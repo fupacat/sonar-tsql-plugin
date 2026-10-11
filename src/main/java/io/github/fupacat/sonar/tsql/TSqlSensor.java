@@ -87,18 +87,18 @@ public class TSqlSensor implements Sensor {
         }
 
         // Report syntax errors if any occurred
-        if (result.hasErrors() && result.getErrors() != null) {
-            for (ParseError error : result.getErrors()) {
+        if (result.hasErrors() && result.errors() != null) {
+            for (ParseError error : result.errors()) {
                 int line = Math.max(1, Math.min(error.line, inputFile.lines()));
-                String msg = (error.getMessage() != null && !error.getMessage().isBlank())
-                        ? error.getMessage()
+                String msg = (error.message != null && !error.message.isBlank())
+                        ? error.message
                         : "T-SQL syntax error";
                 reportSyntaxError(inputFile, context, line, msg);
             }
         }
 
         // Run AST visitor checks
-        TSqlFragment rootFragment = result.getFragment();
+        TSqlFragment rootFragment = result.fragment();
         if (rootFragment != null && !activeChecks.isEmpty()) {
             TSqlCheckContext checkContext = new SensorCheckContext(inputFile, context);
             for (TSqlCheck check : activeChecks) {
@@ -196,9 +196,9 @@ public class TSqlSensor implements Sensor {
 
             if (startObj instanceof TSqlParserToken startToken && endObj instanceof TSqlParserToken endToken) {
                 int startLine = startToken.getLine();
-                int startCol = startToken.getCharPositionInLine();
+                int startCol = Math.max(0, startToken.getColumn() - 1);
                 int endLine = endToken.getLine();
-                int endCol = endToken.getCharPositionInLine() + (endToken.getText() != null ? endToken.getText().length() : 0);
+                int endCol = Math.max(startCol, endToken.getColumn() - 1 + (endToken.getText() != null ? endToken.getText().length() : 0));
 
                 if (startLine >= 1 && endLine >= startLine && startLine <= file.lines() && endLine <= file.lines()) {
                     try {

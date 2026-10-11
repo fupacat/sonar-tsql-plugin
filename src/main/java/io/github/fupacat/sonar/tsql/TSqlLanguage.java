@@ -26,9 +26,9 @@ public class TSqlLanguage extends AbstractLanguage {
     @Override
     public String[] getFileSuffixes() {
         if (configuration != null) {
-            Optional<String[]> suffixes = configuration.getStringArray(FILE_SUFFIXES_KEY);
-            if (suffixes.isPresent() && suffixes.get().length > 0) {
-                return Arrays.stream(suffixes.get())
+            String[] suffixes = configuration.getStringArray(FILE_SUFFIXES_KEY);
+            if (suffixes != null && suffixes.length > 0) {
+                return Arrays.stream(suffixes)
                         .map(String::trim)
                         .filter(s -> !s.isEmpty())
                         .toArray(String[]::new);

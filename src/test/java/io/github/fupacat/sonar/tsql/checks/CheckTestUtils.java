@@ -18,12 +18,12 @@ public final class CheckTestUtils {
     public static List<String> scan(TSqlCheck check, String sql) {
         TSqlParser parser = new TSqlParser();
         ParseResult result = parser.parse(sql);
-        if (result.getFragment() == null) {
-            throw new IllegalArgumentException("Failed to parse SQL: " + sql + ", errors: " + result.getErrors());
+        if (result.fragment() == null) {
+            throw new IllegalArgumentException("Failed to parse SQL: " + sql + ", errors: " + result.errors());
         }
 
         CollectingContext context = new CollectingContext();
-        check.scan(result.getFragment(), context);
+        check.scan(result.fragment(), context);
         return context.issues;
     }
 
