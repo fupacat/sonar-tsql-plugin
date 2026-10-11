@@ -5,6 +5,7 @@ import io.github.fupacat.ParseResult;
 import io.github.fupacat.TSqlParser;
 import io.github.fupacat.TSqlParserToken;
 import io.github.fupacat.ast.TSqlFragment;
+import io.github.fupacat.ast.TSqlScript;
 import io.github.fupacat.sonar.tsql.checks.CheckList;
 import io.github.fupacat.sonar.tsql.checks.TSqlCheck;
 import io.github.fupacat.sonar.tsql.checks.TSqlCheckContext;
@@ -77,7 +78,7 @@ public class TSqlSensor implements Sensor {
             return;
         }
 
-        ParseResult<TSqlFragment> result;
+        ParseResult<TSqlScript> result;
         try {
             result = parser.parse(content);
         } catch (Exception e) {
@@ -88,14 +89,12 @@ public class TSqlSensor implements Sensor {
 
         // Report syntax errors if any occurred
         if (result.hasErrors() && result.errors() != null) {
-            for (Object errorObj : result.errors()) {
-                if (errorObj instanceof ParseError error) {
-                    int line = Math.max(1, Math.min(error.line, inputFile.lines()));
-                    String msg = (error.message != null && !error.message.isBlank())
-                            ? error.message
-                            : "T-SQL syntax error";
-                    reportSyntaxError(inputFile, context, line, msg);
-                }
+            for (ParseError error : result.errors()) {
+                int line = Math.max(1, Math.min(error.line, inputFile.lines()));
+                String msg = (error.message != null && !error.message.isBlank())
+                        ? error.message
+                        : "T-SQL syntax error";
+                reportSyntaxError(inputFile, context, line, msg);
             }
         }
 

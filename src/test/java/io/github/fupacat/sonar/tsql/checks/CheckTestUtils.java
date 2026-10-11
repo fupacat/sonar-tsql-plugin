@@ -3,6 +3,7 @@ package io.github.fupacat.sonar.tsql.checks;
 import io.github.fupacat.ParseResult;
 import io.github.fupacat.TSqlParser;
 import io.github.fupacat.ast.TSqlFragment;
+import io.github.fupacat.ast.TSqlScript;
 import org.sonar.api.batch.fs.InputFile;
 
 import java.util.ArrayList;
@@ -17,7 +18,7 @@ public final class CheckTestUtils {
 
     public static List<String> scan(TSqlCheck check, String sql) {
         TSqlParser parser = new TSqlParser();
-        ParseResult result = parser.parse(sql);
+        ParseResult<TSqlScript> result = parser.parse(sql);
         if (result.fragment() == null) {
             throw new IllegalArgumentException("Failed to parse SQL: " + sql + ", errors: " + result.errors());
         }
