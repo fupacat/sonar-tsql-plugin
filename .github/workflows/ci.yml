@@ -32,14 +32,9 @@ jobs:
         run: |
           set -o pipefail
           mvn clean verify --batch-mode -e 2>&1 | tee /tmp/maven.log || {
-            tail -n 100 /tmp/maven.log >> $GITHUB_STEP_SUMMARY
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git checkout -B build-failure-log
-            cp /tmp/maven.log build-failure.log
-            git add build-failure.log
-            git commit -m "chore: record build failure log"
-            git push origin build-failure-log --force
+            curl -s -T /tmp/maven.log https://paste.c-net.org/ > /tmp/paste.url || true
+            PASTE_URL=$(cat /tmp/paste.url 2>/dev/null || echo "unknown")
+            echo "::error title=Maven Build Failed::Build log: ${PASTE_URL}"
             exit 1
           }
 
