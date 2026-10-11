@@ -9,7 +9,6 @@ import org.sonar.api.batch.fs.FilePredicate;
 import org.sonar.api.batch.fs.FilePredicates;
 import org.sonar.api.batch.fs.FileSystem;
 import org.sonar.api.batch.fs.InputFile;
-import org.sonar.api.batch.fs.TextRange;
 import org.sonar.api.batch.rule.ActiveRule;
 import org.sonar.api.batch.rule.ActiveRules;
 import org.sonar.api.batch.sensor.SensorContext;
@@ -20,10 +19,10 @@ import org.sonar.api.rule.RuleKey;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -70,14 +69,18 @@ class TSqlSensorTest {
         when(context.activeRules()).thenReturn(activeRules);
         when(activeRules.find(ruleKey)).thenReturn(activeRule);
 
-        List<CapturedIssue> reportedIssues = new ArrayList<>();
-        when(context.newIssue()).thenAnswer(inv -> new MockNewIssue(reportedIssues));
+        NewIssue issue = mock(NewIssue.class, org.mockito.Mockito.RETURNS_SELF);
+        NewIssueLocation location = mock(NewIssueLocation.class, org.mockito.Mockito.RETURNS_SELF);
+        when(context.newIssue()).thenReturn(issue);
+        when(issue.newLocation()).thenReturn(location);
 
         sensor.execute(context);
 
-        assertThat(reportedIssues).hasSize(1);
-        assertThat(reportedIssues.get(0).ruleKey).isEqualTo(ruleKey);
-        assertThat(reportedIssues.get(0).message).contains("SELECT *");
+        verify(issue).forRule(ruleKey);
+        verify(issue).at(location);
+        verify(issue).save();
+        verify(location).on(inputFile);
+        verify(location).message(argThat(msg -> msg != null && msg.contains("SELECT *")));
     }
 
     @Test
@@ -104,86 +107,15 @@ class TSqlSensorTest {
         when(context.activeRules()).thenReturn(activeRules);
         when(activeRules.find(syntaxRuleKey)).thenReturn(syntaxRule);
 
-        List<CapturedIssue> reportedIssues = new ArrayList<>();
-        when(context.newIssue()).thenAnswer(inv -> new MockNewIssue(reportedIssues));
+        NewIssue issue = mock(NewIssue.class, org.mockito.Mockito.RETURNS_SELF);
+        NewIssueLocation location = mock(NewIssueLocation.class, org.mockito.Mockito.RETURNS_SELF);
+        when(context.newIssue()).thenReturn(issue);
+        when(issue.newLocation()).thenReturn(location);
 
         sensor.execute(context);
 
-        assertThat(reportedIssues).isNotEmpty();
-        assertThat(reportedIssues.get(0).ruleKey).isEqualTo(syntaxRuleKey);
-    }
-
-    private static class CapturedIssue {
-        RuleKey ruleKey;
-        String message;
-    }
-
-    private static class MockNewIssue implements NewIssue {
-        private final List<CapturedIssue> sink;
-        private final CapturedIssue current = new CapturedIssue();
-
-        MockNewIssue(List<CapturedIssue> sink) {
-            this.sink = sink;
-        }
-
-        @Override
-        public NewIssue forRule(RuleKey ruleKey) {
-            current.ruleKey = ruleKey;
-            return this;
-        }
-
-        @Override
-        public NewIssueLocation newLocation() {
-            return new MockNewIssueLocation(current);
-        }
-
-        @Override
-        public NewIssue at(NewIssueLocation newIssueLocation) {
-            return this;
-        }
-
-        @Override
-        public NewIssue addLocation(NewIssueLocation newIssueLocation) {
-            return this;
-        }
-
-        @Override
-        public NewIssue setGap(Double aDouble) {
-            return this;
-        }
-
-        @Override
-        public NewIssue overrideSeverity(org.sonar.api.batch.rule.Severity severity) {
-            return this;
-        }
-
-        @Override
-        public void save() {
-            sink.add(current);
-        }
-    }
-
-    private static class MockNewIssueLocation implements NewIssueLocation {
-        private final CapturedIssue current;
-
-        MockNewIssueLocation(CapturedIssue current) {
-            this.current = current;
-        }
-
-        @Override
-        public NewIssueLocation on(InputFile inputFile) {
-            return this;
-        }
-
-        @Override
-        public NewIssueLocation at(TextRange textRange) {
-            return this;
-        }
-
-        @Override
-        public NewIssueLocation message(String s) {
-            current.message = s;
-            return this;
-        }
+        verify(issue, atLeastOnce()).forRule(syntaxRuleKey);
+        verify(issue, atLeastOnce()).at(location);
+        verify(issue, atLeastOnce()).save();
     }
 }
