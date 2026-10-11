@@ -1,10 +1,10 @@
 package io.github.fupacat.sonar.tsql.checks;
 
-import io.github.fupacat.TSqlParserToken;
+import io.github.fupacat.ast.ForceSeekTableHint;
+import io.github.fupacat.ast.IndexTableHint;
+import io.github.fupacat.ast.LiteralTableHint;
 import io.github.fupacat.ast.TableHint;
-import io.github.fupacat.ast.TSqlFragment;
-
-import java.util.List;
+import io.github.fupacat.ast.TableHintKind;
 
 /**
  * Rule: Avoid using NOLOCK or READUNCOMMITTED table hints.
@@ -30,25 +30,16 @@ public class AvoidNoLockHintCheck extends TSqlCheck {
 
     private boolean isNoLockHint(TableHint node) {
         if (node.HintKind != null) {
+            if (node.HintKind == TableHintKind.HoldLock || node.HintKind == TableHintKind.Index || node.HintKind == TableHintKind.ForceSeek) {
+                return false;
+            }
             String kindName = node.HintKind.name().toUpperCase();
-            if (kindName.contains("NOLOCK") || kindName.contains("READUNCOMMITTED")) {
-                return true;
-            }
+            return kindName.contains("NOLOCK") || kindName.contains("READUNCOMMITTED");
         }
-        TSqlFragment root = getRoot();
-        List tokenStream = (node.ScriptTokenStream != null && !node.ScriptTokenStream.isEmpty())
-                ? node.ScriptTokenStream
-                : (root != null ? root.ScriptTokenStream : null);
-
-        if (tokenStream != null && node.firstTokenIndex >= 0 && node.firstTokenIndex < tokenStream.size()) {
-            Object tokenObj = tokenStream.get(node.firstTokenIndex);
-            if (tokenObj instanceof TSqlParserToken token) {
-                String txt = token.getText();
-                if (txt != null && (txt.equalsIgnoreCase("NOLOCK") || txt.equalsIgnoreCase("READUNCOMMITTED"))) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        // In ScriptDOM, simple identifier hints (such as NOLOCK and READUNCOMMITTED)
+        // are parsed as basic TableHint instances without specialized sub-types
+        return !(node instanceof IndexTableHint)
+                && !(node instanceof ForceSeekTableHint)
+                && !(node instanceof LiteralTableHint);
     }
 }

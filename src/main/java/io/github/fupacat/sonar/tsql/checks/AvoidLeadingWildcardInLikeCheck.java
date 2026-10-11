@@ -20,10 +20,18 @@ public class AvoidLeadingWildcardInLikeCheck extends TSqlCheck {
     @Override
     public void visit(LikePredicate node) {
         if (node.SecondExpression instanceof StringLiteral stringLiteral) {
-            String val = stringLiteral.Value;
-            if (val != null && (val.startsWith("%") || val.startsWith("_"))) {
-                reportIssue(node.SecondExpression, 
-                        "Avoid leading wildcards ('%' or '_') in LIKE conditions; they preclude index seeks.");
+            String raw = stringLiteral.Value;
+            if (raw != null) {
+                String pattern = raw;
+                if (pattern.startsWith("N'") || pattern.startsWith("n'")) {
+                    pattern = pattern.substring(2);
+                } else if (pattern.startsWith("'")) {
+                    pattern = pattern.substring(1);
+                }
+                if (pattern.startsWith("%") || pattern.startsWith("_")) {
+                    reportIssue(node.SecondExpression, 
+                            "Avoid leading wildcards ('%' or '_') in LIKE conditions; they preclude index seeks.");
+                }
             }
         }
         super.visit(node);
