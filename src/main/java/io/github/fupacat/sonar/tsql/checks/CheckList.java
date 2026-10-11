@@ -1,0 +1,34 @@
+package io.github.fupacat.sonar.tsql.checks;
+
+import java.util.List;
+
+/**
+ * Registry of all available T-SQL rule checks.
+ */
+public final class CheckList {
+
+    public static final String SYNTAX_ERROR_RULE_KEY = "SyntaxError";
+
+    private static final List<Class<? extends TSqlCheck>> CHECKS = List.of(
+            AvoidSelectAllCheck.class,
+            AvoidLeadingWildcardInLikeCheck.class,
+            AvoidNoLockHintCheck.class,
+            AvoidDeprecatedTypesCheck.class
+    );
+
+    private CheckList() {
+    }
+
+    public static List<Class<? extends TSqlCheck>> getChecks() {
+        return CHECKS;
+    }
+
+    public static List<TSqlCheck> instantiateChecks() {
+        return List.of(
+                new AvoidSelectAllCheck(),
+                new AvoidLeadingWildcardInLikeCheck(),
+                new AvoidNoLockHintCheck(),
+                new AvoidDeprecatedTypesCheck()
+        );
+    }
+}

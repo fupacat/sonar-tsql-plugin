@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.github.fupacat</groupId>
+    <artifactId>sonar-tsql-plugin</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <packaging>sonar-plugin</packaging>
+
+    <name>SonarQube T-SQL Plugin</name>
+    <description>Static code analyzer and SonarQube plugin for Microsoft Transact-SQL (T-SQL), powered by tsql-scriptdom-java.</description>
+    <url>https://github.com/fupacat/sonar-tsql-plugin</url>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Eric O'Loughlin</name>
+            <organizationUrl>https://github.com/fupacat</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/fupacat/sonar-tsql-plugin.git</connection>
+        <developerConnection>scm:git:ssh://github.com:fupacat/sonar-tsql-plugin.git</developerConnection>
+        <url>https://github.com/fupacat/sonar-tsql-plugin</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.release>17</maven.compiler.release>
+        <java.version>17</java.version>
+        
+        <sonar.apiVersion>10.11.0.2468</sonar.apiVersion>
+        <sonar.pluginMinVersion>9.9</sonar.pluginMinVersion>
+        <scriptdom.version>0.1.0</scriptdom.version>
+        
+        <sonar-packaging.version>1.23.0.740</sonar-packaging.version>
+        <maven-compiler.version>3.13.0</maven-compiler.version>
+        <maven-surefire.version>3.2.5</maven-surefire.version>
+        <junit.version>5.10.2</junit.version>
+        <assertj.version>3.25.3</assertj.version>
+        <mockito.version>5.11.0</mockito.version>
+    </properties>
+
+    <dependencies>
+        <!-- SonarQube Plugin API (provided by the SonarQube runtime) -->
+        <dependency>
+            <groupId>org.sonarsource.api.plugin</groupId>
+            <artifactId>sonar-plugin-api</artifactId>
+            <version>${sonar.apiVersion}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Microsoft T-SQL ScriptDOM parser for Java (bundled with the plugin) -->
+        <dependency>
+            <groupId>io.github.fupacat</groupId>
+            <artifactId>tsql-scriptdom-core</artifactId>
+            <version>${scriptdom.version}</version>
+        </dependency>
+
+        <!-- Test Dependencies -->
+        <dependency>
+            <groupId>org.sonarsource.api.plugin</groupId>
+            <artifactId>sonar-plugin-api-test-fixtures</artifactId>
+            <version>${sonar.apiVersion}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler.version}</version>
+                <configuration>
+                    <release>${maven.compiler.release}</release>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire.version}</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.sonarsource.sonar-packaging-maven-plugin</groupId>
+                <artifactId>sonar-packaging-maven-plugin</artifactId>
+                <version>${sonar-packaging.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <pluginKey>tsql</pluginKey>
+                    <pluginName>SonarQube T-SQL Plugin</pluginName>
+                    <pluginClass>io.github.fupacat.sonar.tsql.TSqlPlugin</pluginClass>
+                    <pluginDescription>Static code analyzer for Transact-SQL (T-SQL) powered by tsql-scriptdom-java</pluginDescription>
+                    <pluginApiMinVersion>${sonar.pluginMinVersion}</pluginApiMinVersion>
+                    <requiredForLanguages>tsql</requiredForLanguages>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
