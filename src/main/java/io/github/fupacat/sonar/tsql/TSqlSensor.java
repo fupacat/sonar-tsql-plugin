@@ -101,7 +101,7 @@ public class TSqlSensor implements Sensor {
         // Run AST visitor checks
         TSqlFragment rootFragment = result.fragment();
         if (rootFragment != null && !activeChecks.isEmpty()) {
-            TSqlCheckContext checkContext = new SensorCheckContext(inputFile, context);
+            TSqlCheckContext checkContext = new SensorCheckContext(inputFile, context, rootFragment);
             for (TSqlCheck check : activeChecks) {
                 try {
                     check.scan(rootFragment, checkContext);
@@ -127,10 +127,12 @@ public class TSqlSensor implements Sensor {
     private static class SensorCheckContext implements TSqlCheckContext {
         private final InputFile inputFile;
         private final SensorContext sensorContext;
+        private final TSqlFragment rootFragment;
 
-        public SensorCheckContext(InputFile inputFile, SensorContext sensorContext) {
+        public SensorCheckContext(InputFile inputFile, SensorContext sensorContext, TSqlFragment rootFragment) {
             this.inputFile = inputFile;
             this.sensorContext = sensorContext;
+            this.rootFragment = rootFragment;
         }
 
         @Override
@@ -168,10 +170,21 @@ public class TSqlSensor implements Sensor {
             issue.at(location).save();
         }
 
+        private List getTokenStream(TSqlFragment fragment) {
+            if (fragment != null && fragment.ScriptTokenStream != null && !fragment.ScriptTokenStream.isEmpty()) {
+                return fragment.ScriptTokenStream;
+            }
+            if (rootFragment != null && rootFragment.ScriptTokenStream != null && !rootFragment.ScriptTokenStream.isEmpty()) {
+                return rootFragment.ScriptTokenStream;
+            }
+            return null;
+        }
+
         private int getStartLine(TSqlFragment fragment) {
-            if (fragment != null && fragment.ScriptTokenStream != null
-                    && fragment.firstTokenIndex >= 0 && fragment.firstTokenIndex < fragment.ScriptTokenStream.size()) {
-                Object tokenObj = fragment.ScriptTokenStream.get(fragment.firstTokenIndex);
+            List tokenStream = getTokenStream(fragment);
+            if (fragment != null && tokenStream != null
+                    && fragment.firstTokenIndex >= 0 && fragment.firstTokenIndex < tokenStream.size()) {
+                Object tokenObj = tokenStream.get(fragment.firstTokenIndex);
                 if (tokenObj instanceof TSqlParserToken token) {
                     return Math.max(1, token.getLine());
                 }
@@ -180,20 +193,21 @@ public class TSqlSensor implements Sensor {
         }
 
         private TextRange computeRange(TSqlFragment fragment, InputFile file) {
-            if (fragment == null || fragment.ScriptTokenStream == null) {
+            List tokenStream = getTokenStream(fragment);
+            if (fragment == null || tokenStream == null) {
                 return null;
             }
             int firstIdx = fragment.firstTokenIndex;
             int lastIdx = fragment.lastTokenIndex;
-            if (firstIdx < 0 || firstIdx >= fragment.ScriptTokenStream.size()) {
+            if (firstIdx < 0 || firstIdx >= tokenStream.size()) {
                 return null;
             }
-            if (lastIdx < firstIdx || lastIdx >= fragment.ScriptTokenStream.size()) {
+            if (lastIdx < firstIdx || lastIdx >= tokenStream.size()) {
                 lastIdx = firstIdx;
             }
 
-            Object startObj = fragment.ScriptTokenStream.get(firstIdx);
-            Object endObj = fragment.ScriptTokenStream.get(lastIdx);
+            Object startObj = tokenStream.get(firstIdx);
+            Object endObj = tokenStream.get(lastIdx);
 
             if (startObj instanceof TSqlParserToken startToken && endObj instanceof TSqlParserToken endToken) {
                 int startLine = startToken.getLine();

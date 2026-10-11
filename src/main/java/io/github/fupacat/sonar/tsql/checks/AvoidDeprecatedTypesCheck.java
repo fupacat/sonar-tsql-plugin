@@ -28,6 +28,7 @@ public class AvoidDeprecatedTypesCheck extends TSqlCheck {
                                 getRecommendedReplacement(option)));
             }
         }
+        super.visit(node);
     }
 
     private String getRecommendedReplacement(SqlDataTypeOption option) {

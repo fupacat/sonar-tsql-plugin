@@ -2,6 +2,9 @@ package io.github.fupacat.sonar.tsql.checks;
 
 import io.github.fupacat.TSqlParserToken;
 import io.github.fupacat.ast.TableHint;
+import io.github.fupacat.ast.TSqlFragment;
+
+import java.util.List;
 
 /**
  * Rule: Avoid using NOLOCK or READUNCOMMITTED table hints.
@@ -22,6 +25,7 @@ public class AvoidNoLockHintCheck extends TSqlCheck {
             reportIssue(node, 
                     "Avoid using 'NOLOCK' or 'READUNCOMMITTED' table hints. They cause dirty reads and data inconsistency.");
         }
+        super.visit(node);
     }
 
     private boolean isNoLockHint(TableHint node) {
@@ -31,8 +35,13 @@ public class AvoidNoLockHintCheck extends TSqlCheck {
                 return true;
             }
         }
-        if (node.ScriptTokenStream != null && node.firstTokenIndex >= 0 && node.firstTokenIndex < node.ScriptTokenStream.size()) {
-            Object tokenObj = node.ScriptTokenStream.get(node.firstTokenIndex);
+        TSqlFragment root = getRoot();
+        List tokenStream = (node.ScriptTokenStream != null && !node.ScriptTokenStream.isEmpty())
+                ? node.ScriptTokenStream
+                : (root != null ? root.ScriptTokenStream : null);
+
+        if (tokenStream != null && node.firstTokenIndex >= 0 && node.firstTokenIndex < tokenStream.size()) {
+            Object tokenObj = tokenStream.get(node.firstTokenIndex);
             if (tokenObj instanceof TSqlParserToken token) {
                 String txt = token.getText();
                 if (txt != null && (txt.equalsIgnoreCase("NOLOCK") || txt.equalsIgnoreCase("READUNCOMMITTED"))) {

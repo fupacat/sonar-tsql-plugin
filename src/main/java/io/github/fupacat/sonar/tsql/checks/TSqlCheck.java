@@ -1,14 +1,16 @@
 package io.github.fupacat.sonar.tsql.checks;
 
+import io.github.fupacat.ast.TSqlConcreteFragmentVisitor;
 import io.github.fupacat.ast.TSqlFragment;
-import io.github.fupacat.ast.TSqlFragmentVisitor;
 
 /**
  * Base class for all T-SQL static analysis rules implemented as AST visitors.
+ * Extends {@link TSqlConcreteFragmentVisitor} to ensure full traversal through all AST nodes.
  */
-public abstract class TSqlCheck implements TSqlFragmentVisitor {
+public abstract class TSqlCheck extends TSqlConcreteFragmentVisitor {
 
     private TSqlCheckContext context;
+    private TSqlFragment root;
 
     /**
      * @return unique rule key registered in SonarQube rules repository
@@ -23,13 +25,22 @@ public abstract class TSqlCheck implements TSqlFragmentVisitor {
      */
     public void scan(TSqlFragment root, TSqlCheckContext context) {
         this.context = context;
+        this.root = root;
         try {
             if (root != null) {
                 root.accept(this);
             }
         } finally {
             this.context = null;
+            this.root = null;
         }
+    }
+
+    /**
+     * @return the root AST fragment of the current scan, if available
+     */
+    public TSqlFragment getRoot() {
+        return root;
     }
 
     /**

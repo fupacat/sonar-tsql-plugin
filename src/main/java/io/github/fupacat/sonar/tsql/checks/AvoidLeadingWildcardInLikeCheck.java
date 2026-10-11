@@ -26,5 +26,6 @@ public class AvoidLeadingWildcardInLikeCheck extends TSqlCheck {
                         "Avoid leading wildcards ('%' or '_') in LIKE conditions; they preclude index seeks.");
             }
         }
+        super.visit(node);
     }
 }

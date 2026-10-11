@@ -19,5 +19,6 @@ public class AvoidSelectAllCheck extends TSqlCheck {
     @Override
     public void visit(SelectStarExpression node) {
         reportIssue(node, "Avoid using 'SELECT *'. Specify explicit column names instead.");
+        super.visit(node);
     }
 }
