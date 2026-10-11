@@ -35,12 +35,14 @@ public class TSqlSensor implements Sensor {
 
     private static final Logger LOG = LoggerFactory.getLogger(TSqlSensor.class);
 
+    // TRACEABILITY_MAPPING: REQ-005
     @Override
     public void describe(SensorDescriptor descriptor) {
         descriptor.name("T-SQL ScriptDOM Sensor")
                 .onlyOnLanguage(TSqlLanguage.KEY);
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     @Override
     public void execute(SensorContext context) {
         FileSystem fs = context.fileSystem();
@@ -57,6 +59,7 @@ public class TSqlSensor implements Sensor {
         }
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     private List<TSqlCheck> getActiveChecks(SensorContext context) {
         List<TSqlCheck> activeChecks = new ArrayList<>();
         for (TSqlCheck check : CheckList.instantiateChecks()) {
@@ -68,6 +71,7 @@ public class TSqlSensor implements Sensor {
         return activeChecks;
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     private void analyzeFile(InputFile inputFile, SensorContext context, TSqlParser parser, List<TSqlCheck> activeChecks) {
         LOG.debug("Analyzing T-SQL file: {}", inputFile.uri());
         String content;
@@ -112,6 +116,7 @@ public class TSqlSensor implements Sensor {
         }
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     private void reportSyntaxError(InputFile inputFile, SensorContext context, int line, String message) {
         RuleKey syntaxRuleKey = RuleKey.of(TSqlRulesDefinition.REPOSITORY_KEY, CheckList.SYNTAX_ERROR_RULE_KEY);
         if (context.activeRules().find(syntaxRuleKey) != null) {
@@ -159,7 +164,7 @@ public class TSqlSensor implements Sensor {
         }
 
         @Override
-        public void reportIssue(TSqlCheck check, int line, String message) {
+        public void reportIssueAtLine(TSqlCheck check, int line, String message) {
             RuleKey ruleKey = RuleKey.of(TSqlRulesDefinition.REPOSITORY_KEY, check.getRuleKey());
             int validLine = Math.max(1, Math.min(line, inputFile.lines()));
             NewIssue issue = sensorContext.newIssue().forRule(ruleKey);

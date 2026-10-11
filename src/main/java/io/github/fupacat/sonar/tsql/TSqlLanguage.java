@@ -23,6 +23,7 @@ public class TSqlLanguage extends AbstractLanguage {
         this.configuration = configuration;
     }
 
+    // TRACEABILITY_MAPPING: REQ-001
     @Override
     public String[] getFileSuffixes() {
         if (configuration != null) {

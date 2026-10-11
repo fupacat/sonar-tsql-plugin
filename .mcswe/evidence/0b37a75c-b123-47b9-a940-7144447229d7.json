@@ -1,0 +1,1033 @@
+{
+  "adapters": {
+    "controller": "3.0.0",
+    "fingerprints": {
+      "JavaAstScanner.java": "a3114cef184b0d3d04f9b5e7c67c5c8d57c2b5d4bde14f69369284621ec255cf",
+      "engine.py": "76b242a56c7c4a0902edf83ad0e1ff962c9fb767af38300cd0bd5de80c4551a6",
+      "java_adapter.py": "24636b44c1053d6b9f620a6d36436df56972fbb8f2e769624f58f4b9c3b8c379",
+      "maven_adapter.py": "1df8fcb3f32bdcc0966b0f966e841887d2e5d489078f680e3edf268919f59507",
+      "pytest_adapter.py": "176e5a615f0e4beb508c549d69e8d9befb742b2ef77ce3e09e77de7a43b33b61"
+    },
+    "parser": "java-ast-v1",
+    "runner": null,
+    "test": "maven-surefire-v1"
+  },
+  "diagnostics": [
+    {
+      "code": "ROGUE_REGION",
+      "gate": 3,
+      "identifiers": [],
+      "message": "[17, 20]",
+      "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheck.java",
+      "repair_scope": [
+        "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheck.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "ROGUE_REGION",
+      "gate": 3,
+      "identifiers": [],
+      "message": "[32, 45]",
+      "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheck.java",
+      "repair_scope": [
+        "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheck.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "ROGUE_REGION",
+      "gate": 3,
+      "identifiers": [],
+      "message": "[15, 18]",
+      "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheck.java",
+      "repair_scope": [
+        "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheck.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "ROGUE_REGION",
+      "gate": 3,
+      "identifiers": [],
+      "message": "[14, 17]",
+      "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheck.java",
+      "repair_scope": [
+        "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheck.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "ROGUE_REGION",
+      "gate": 3,
+      "identifiers": [],
+      "message": "[18, 18]",
+      "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+      "repair_scope": [
+        "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "ROGUE_REGION",
+      "gate": 3,
+      "identifiers": [],
+      "message": "[26, 37]",
+      "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+      "repair_scope": [
+        "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "ROGUE_REGION",
+      "gate": 3,
+      "identifiers": [],
+      "message": "[42, 44]",
+      "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+      "repair_scope": [
+        "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "ROGUE_REGION",
+      "gate": 3,
+      "identifiers": [],
+      "message": "[52, 56]",
+      "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+      "repair_scope": [
+        "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "ROGUE_REGION",
+      "gate": 3,
+      "identifiers": [],
+      "message": "[64, 68]",
+      "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+      "repair_scope": [
+        "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "ROGUE_REGION",
+      "gate": 3,
+      "identifiers": [],
+      "message": "[15, 18]",
+      "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheck.java",
+      "repair_scope": [
+        "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheck.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "ROGUE_REGION",
+      "gate": 3,
+      "identifiers": [],
+      "message": "[35, 42]",
+      "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheck.java",
+      "repair_scope": [
+        "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheck.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "ROGUE_REGION",
+      "gate": 3,
+      "identifiers": [],
+      "message": "[14, 14]",
+      "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheckContext.java",
+      "repair_scope": [
+        "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheckContext.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "ROGUE_REGION",
+      "gate": 3,
+      "identifiers": [],
+      "message": "[23, 23]",
+      "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheckContext.java",
+      "repair_scope": [
+        "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheckContext.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "ROGUE_REGION",
+      "gate": 3,
+      "identifiers": [],
+      "message": "[32, 32]",
+      "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheckContext.java",
+      "repair_scope": [
+        "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheckContext.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "ROGUE_REGION",
+      "gate": 3,
+      "identifiers": [],
+      "message": "[62, 71]",
+      "path": "src/main/java/io/github/fupacat/sonar/tsql/TSqlSensor.java",
+      "repair_scope": [
+        "src/main/java/io/github/fupacat/sonar/tsql/TSqlSensor.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "ROGUE_REGION",
+      "gate": 3,
+      "identifiers": [],
+      "message": "[73, 115]",
+      "path": "src/main/java/io/github/fupacat/sonar/tsql/TSqlSensor.java",
+      "repair_scope": [
+        "src/main/java/io/github/fupacat/sonar/tsql/TSqlSensor.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "ROGUE_REGION",
+      "gate": 3,
+      "identifiers": [],
+      "message": "[117, 127]",
+      "path": "src/main/java/io/github/fupacat/sonar/tsql/TSqlSensor.java",
+      "repair_scope": [
+        "src/main/java/io/github/fupacat/sonar/tsql/TSqlSensor.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "ROGUE_REGION",
+      "gate": 3,
+      "identifiers": [],
+      "message": "[34, 37]",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "ROGUE_REGION",
+      "gate": 3,
+      "identifiers": [],
+      "message": "[19, 29]",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/checks/CheckTestUtils.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/CheckTestUtils.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_EXECUTION",
+      "gate": 3,
+      "identifiers": [],
+      "message": "missing runner report",
+      "path": "",
+      "repair_scope": [],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-001"
+      ],
+      "message": "REQ-001: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/TSqlLanguageTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/TSqlLanguageTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-001"
+      ],
+      "message": "REQ-001: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/TSqlLanguageTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/TSqlLanguageTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-001"
+      ],
+      "message": "REQ-001: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/TSqlLanguageTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/TSqlLanguageTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-002"
+      ],
+      "message": "REQ-002: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/TSqlPluginTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/TSqlPluginTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-003"
+      ],
+      "message": "REQ-003: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/rules/TSqlRulesDefinitionTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/rules/TSqlRulesDefinitionTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-004"
+      ],
+      "message": "REQ-004: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/rules/TSqlQualityProfileTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/rules/TSqlQualityProfileTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-005"
+      ],
+      "message": "REQ-005: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-005"
+      ],
+      "message": "REQ-005: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-005"
+      ],
+      "message": "REQ-005: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-006"
+      ],
+      "message": "REQ-006: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/rules/TSqlRulesDefinitionTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/rules/TSqlRulesDefinitionTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-007"
+      ],
+      "message": "REQ-007: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheckTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheckTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-007"
+      ],
+      "message": "REQ-007: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheckTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheckTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-007"
+      ],
+      "message": "REQ-007: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheckTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheckTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-008"
+      ],
+      "message": "REQ-008: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-008"
+      ],
+      "message": "REQ-008: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-008"
+      ],
+      "message": "REQ-008: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-008"
+      ],
+      "message": "REQ-008: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-009"
+      ],
+      "message": "REQ-009: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheckTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheckTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-009"
+      ],
+      "message": "REQ-009: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheckTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheckTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-009"
+      ],
+      "message": "REQ-009: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheckTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheckTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-010"
+      ],
+      "message": "REQ-010: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheckTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheckTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-010"
+      ],
+      "message": "REQ-010: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheckTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheckTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-010"
+      ],
+      "message": "REQ-010: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheckTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheckTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [
+        "REQ-010"
+      ],
+      "message": "REQ-010: mapped test must execute and pass",
+      "path": "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheckTest.java",
+      "repair_scope": [
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheckTest.java"
+      ],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    },
+    {
+      "code": "TEST_NOT_EXECUTED",
+      "gate": 3,
+      "identifiers": [],
+      "message": "collection/outcome mismatch",
+      "path": "",
+      "repair_scope": [],
+      "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+      "schema_version": 3,
+      "span": null
+    }
+  ],
+  "enforcement": "advisory",
+  "exemptions": [],
+  "inputs": {
+    ".mcswe/config.json": "e3e87e28f5c11f09e52af61bb926c13a8f14d7a97cc12c524e08a175d45712f8",
+    "context/ICD.md": "a3d66b70fc67ff52459272fbd9454ae0691b11a42272af7101672dc84c040c2e",
+    "context/SRS.md": "74ddf375e83984091d706e72964b9d87086d9e52c7d3f060c2d0f08d69a41653",
+    "pre_protocol/DECISIONS.md": "24b874ecd71fcad49d2e5b315b676490a7b5810fa498141f13218fe916ec2b55",
+    "pre_protocol/RESEARCH_BOUNDS.md": "24c2841684e14a648c1032004c2011ba5cc7b40bbd4e5858bf257f8cdbb15945",
+    "src/main/java/io/github/fupacat/sonar/tsql/TSqlLanguage.java": "d275bd1a9ee68d0afb3566c7a79eeadb0843cfc0e80cbea5cb0f77891231df19",
+    "src/main/java/io/github/fupacat/sonar/tsql/TSqlPlugin.java": "27f00b70299b6b4b3880c88b23182eef437437ebb4da3e6695ecd9e83d0e4f13",
+    "src/main/java/io/github/fupacat/sonar/tsql/TSqlSensor.java": "0a050f211e865957e46fc0fc5dfef4af9af4df4da47c46011e8d170ab012f16a",
+    "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheck.java": "4b9e15d505213b4184d1aa49b5ade28909c59904ae812e9bb291d80f5a25e98d",
+    "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheck.java": "050a035f294f4287e6e57384e4839965a8ed503215c54dee76e7bc100e16bd1f",
+    "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheck.java": "359f1dc66fed59d13357be69b11fd136e48f44caa7248d15b31f3e5d13bf4390",
+    "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheck.java": "09b94de1239daee5647b39a3c1e03b1c0fc2d21ca28847eeae37cd11aaa1e595",
+    "src/main/java/io/github/fupacat/sonar/tsql/checks/CheckList.java": "094edf081f3c170a99f66eb2b092c2267014c52e08cccb2c6207cf5e721f8020",
+    "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java": "df987be2f582f5329fa32fc9254e7033d405f7b4c163cc0c67664c66764da667",
+    "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheckContext.java": "f379974c00338f2d196e479506f09c6463b122b2d306e76e217f4402badd0780",
+    "src/main/java/io/github/fupacat/sonar/tsql/rules/TSqlQualityProfile.java": "fd5435b73186dc1b2112d89b81ae35aef81f48e27043679cb8bdb15ee1a6c8f5",
+    "src/main/java/io/github/fupacat/sonar/tsql/rules/TSqlRulesDefinition.java": "cbb385257f905b4e46cab25c96ecde56d8047ffdcab4cb97ba9a295a020ff705",
+    "src/test/java/io/github/fupacat/sonar/tsql/TSqlLanguageTest.java": "08cc7a79a33028cfd24e5776a45e9e3876f995c7277a37d0d22f71e9f75e77a2",
+    "src/test/java/io/github/fupacat/sonar/tsql/TSqlPluginTest.java": "6fddcfe909aae8fa3336657f3370b8d22c8949bdb049b5663bf8f6154c1cefea",
+    "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java": "2a5f791edf1c0f18521bbab8bc8e125f045e8a5270f4baf47096a31781c42e8e",
+    "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheckTest.java": "f906ba108589d5a2f3747a57cc3b702e04a8490550a78a2f973bdb2ab611a5fd",
+    "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java": "fe4bd98a698ff957e63d6f01402e2706bc8e4057fbf9799a5ec876329ffef8ba",
+    "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheckTest.java": "46eda8f57a3bdc8f5d4502e47aef5c0eb24dcacad5dae33246d1c492029cf88d",
+    "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheckTest.java": "714483909899b2b523642e98bf1112ce20047c660eef2b8fd945e6412ae8e030",
+    "src/test/java/io/github/fupacat/sonar/tsql/checks/CheckTestUtils.java": "ce6490d6807231fdadba77ef479e2750dd795322315dcbca335a0b6e047a7d7b",
+    "src/test/java/io/github/fupacat/sonar/tsql/rules/TSqlQualityProfileTest.java": "cbbbe38bfb64f5511055d141a0965fcc44add489b6c0fa819b34294d10a9fee7",
+    "src/test/java/io/github/fupacat/sonar/tsql/rules/TSqlRulesDefinitionTest.java": "9ba666a1ff92f681d603b3ff79c6581010896cd47c4118cc6360a8b8bbc367bb"
+  },
+  "result": {},
+  "revision": ".mcswe/locks/809bd24b-9398-43b0-be25-ee9cc893815a.json",
+  "rows": [
+    {
+      "requirement": "REQ-001",
+      "source": [
+        {
+          "exported": true,
+          "ids": [
+            "REQ-001"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/TSqlLanguage.java",
+          "signature": {
+            "async": false,
+            "parameters": [],
+            "return": "String[]"
+          },
+          "span": [
+            27,
+            39
+          ],
+          "symbol": "TSqlLanguage.getFileSuffixes"
+        }
+      ],
+      "status": "FAILING",
+      "tests": []
+    },
+    {
+      "requirement": "REQ-002",
+      "source": [
+        {
+          "exported": true,
+          "ids": [
+            "REQ-002"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/TSqlPlugin.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "Context",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "context"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            13,
+            21
+          ],
+          "symbol": "TSqlPlugin.define"
+        }
+      ],
+      "status": "FAILING",
+      "tests": []
+    },
+    {
+      "requirement": "REQ-003",
+      "source": [
+        {
+          "exported": true,
+          "ids": [
+            "REQ-003"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/rules/TSqlRulesDefinition.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "Context",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "context"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            23,
+            100
+          ],
+          "symbol": "TSqlRulesDefinition.define"
+        }
+      ],
+      "status": "FAILING",
+      "tests": []
+    },
+    {
+      "requirement": "REQ-004",
+      "source": [
+        {
+          "exported": true,
+          "ids": [
+            "REQ-004"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/rules/TSqlQualityProfile.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "Context",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "context"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            19,
+            32
+          ],
+          "symbol": "TSqlQualityProfile.define"
+        }
+      ],
+      "status": "FAILING",
+      "tests": []
+    },
+    {
+      "requirement": "REQ-005",
+      "source": [
+        {
+          "exported": true,
+          "ids": [
+            "REQ-005"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/TSqlSensor.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "SensorDescriptor",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "descriptor"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            39,
+            43
+          ],
+          "symbol": "TSqlSensor.describe"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-005"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/TSqlSensor.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "SensorContext",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "context"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            46,
+            60
+          ],
+          "symbol": "TSqlSensor.execute"
+        }
+      ],
+      "status": "FAILING",
+      "tests": []
+    },
+    {
+      "requirement": "REQ-006",
+      "source": [
+        {
+          "exported": true,
+          "ids": [
+            "REQ-006"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/CheckList.java",
+          "signature": {
+            "async": false,
+            "parameters": [],
+            "return": "List<Class<? extends TSqlCheck>>"
+          },
+          "span": [
+            23,
+            25
+          ],
+          "symbol": "CheckList.getChecks"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-006"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/CheckList.java",
+          "signature": {
+            "async": false,
+            "parameters": [],
+            "return": "List<TSqlCheck>"
+          },
+          "span": [
+            28,
+            35
+          ],
+          "symbol": "CheckList.instantiateChecks"
+        }
+      ],
+      "status": "FAILING",
+      "tests": []
+    },
+    {
+      "requirement": "REQ-007",
+      "source": [
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "SelectStarExpression",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "node"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            20,
+            24
+          ],
+          "symbol": "AvoidSelectAllCheck.visit"
+        }
+      ],
+      "status": "FAILING",
+      "tests": []
+    },
+    {
+      "requirement": "REQ-008",
+      "source": [
+        {
+          "exported": true,
+          "ids": [
+            "REQ-008"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "LikePredicate",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "node"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            21,
+            39
+          ],
+          "symbol": "AvoidLeadingWildcardInLikeCheck.visit"
+        }
+      ],
+      "status": "FAILING",
+      "tests": []
+    },
+    {
+      "requirement": "REQ-009",
+      "source": [
+        {
+          "exported": true,
+          "ids": [
+            "REQ-009"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "TableHint",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "node"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            23,
+            30
+          ],
+          "symbol": "AvoidNoLockHintCheck.visit"
+        }
+      ],
+      "status": "FAILING",
+      "tests": []
+    },
+    {
+      "requirement": "REQ-010",
+      "source": [
+        {
+          "exported": true,
+          "ids": [
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "SqlDataTypeReference",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "node"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            21,
+            33
+          ],
+          "symbol": "AvoidDeprecatedTypesCheck.visit"
+        }
+      ],
+      "status": "FAILING",
+      "tests": []
+    }
+  ],
+  "run_id": "0b37a75c-b123-47b9-a940-7144447229d7",
+  "schema_version": 3,
+  "test_report": {}
+}

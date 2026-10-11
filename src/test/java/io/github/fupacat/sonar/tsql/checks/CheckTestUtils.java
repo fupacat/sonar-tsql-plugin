@@ -16,6 +16,7 @@ public final class CheckTestUtils {
     private CheckTestUtils() {
     }
 
+    // TRACEABILITY_MAPPING: REQ-007, REQ-008, REQ-009, REQ-010
     public static List<String> scan(TSqlCheck check, String sql) {
         TSqlParser parser = new TSqlParser();
         ParseResult<TSqlScript> result = parser.parse(sql);
@@ -42,7 +43,7 @@ public final class CheckTestUtils {
         }
 
         @Override
-        public void reportIssue(TSqlCheck check, int line, String message) {
+        public void reportIssueAtLine(TSqlCheck check, int line, String message) {
             issues.add(message);
         }
     }

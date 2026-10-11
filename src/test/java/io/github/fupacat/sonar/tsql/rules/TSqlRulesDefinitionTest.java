@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class TSqlRulesDefinitionTest {
 
+    // TRACEABILITY_MAPPING: REQ-003, REQ-006
     @Test
     void testRulesDefinition() {
         TSqlRulesDefinition definition = new TSqlRulesDefinition();

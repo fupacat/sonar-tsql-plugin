@@ -11,6 +11,7 @@ import static org.mockito.Mockito.mock;
 
 class TSqlPluginTest {
 
+    // TRACEABILITY_MAPPING: REQ-002
     @Test
     void testPluginDefinesExpectedExtensions() {
         SonarRuntime runtime = mock(SonarRuntime.class);

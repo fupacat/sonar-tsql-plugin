@@ -1,0 +1,99 @@
+{
+  "approvals": {
+    "ARCH_LOCKED": ".mcswe/locks/ab60020d-a3a6-48cc-b446-09ab187f264a.json",
+    "SPEC_LOCKED": ".mcswe/locks/0d90c0c5-6769-41cc-90ef-c9f0797cf227.json",
+    "TRIAGED": ".mcswe/locks/ba3ddbb4-069f-4d3d-98ad-0517ed46efea.json"
+  },
+  "evidence": ".mcswe/evidence/bc397314-13c6-4b29-982f-efc40ec37235.json",
+  "history": [
+    {
+      "from": "INIT",
+      "revision": 1,
+      "to": "TRIAGED"
+    },
+    {
+      "from": "TRIAGED",
+      "revision": 2,
+      "to": "SPEC_LOCKED"
+    },
+    {
+      "from": "SPEC_LOCKED",
+      "revision": 3,
+      "to": "ARCH_LOCKED"
+    },
+    {
+      "affected_revision": {
+        "ARCH_LOCKED": ".mcswe/locks/4f5c85dd-3324-4a38-a45a-5d7401c2ef3a.json",
+        "SPEC_LOCKED": ".mcswe/locks/2dde6537-ca3b-4c02-9876-3982a23b7d26.json",
+        "TRIAGED": ".mcswe/locks/3f7ee006-f0cb-4ef9-a67b-845d6f4b942e.json"
+      },
+      "from": "ARCH_LOCKED",
+      "reason": "upstream failure",
+      "revision": 4,
+      "to": "INIT"
+    },
+    {
+      "from": "INIT",
+      "revision": 5,
+      "to": "TRIAGED"
+    },
+    {
+      "from": "TRIAGED",
+      "revision": 6,
+      "to": "SPEC_LOCKED"
+    },
+    {
+      "from": "SPEC_LOCKED",
+      "revision": 7,
+      "to": "ARCH_LOCKED"
+    },
+    {
+      "from": "ARCH_LOCKED",
+      "revision": 8,
+      "to": "HEALING"
+    },
+    {
+      "from": "HEALING",
+      "revision": 9,
+      "to": "TRIAGED"
+    },
+    {
+      "from": "TRIAGED",
+      "revision": 10,
+      "to": "SPEC_LOCKED"
+    },
+    {
+      "from": "SPEC_LOCKED",
+      "revision": 11,
+      "to": "ARCH_LOCKED"
+    },
+    {
+      "from": "ARCH_LOCKED",
+      "revision": 12,
+      "to": "HEALING"
+    },
+    {
+      "from": "HEALING",
+      "revision": 13,
+      "to": "TRIAGED"
+    },
+    {
+      "from": "TRIAGED",
+      "revision": 14,
+      "to": "SPEC_LOCKED"
+    },
+    {
+      "from": "SPEC_LOCKED",
+      "revision": 15,
+      "to": "ARCH_LOCKED"
+    },
+    {
+      "from": "ARCH_LOCKED",
+      "revision": 16,
+      "to": "AUDITED"
+    }
+  ],
+  "revision": 16,
+  "schema_version": 3,
+  "state": "AUDITED"
+}

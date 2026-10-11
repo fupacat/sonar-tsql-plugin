@@ -11,6 +11,7 @@ public interface TSqlCheckContext {
     /**
      * @return the file currently under analysis
      */
+    // TRACEABILITY_MAPPING: REQ-005
     InputFile getFile();
 
     /**
@@ -20,6 +21,7 @@ public interface TSqlCheckContext {
      * @param fragment the AST fragment where the violation occurred
      * @param message human-readable issue message
      */
+    // TRACEABILITY_MAPPING: REQ-005
     void reportIssue(TSqlCheck check, TSqlFragment fragment, String message);
 
     /**
@@ -29,5 +31,6 @@ public interface TSqlCheckContext {
      * @param line 1-indexed line number
      * @param message human-readable issue message
      */
-    void reportIssue(TSqlCheck check, int line, String message);
+    // TRACEABILITY_MAPPING: REQ-005
+    void reportIssueAtLine(TSqlCheck check, int line, String message);
 }

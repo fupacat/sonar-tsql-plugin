@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 class TSqlLanguageTest {
 
+    // TRACEABILITY_MAPPING: REQ-001
     @Test
     void testLanguageDefaults() {
         Configuration config = mock(Configuration.class);
@@ -18,6 +19,7 @@ class TSqlLanguageTest {
         assertThat(language.getFileSuffixes()).containsExactly(".sql", ".tsql");
     }
 
+    // TRACEABILITY_MAPPING: REQ-001
     @Test
     void testCustomFileSuffixes() {
         Configuration config = mock(Configuration.class);
@@ -28,6 +30,7 @@ class TSqlLanguageTest {
         assertThat(language.getFileSuffixes()).containsExactly(".prc", ".fnc", ".sql");
     }
 
+    // TRACEABILITY_MAPPING: REQ-001
     @Test
     void testNullConfiguration() {
         TSqlLanguage language = new TSqlLanguage(null);

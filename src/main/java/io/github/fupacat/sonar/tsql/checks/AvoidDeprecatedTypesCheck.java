@@ -12,11 +12,13 @@ public class AvoidDeprecatedTypesCheck extends TSqlCheck {
 
     public static final String RULE_KEY = "AvoidDeprecatedTypes";
 
+    // TRACEABILITY_MAPPING: REQ-010
     @Override
     public String getRuleKey() {
         return RULE_KEY;
     }
 
+    // TRACEABILITY_MAPPING: REQ-010
     @Override
     public void visit(SqlDataTypeReference node) {
         if (node.SqlDataTypeOption != null) {
@@ -31,6 +33,7 @@ public class AvoidDeprecatedTypesCheck extends TSqlCheck {
         super.visit(node);
     }
 
+    // TRACEABILITY_MAPPING: REQ-010
     private String getRecommendedReplacement(SqlDataTypeOption option) {
         return switch (option) {
             case Text -> "VARCHAR(MAX)";

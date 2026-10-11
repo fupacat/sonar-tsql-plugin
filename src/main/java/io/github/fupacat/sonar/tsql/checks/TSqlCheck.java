@@ -15,6 +15,7 @@ public abstract class TSqlCheck extends TSqlConcreteFragmentVisitor {
     /**
      * @return unique rule key registered in SonarQube rules repository
      */
+    // TRACEABILITY_MAPPING: REQ-007, REQ-008, REQ-009, REQ-010
     public abstract String getRuleKey();
 
     /**
@@ -23,6 +24,7 @@ public abstract class TSqlCheck extends TSqlConcreteFragmentVisitor {
      * @param root root AST node
      * @param context analysis context
      */
+    // TRACEABILITY_MAPPING: REQ-007, REQ-008, REQ-009, REQ-010
     public void scan(TSqlFragment root, TSqlCheckContext context) {
         this.context = context;
         this.root = root;
@@ -39,6 +41,7 @@ public abstract class TSqlCheck extends TSqlConcreteFragmentVisitor {
     /**
      * @return the root AST fragment of the current scan, if available
      */
+    // TRACEABILITY_MAPPING: REQ-007, REQ-008, REQ-009, REQ-010
     public TSqlFragment getRoot() {
         return root;
     }
@@ -49,6 +52,7 @@ public abstract class TSqlCheck extends TSqlConcreteFragmentVisitor {
      * @param fragment node causing the violation
      * @param message descriptive issue message
      */
+    // TRACEABILITY_MAPPING: REQ-007, REQ-008, REQ-009, REQ-010
     protected void reportIssue(TSqlFragment fragment, String message) {
         if (context != null) {
             context.reportIssue(this, fragment, message);
@@ -61,9 +65,10 @@ public abstract class TSqlCheck extends TSqlConcreteFragmentVisitor {
      * @param line 1-indexed line number
      * @param message descriptive issue message
      */
-    protected void reportIssue(int line, String message) {
+    // TRACEABILITY_MAPPING: REQ-007, REQ-008, REQ-009, REQ-010
+    protected void reportIssueAtLine(int line, String message) {
         if (context != null) {
-            context.reportIssue(this, line, message);
+            context.reportIssueAtLine(this, line, message);
         }
     }
 }

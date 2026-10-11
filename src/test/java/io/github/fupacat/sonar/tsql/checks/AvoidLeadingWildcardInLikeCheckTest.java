@@ -10,6 +10,7 @@ class AvoidLeadingWildcardInLikeCheckTest {
 
     private final AvoidLeadingWildcardInLikeCheck check = new AvoidLeadingWildcardInLikeCheck();
 
+    // TRACEABILITY_MAPPING: REQ-008
     @Test
     void testFlagsLeadingPercentWildcard() {
         String sql = "SELECT Id FROM Customers WHERE CompanyName LIKE '%Tech';";
@@ -18,6 +19,7 @@ class AvoidLeadingWildcardInLikeCheckTest {
         assertThat(issues.get(0)).contains("Avoid leading wildcards");
     }
 
+    // TRACEABILITY_MAPPING: REQ-008
     @Test
     void testFlagsLeadingUnderscoreWildcard() {
         String sql = "SELECT Id FROM Customers WHERE Code LIKE '_XYZ';";
@@ -26,6 +28,7 @@ class AvoidLeadingWildcardInLikeCheckTest {
         assertThat(issues.get(0)).contains("Avoid leading wildcards");
     }
 
+    // TRACEABILITY_MAPPING: REQ-008
     @Test
     void testCompliantTrailingWildcard() {
         String sql = "SELECT Id FROM Customers WHERE CompanyName LIKE 'Tech%';";
@@ -33,6 +36,7 @@ class AvoidLeadingWildcardInLikeCheckTest {
         assertThat(issues).isEmpty();
     }
 
+    // TRACEABILITY_MAPPING: REQ-008
     @Test
     void testCompliantExactMatch() {
         String sql = "SELECT Id FROM Customers WHERE CompanyName LIKE 'Acme Corp';";

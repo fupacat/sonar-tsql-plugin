@@ -14,11 +14,13 @@ public class AvoidNoLockHintCheck extends TSqlCheck {
 
     public static final String RULE_KEY = "AvoidNoLockHint";
 
+    // TRACEABILITY_MAPPING: REQ-009
     @Override
     public String getRuleKey() {
         return RULE_KEY;
     }
 
+    // TRACEABILITY_MAPPING: REQ-009
     @Override
     public void visit(TableHint node) {
         if (isNoLockHint(node)) {
@@ -28,6 +30,7 @@ public class AvoidNoLockHintCheck extends TSqlCheck {
         super.visit(node);
     }
 
+    // TRACEABILITY_MAPPING: REQ-009
     private boolean isNoLockHint(TableHint node) {
         if (node.HintKind != null) {
             if (node.HintKind == TableHintKind.HoldLock || node.HintKind == TableHintKind.Index || node.HintKind == TableHintKind.ForceSeek) {

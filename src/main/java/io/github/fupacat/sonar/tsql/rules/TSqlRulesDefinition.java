@@ -19,6 +19,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
     public static final String REPOSITORY_KEY = "tsql";
     public static final String REPOSITORY_NAME = "SonarQube T-SQL Analyzer";
 
+    // TRACEABILITY_MAPPING: REQ-003
     @Override
     public void define(Context context) {
         NewRepository repository = context.createRepository(REPOSITORY_KEY, TSqlLanguage.KEY)

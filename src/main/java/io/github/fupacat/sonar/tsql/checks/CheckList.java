@@ -19,10 +19,12 @@ public final class CheckList {
     private CheckList() {
     }
 
+    // TRACEABILITY_MAPPING: REQ-006
     public static List<Class<? extends TSqlCheck>> getChecks() {
         return CHECKS;
     }
 
+    // TRACEABILITY_MAPPING: REQ-006
     public static List<TSqlCheck> instantiateChecks() {
         return List.of(
                 new AvoidSelectAllCheck(),

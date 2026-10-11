@@ -12,11 +12,13 @@ public class AvoidLeadingWildcardInLikeCheck extends TSqlCheck {
 
     public static final String RULE_KEY = "AvoidLeadingWildcardInLike";
 
+    // TRACEABILITY_MAPPING: REQ-008
     @Override
     public String getRuleKey() {
         return RULE_KEY;
     }
 
+    // TRACEABILITY_MAPPING: REQ-008
     @Override
     public void visit(LikePredicate node) {
         if (node.SecondExpression instanceof StringLiteral stringLiteral) {

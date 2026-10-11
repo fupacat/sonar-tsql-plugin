@@ -31,11 +31,13 @@ class TSqlSensorTest {
 
     private TSqlSensor sensor;
 
+    // TRACEABILITY_MAPPING: REQ-005
     @BeforeEach
     void setUp() {
         sensor = new TSqlSensor();
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     @Test
     void testDescriptor() {
         SensorDescriptor descriptor = mock(SensorDescriptor.class, org.mockito.Mockito.RETURNS_SELF);
@@ -45,6 +47,7 @@ class TSqlSensorTest {
         verify(descriptor).onlyOnLanguage(TSqlLanguage.KEY);
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     @Test
     void testExecutesActiveRuleOnValidSql() throws IOException {
         RuleKey ruleKey = RuleKey.of(TSqlRulesDefinition.REPOSITORY_KEY, AvoidSelectAllCheck.RULE_KEY);
@@ -83,6 +86,7 @@ class TSqlSensorTest {
         verify(location).message(argThat(msg -> msg != null && msg.contains("SELECT *")));
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     @Test
     void testReportsSyntaxError() throws IOException {
         RuleKey syntaxRuleKey = RuleKey.of(TSqlRulesDefinition.REPOSITORY_KEY, CheckList.SYNTAX_ERROR_RULE_KEY);

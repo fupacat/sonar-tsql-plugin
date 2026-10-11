@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class TSqlQualityProfileTest {
 
+    // TRACEABILITY_MAPPING: REQ-004
     @Test
     void testQualityProfileDefinition() {
         TSqlQualityProfile qualityProfile = new TSqlQualityProfile();

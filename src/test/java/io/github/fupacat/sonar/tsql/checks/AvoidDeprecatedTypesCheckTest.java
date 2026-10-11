@@ -10,6 +10,7 @@ class AvoidDeprecatedTypesCheckTest {
 
     private final AvoidDeprecatedTypesCheck check = new AvoidDeprecatedTypesCheck();
 
+    // TRACEABILITY_MAPPING: REQ-010
     @Test
     void testFlagsTextType() {
         String sql = "CREATE TABLE Articles (Id INT, Content TEXT);";
@@ -18,6 +19,7 @@ class AvoidDeprecatedTypesCheckTest {
         assertThat(issues.get(0)).contains("TEXT").contains("VARCHAR(MAX)");
     }
 
+    // TRACEABILITY_MAPPING: REQ-010
     @Test
     void testFlagsNTextType() {
         String sql = "CREATE TABLE Articles (Id INT, Content NTEXT);";
@@ -26,6 +28,7 @@ class AvoidDeprecatedTypesCheckTest {
         assertThat(issues.get(0)).contains("NTEXT").contains("NVARCHAR(MAX)");
     }
 
+    // TRACEABILITY_MAPPING: REQ-010
     @Test
     void testFlagsImageType() {
         String sql = "CREATE TABLE Documents (Id INT, Scan IMAGE);";
@@ -34,6 +37,7 @@ class AvoidDeprecatedTypesCheckTest {
         assertThat(issues.get(0)).contains("IMAGE").contains("VARBINARY(MAX)");
     }
 
+    // TRACEABILITY_MAPPING: REQ-010
     @Test
     void testCompliantModernTypes() {
         String sql = "CREATE TABLE Articles (Id INT, Content NVARCHAR(MAX), Photo VARBINARY(MAX));";

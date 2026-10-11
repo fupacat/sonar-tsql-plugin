@@ -10,6 +10,7 @@ class AvoidSelectAllCheckTest {
 
     private final AvoidSelectAllCheck check = new AvoidSelectAllCheck();
 
+    // TRACEABILITY_MAPPING: REQ-007
     @Test
     void testFlagsSelectStar() {
         String sql = "SELECT * FROM Employees;";
@@ -18,6 +19,7 @@ class AvoidSelectAllCheckTest {
         assertThat(issues.get(0)).contains("SELECT *");
     }
 
+    // TRACEABILITY_MAPPING: REQ-007
     @Test
     void testFlagsQualifiedSelectStar() {
         String sql = "SELECT e.* FROM Employees e;";
@@ -26,6 +28,7 @@ class AvoidSelectAllCheckTest {
         assertThat(issues.get(0)).contains("SELECT *");
     }
 
+    // TRACEABILITY_MAPPING: REQ-007
     @Test
     void testCompliantExplicitColumns() {
         String sql = "SELECT EmployeeId, FirstName, LastName FROM Employees;";

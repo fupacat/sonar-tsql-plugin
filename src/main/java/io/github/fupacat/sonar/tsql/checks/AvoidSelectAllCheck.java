@@ -11,11 +11,13 @@ public class AvoidSelectAllCheck extends TSqlCheck {
 
     public static final String RULE_KEY = "AvoidSelectAll";
 
+    // TRACEABILITY_MAPPING: REQ-007
     @Override
     public String getRuleKey() {
         return RULE_KEY;
     }
 
+    // TRACEABILITY_MAPPING: REQ-007
     @Override
     public void visit(SelectStarExpression node) {
         reportIssue(node, "Avoid using 'SELECT *'. Specify explicit column names instead.");

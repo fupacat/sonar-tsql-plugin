@@ -15,6 +15,7 @@ public class TSqlQualityProfile implements BuiltInQualityProfilesDefinition {
 
     public static final String PROFILE_NAME = "Sonar way";
 
+    // TRACEABILITY_MAPPING: REQ-004
     @Override
     public void define(Context context) {
         NewBuiltInQualityProfile profile = context.createBuiltInQualityProfile(PROFILE_NAME, TSqlLanguage.KEY);

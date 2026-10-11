@@ -9,6 +9,7 @@ import org.sonar.api.Plugin;
  */
 public class TSqlPlugin implements Plugin {
 
+    // TRACEABILITY_MAPPING: REQ-002
     @Override
     public void define(Context context) {
         context.addExtensions(

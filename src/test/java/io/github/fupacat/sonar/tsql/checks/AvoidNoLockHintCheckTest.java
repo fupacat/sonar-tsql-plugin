@@ -10,6 +10,7 @@ class AvoidNoLockHintCheckTest {
 
     private final AvoidNoLockHintCheck check = new AvoidNoLockHintCheck();
 
+    // TRACEABILITY_MAPPING: REQ-009
     @Test
     void testFlagsNoLockHint() {
         String sql = "SELECT OrderId FROM Orders WITH (NOLOCK);";
@@ -18,6 +19,7 @@ class AvoidNoLockHintCheckTest {
         assertThat(issues.get(0)).contains("NOLOCK");
     }
 
+    // TRACEABILITY_MAPPING: REQ-009
     @Test
     void testFlagsReadUncommittedHint() {
         String sql = "SELECT OrderId FROM Orders WITH (READUNCOMMITTED);";
@@ -26,6 +28,7 @@ class AvoidNoLockHintCheckTest {
         assertThat(issues.get(0)).contains("READUNCOMMITTED");
     }
 
+    // TRACEABILITY_MAPPING: REQ-009
     @Test
     void testCompliantQueryWithoutHint() {
         String sql = "SELECT OrderId FROM Orders;";

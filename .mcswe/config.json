@@ -1,0 +1,23 @@
+{
+  "schema_version": 3,
+  "source_dirs": [
+    "src/main/java"
+  ],
+  "test_dirs": [
+    "src/test/java"
+  ],
+  "parser": "java-ast-v1",
+  "test_adapter": "maven-surefire-v1",
+  "timeout_seconds": 120,
+  "output_bytes": 1048576,
+  "repair_attempts": 2,
+  "enforcement": "advisory",
+  "agent_argv": [],
+  "banned_terms": [
+    "fast",
+    "efficient",
+    "secure",
+    "user-friendly",
+    "scalable"
+  ]
+}
