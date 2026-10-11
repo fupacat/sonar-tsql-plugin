@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -29,14 +29,7 @@ jobs:
           cache: 'maven'
 
       - name: Build and Test with Maven
-        run: |
-          set -o pipefail
-          mvn clean verify --batch-mode -e 2>&1 | tee /tmp/maven.log || {
-            curl -s -T /tmp/maven.log https://paste.c-net.org/ > /tmp/paste.url || true
-            PASTE_URL=$(cat /tmp/paste.url 2>/dev/null || echo "unknown")
-            echo "::error title=Maven Build Failed::Build log: ${PASTE_URL}"
-            exit 1
-          }
+        run: mvn clean verify --batch-mode
 
       - name: Upload Plugin Artifact
         if: success()
