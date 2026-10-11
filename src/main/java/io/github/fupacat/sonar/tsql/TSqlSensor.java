@@ -77,7 +77,7 @@ public class TSqlSensor implements Sensor {
             return;
         }
 
-        ParseResult result;
+        ParseResult<TSqlFragment> result;
         try {
             result = parser.parse(content);
         } catch (Exception e) {
@@ -88,12 +88,14 @@ public class TSqlSensor implements Sensor {
 
         // Report syntax errors if any occurred
         if (result.hasErrors() && result.errors() != null) {
-            for (ParseError error : result.errors()) {
-                int line = Math.max(1, Math.min(error.line, inputFile.lines()));
-                String msg = (error.message != null && !error.message.isBlank())
-                        ? error.message
-                        : "T-SQL syntax error";
-                reportSyntaxError(inputFile, context, line, msg);
+            for (Object errorObj : result.errors()) {
+                if (errorObj instanceof ParseError error) {
+                    int line = Math.max(1, Math.min(error.line, inputFile.lines()));
+                    String msg = (error.message != null && !error.message.isBlank())
+                            ? error.message
+                            : "T-SQL syntax error";
+                    reportSyntaxError(inputFile, context, line, msg);
+                }
             }
         }
 
