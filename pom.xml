@@ -45,7 +45,7 @@
         <sonar.pluginMinVersion>9.9</sonar.pluginMinVersion>
         <scriptdom.version>0.1.0</scriptdom.version>
         
-        <sonar-packaging.version>1.23.0.740</sonar-packaging.version>
+        <sonar-packaging.version>2.0.0.3035</sonar-packaging.version>
         <maven-compiler.version>3.13.0</maven-compiler.version>
         <maven-surefire.version>3.2.5</maven-surefire.version>
         <junit.version>5.10.2</junit.version>
