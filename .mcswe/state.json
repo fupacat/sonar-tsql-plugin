@@ -4,7 +4,7 @@
     "SPEC_LOCKED": ".mcswe/locks/0d90c0c5-6769-41cc-90ef-c9f0797cf227.json",
     "TRIAGED": ".mcswe/locks/ba3ddbb4-069f-4d3d-98ad-0517ed46efea.json"
   },
-  "evidence": ".mcswe/evidence/bc397314-13c6-4b29-982f-efc40ec37235.json",
+  "evidence": ".mcswe/evidence/e83a880e-9ab6-47f9-9443-43576f808e9e.json",
   "history": [
     {
       "from": "INIT",
@@ -91,9 +91,14 @@
       "from": "ARCH_LOCKED",
       "revision": 16,
       "to": "AUDITED"
+    },
+    {
+      "from": "AUDITED",
+      "revision": 17,
+      "to": "AUDITED"
     }
   ],
-  "revision": 16,
+  "revision": 17,
   "schema_version": 3,
   "state": "AUDITED"
 }
