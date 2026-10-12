@@ -1,0 +1,40 @@
+name: Bug Report
+description: Report unexpected rule false-positives, false-negatives, or SonarQube integration issues
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please ensure you have checked existing issues before filing.
+  - type: textarea
+    id: tsql-sample
+    attributes:
+      label: T-SQL Sample Script
+      description: Provide the minimal reproducible T-SQL snippet that reproduces the issue.
+      placeholder: |
+        SELECT * FROM dbo.my_table WITH (NOLOCK);
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What should happen (e.g. rule should trigger on line 2, or rule should not flag this construct)?
+    validations:
+      required: true
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happens (e.g. false positive, missed violation, or scanner exception)?
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: SonarQube version, JDK version, and sonar-tsql-plugin version used.
+      placeholder: SonarQube 10.x / OpenJDK 17 / 0.1.0
+    validations:
+      required: false

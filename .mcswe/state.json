@@ -1,10 +1,10 @@
 {
   "approvals": {
-    "ARCH_LOCKED": ".mcswe/locks/ab60020d-a3a6-48cc-b446-09ab187f264a.json",
-    "SPEC_LOCKED": ".mcswe/locks/0d90c0c5-6769-41cc-90ef-c9f0797cf227.json",
-    "TRIAGED": ".mcswe/locks/ba3ddbb4-069f-4d3d-98ad-0517ed46efea.json"
+    "ARCH_LOCKED": ".mcswe/locks/7eeffe20-cd6f-4cbf-8cb4-c850cef133ed.json",
+    "SPEC_LOCKED": ".mcswe/locks/cec8888c-0e98-46c3-bb4e-3f1f311aea25.json",
+    "TRIAGED": ".mcswe/locks/8f1b7a07-e9d7-488a-a0ba-4b339919131a.json"
   },
-  "evidence": ".mcswe/evidence/e83a880e-9ab6-47f9-9443-43576f808e9e.json",
+  "evidence": ".mcswe/evidence/cf8a4502-c28a-4bc9-8cf1-c122d36b7f88.json",
   "history": [
     {
       "from": "INIT",
@@ -96,9 +96,34 @@
       "from": "AUDITED",
       "revision": 17,
       "to": "AUDITED"
+    },
+    {
+      "from": "AUDITED",
+      "revision": 18,
+      "to": "HEALING"
+    },
+    {
+      "from": "HEALING",
+      "revision": 19,
+      "to": "TRIAGED"
+    },
+    {
+      "from": "TRIAGED",
+      "revision": 20,
+      "to": "SPEC_LOCKED"
+    },
+    {
+      "from": "SPEC_LOCKED",
+      "revision": 21,
+      "to": "ARCH_LOCKED"
+    },
+    {
+      "from": "ARCH_LOCKED",
+      "revision": 22,
+      "to": "AUDITED"
     }
   ],
-  "revision": 17,
+  "revision": 22,
   "schema_version": 3,
   "state": "AUDITED"
 }

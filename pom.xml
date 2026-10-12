@@ -23,7 +23,9 @@
 
     <developers>
         <developer>
+            <id>fupacat</id>
             <name>Eric O'Loughlin</name>
+            <url>https://github.com/fupacat</url>
             <organizationUrl>https://github.com/fupacat</organizationUrl>
         </developer>
     </developers>
@@ -34,6 +36,11 @@
         <url>https://github.com/fupacat/sonar-tsql-plugin</url>
         <tag>HEAD</tag>
     </scm>
+
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/fupacat/sonar-tsql-plugin/issues</url>
+    </issueManagement>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

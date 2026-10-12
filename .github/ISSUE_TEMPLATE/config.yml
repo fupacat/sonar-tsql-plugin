@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions / Community Questions
+    url: https://github.com/fupacat/sonar-tsql-plugin/discussions
+    about: Ask questions, share ideas, and discuss T-SQL SonarQube rules with the community.
+  - name: Security Vulnerability Reporting
+    url: https://github.com/fupacat/sonar-tsql-plugin/security/advisories/new
+    about: Privately report potential security vulnerabilities to maintainers.

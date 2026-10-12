@@ -1,0 +1,25 @@
+{
+  "inputs": {
+    "adapters": {
+      "controller": "3.0.0",
+      "fingerprints": {
+        "JavaAstScanner.java": "a3114cef184b0d3d04f9b5e7c67c5c8d57c2b5d4bde14f69369284621ec255cf",
+        "engine.py": "76b242a56c7c4a0902edf83ad0e1ff962c9fb767af38300cd0bd5de80c4551a6",
+        "java_adapter.py": "24636b44c1053d6b9f620a6d36436df56972fbb8f2e769624f58f4b9c3b8c379",
+        "maven_adapter.py": "1df8fcb3f32bdcc0966b0f966e841887d2e5d489078f680e3edf268919f59507",
+        "pytest_adapter.py": "176e5a615f0e4beb508c549d69e8d9befb742b2ef77ce3e09e77de7a43b33b61"
+      },
+      "parser": "java-ast-v1",
+      "test": "maven-surefire-v1"
+    },
+    "files": {
+      ".mcswe/config.json": "e3e87e28f5c11f09e52af61bb926c13a8f14d7a97cc12c524e08a175d45712f8",
+      "context/SRS.md": "74ddf375e83984091d706e72964b9d87086d9e52c7d3f060c2d0f08d69a41653",
+      "pre_protocol/DECISIONS.md": "24b874ecd71fcad49d2e5b315b676490a7b5810fa498141f13218fe916ec2b55",
+      "pre_protocol/RESEARCH_BOUNDS.md": "24c2841684e14a648c1032004c2011ba5cc7b40bbd4e5858bf257f8cdbb15945"
+    }
+  },
+  "parent": ".mcswe/locks/8f1b7a07-e9d7-488a-a0ba-4b339919131a.json",
+  "phase": "SPEC_LOCKED",
+  "schema_version": 3
+}

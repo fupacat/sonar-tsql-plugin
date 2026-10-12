@@ -1,0 +1,35 @@
+name: Feature Request / New Rule Proposal
+description: Suggest an idea or propose a new T-SQL rule check
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We welcome new rule proposals and plugin enhancement suggestions!
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Description
+      description: A clear and concise description of the feature or rule.
+    validations:
+      required: true
+  - type: textarea
+    id: rule-sample
+    attributes:
+      label: T-SQL Violation Example (if proposing a rule)
+      description: Code example demonstrating compliant vs non-compliant T-SQL patterns.
+      placeholder: |
+        -- Non-compliant:
+        ...
+        -- Compliant:
+        ...
+    validations:
+      required: false
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale & Value
+      description: Why is this important (e.g. performance, index optimization, data integrity, maintainability)?
+    validations:
+      required: true

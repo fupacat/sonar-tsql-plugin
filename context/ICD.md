@@ -556,7 +556,8 @@
   "dependencies": [
     "io.github.fupacat.sonar.tsql.rules.TSqlQualityProfile",
     "io.github.fupacat.sonar.tsql.rules.TSqlRulesDefinition",
-    "org.sonar.api.Plugin"
+    "org.sonar.api.Plugin",
+    "org.sonar.api.config.PropertyDefinition"
   ],
   "exchanges": []
 }
