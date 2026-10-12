@@ -35,8 +35,4 @@ jobs:
           args: >
             -Dsonar.organization=fupacat
             -Dsonar.projectKey=fupacat_sonar-tsql-plugin
-            -Dsonar.sources=src/main/java
-            -Dsonar.tests=src/test/java
-            -Dsonar.java.binaries=target/classes
-            -Dsonar.java.test.binaries=target/test-classes
-            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+
