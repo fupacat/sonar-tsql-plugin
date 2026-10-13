@@ -52,6 +52,16 @@ public abstract class TSqlCheck extends TSqlConcreteFragmentVisitor {
     }
 
     /**
+     * @return the raw source text associated with the current root fragment, if any
+     */
+    protected String getSourceText() {
+        if (root != null && root.Value != null) {
+            return root.Value;
+        }
+        return "";
+    }
+
+    /**
      * Reports an issue on a specific AST fragment.
      *
      * @param fragment node causing the violation

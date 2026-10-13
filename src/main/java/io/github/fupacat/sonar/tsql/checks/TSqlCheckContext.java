@@ -15,10 +15,18 @@ public interface TSqlCheckContext {
     InputFile getFile();
 
     /**
-     * @return the original SQL source text for the file, if available.
+     * @return the full source text for the current file, if available
      */
     default String getSourceText() {
-        return null;
+        InputFile file = getFile();
+        if (file == null) {
+            return "";
+        }
+        try {
+            return file.contents();
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     /**
