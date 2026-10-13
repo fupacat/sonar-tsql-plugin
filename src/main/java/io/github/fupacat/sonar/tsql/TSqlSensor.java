@@ -92,7 +92,7 @@ public class TSqlSensor implements Sensor {
         }
 
         reportParseErrors(inputFile, context, result);
-        executeChecks(inputFile, context, result.fragment(), activeChecks, projectSchema);
+        executeChecks(inputFile, context, result.fragment(), content, activeChecks, projectSchema);
     }
 
     // TRACEABILITY_MAPPING: REQ-005
@@ -110,11 +110,11 @@ public class TSqlSensor implements Sensor {
     }
 
     // TRACEABILITY_MAPPING: REQ-005
-    private void executeChecks(InputFile inputFile, SensorContext context, TSqlFragment rootFragment, List<TSqlCheck> activeChecks, ProjectSchemaCatalog projectSchema) {
+    private void executeChecks(InputFile inputFile, SensorContext context, TSqlFragment rootFragment, String sourceText, List<TSqlCheck> activeChecks, ProjectSchemaCatalog projectSchema) {
         if (rootFragment == null || activeChecks.isEmpty()) {
             return;
         }
-        TSqlCheckContext checkContext = new SensorCheckContext(inputFile, context, rootFragment, projectSchema);
+        TSqlCheckContext checkContext = new SensorCheckContext(inputFile, context, rootFragment, sourceText, projectSchema);
         for (TSqlCheck check : activeChecks) {
             try {
                 check.scan(rootFragment, checkContext);
@@ -141,18 +141,29 @@ public class TSqlSensor implements Sensor {
         private final InputFile inputFile;
         private final SensorContext sensorContext;
         private final TSqlFragment rootFragment;
+        private final String sourceText;
         private final ProjectSchemaCatalog projectSchema;
 
-        public SensorCheckContext(InputFile inputFile, SensorContext sensorContext, TSqlFragment rootFragment, ProjectSchemaCatalog projectSchema) {
+        public SensorCheckContext(InputFile inputFile, SensorContext sensorContext, TSqlFragment rootFragment) {
+            this(inputFile, sensorContext, rootFragment, null, null);
+        }
+
+        public SensorCheckContext(InputFile inputFile, SensorContext sensorContext, TSqlFragment rootFragment, String sourceText, ProjectSchemaCatalog projectSchema) {
             this.inputFile = inputFile;
             this.sensorContext = sensorContext;
             this.rootFragment = rootFragment;
+            this.sourceText = sourceText;
             this.projectSchema = projectSchema == null ? ProjectSchemaCatalog.empty() : projectSchema;
         }
 
         @Override
         public InputFile getFile() {
             return inputFile;
+        }
+
+        @Override
+        public String getSourceText() {
+            return sourceText;
         }
 
         @Override

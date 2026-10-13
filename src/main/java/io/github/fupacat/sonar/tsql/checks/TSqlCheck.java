@@ -12,6 +12,7 @@ public abstract class TSqlCheck extends TSqlConcreteFragmentVisitor {
 
     private TSqlCheckContext context;
     private TSqlFragment root;
+    private String sourceText;
 
     protected ProjectSchemaCatalog getProjectSchema() {
         if (context != null) {
@@ -36,13 +37,9 @@ public abstract class TSqlCheck extends TSqlConcreteFragmentVisitor {
     public void scan(TSqlFragment root, TSqlCheckContext context) {
         this.context = context;
         this.root = root;
-        try {
-            if (root != null) {
-                root.accept(this);
-            }
-        } finally {
-            this.context = null;
-            this.root = null;
+        this.sourceText = context != null ? context.getSourceText() : null;
+        if (root != null) {
+            root.accept(this);
         }
     }
 
@@ -52,6 +49,14 @@ public abstract class TSqlCheck extends TSqlConcreteFragmentVisitor {
     // TRACEABILITY_MAPPING: REQ-007, REQ-008, REQ-009, REQ-010
     public TSqlFragment getRoot() {
         return root;
+    }
+
+    protected String getSourceText() {
+        return sourceText;
+    }
+
+    protected void setSourceText(String sourceText) {
+        this.sourceText = sourceText;
     }
 
     /**
