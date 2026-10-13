@@ -6,6 +6,7 @@ import io.github.fupacat.TSqlParser;
 import io.github.fupacat.TSqlParserToken;
 import io.github.fupacat.ast.TSqlFragment;
 import io.github.fupacat.ast.TSqlScript;
+import io.github.fupacat.sonar.tsql.catalog.ProjectSchemaCatalog;
 import io.github.fupacat.sonar.tsql.checks.CheckList;
 import io.github.fupacat.sonar.tsql.checks.TSqlCheck;
 import io.github.fupacat.sonar.tsql.checks.TSqlCheckContext;
@@ -49,11 +50,12 @@ public class TSqlSensor implements Sensor {
         FilePredicate predicate = fs.predicates().hasLanguage(TSqlLanguage.KEY);
         Iterable<InputFile> inputFiles = fs.inputFiles(predicate);
 
+        ProjectSchemaCatalog projectSchema = ProjectSchemaCatalog.fromInputFiles(inputFiles);
         List<TSqlCheck> activeChecks = getActiveChecks(context);
         LOG.info("Analyzing T-SQL files with {} active rules", activeChecks.size());
 
         for (InputFile inputFile : inputFiles) {
-            analyzeFile(inputFile, context, activeChecks);
+            analyzeFile(inputFile, context, activeChecks, projectSchema);
         }
     }
 
@@ -70,7 +72,7 @@ public class TSqlSensor implements Sensor {
     }
 
     // TRACEABILITY_MAPPING: REQ-005
-    private void analyzeFile(InputFile inputFile, SensorContext context, List<TSqlCheck> activeChecks) {
+    private void analyzeFile(InputFile inputFile, SensorContext context, List<TSqlCheck> activeChecks, ProjectSchemaCatalog projectSchema) {
         LOG.debug("Analyzing T-SQL file: {}", inputFile.uri());
         String content;
         try {
@@ -90,7 +92,7 @@ public class TSqlSensor implements Sensor {
         }
 
         reportParseErrors(inputFile, context, result);
-        executeChecks(inputFile, context, result.fragment(), activeChecks);
+        executeChecks(inputFile, context, result.fragment(), activeChecks, projectSchema);
     }
 
     // TRACEABILITY_MAPPING: REQ-005
@@ -108,11 +110,11 @@ public class TSqlSensor implements Sensor {
     }
 
     // TRACEABILITY_MAPPING: REQ-005
-    private void executeChecks(InputFile inputFile, SensorContext context, TSqlFragment rootFragment, List<TSqlCheck> activeChecks) {
+    private void executeChecks(InputFile inputFile, SensorContext context, TSqlFragment rootFragment, List<TSqlCheck> activeChecks, ProjectSchemaCatalog projectSchema) {
         if (rootFragment == null || activeChecks.isEmpty()) {
             return;
         }
-        TSqlCheckContext checkContext = new SensorCheckContext(inputFile, context, rootFragment);
+        TSqlCheckContext checkContext = new SensorCheckContext(inputFile, context, rootFragment, projectSchema);
         for (TSqlCheck check : activeChecks) {
             try {
                 check.scan(rootFragment, checkContext);
@@ -139,16 +141,23 @@ public class TSqlSensor implements Sensor {
         private final InputFile inputFile;
         private final SensorContext sensorContext;
         private final TSqlFragment rootFragment;
+        private final ProjectSchemaCatalog projectSchema;
 
-        public SensorCheckContext(InputFile inputFile, SensorContext sensorContext, TSqlFragment rootFragment) {
+        public SensorCheckContext(InputFile inputFile, SensorContext sensorContext, TSqlFragment rootFragment, ProjectSchemaCatalog projectSchema) {
             this.inputFile = inputFile;
             this.sensorContext = sensorContext;
             this.rootFragment = rootFragment;
+            this.projectSchema = projectSchema == null ? ProjectSchemaCatalog.empty() : projectSchema;
         }
 
         @Override
         public InputFile getFile() {
             return inputFile;
+        }
+
+        @Override
+        public ProjectSchemaCatalog getProjectSchema() {
+            return projectSchema;
         }
 
         @Override

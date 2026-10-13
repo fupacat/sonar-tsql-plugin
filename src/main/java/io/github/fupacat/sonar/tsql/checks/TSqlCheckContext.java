@@ -1,6 +1,7 @@
 package io.github.fupacat.sonar.tsql.checks;
 
 import io.github.fupacat.ast.TSqlFragment;
+import io.github.fupacat.sonar.tsql.catalog.ProjectSchemaCatalog;
 import org.sonar.api.batch.fs.InputFile;
 
 /**
@@ -13,6 +14,13 @@ public interface TSqlCheckContext {
      */
     // TRACEABILITY_MAPPING: REQ-005
     InputFile getFile();
+
+    /**
+     * @return the project-wide schema catalog built from all analyzed DDL files
+     */
+    default ProjectSchemaCatalog getProjectSchema() {
+        return ProjectSchemaCatalog.empty();
+    }
 
     /**
      * Reports an issue on a specific AST fragment.

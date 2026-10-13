@@ -8,8 +8,11 @@ import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
 import io.github.fupacat.sonar.tsql.checks.CaseInputInvariantCheck;
 import io.github.fupacat.sonar.tsql.checks.CheckList;
 import io.github.fupacat.sonar.tsql.checks.DeleteAndUpdateWithoutWhereCheck;
+import io.github.fupacat.sonar.tsql.checks.InPredicateIndexedColumnCheck;
+import io.github.fupacat.sonar.tsql.checks.NarrowingCastCheck;
 import io.github.fupacat.sonar.tsql.checks.NotInSubqueryCheck;
 import io.github.fupacat.sonar.tsql.checks.NullComparisonCheck;
+import io.github.fupacat.sonar.tsql.checks.NullableColumnIsNullCheck;
 import io.github.fupacat.sonar.tsql.checks.TopWithoutOrderByCheck;
 import org.junit.jupiter.api.Test;
 import org.sonar.api.server.profile.BuiltInQualityProfilesDefinition;
@@ -43,6 +46,9 @@ class TSqlQualityProfileTest {
                         NullComparisonCheck.RULE_KEY,
                         TopWithoutOrderByCheck.RULE_KEY,
                         CaseInputInvariantCheck.RULE_KEY,
+                        InPredicateIndexedColumnCheck.RULE_KEY,
+                        NullableColumnIsNullCheck.RULE_KEY,
+                        NarrowingCastCheck.RULE_KEY,
                         CheckList.SYNTAX_ERROR_RULE_KEY
                 );
     }

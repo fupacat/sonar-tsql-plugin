@@ -18,7 +18,10 @@ public final class CheckList {
             NotInSubqueryCheck.class,
             NullComparisonCheck.class,
             TopWithoutOrderByCheck.class,
-            CaseInputInvariantCheck.class
+            CaseInputInvariantCheck.class,
+            InPredicateIndexedColumnCheck.class,
+            NullableColumnIsNullCheck.class,
+            NarrowingCastCheck.class
     );
 
     private CheckList() {
@@ -40,7 +43,10 @@ public final class CheckList {
                 new NotInSubqueryCheck(),
                 new NullComparisonCheck(),
                 new TopWithoutOrderByCheck(),
-                new CaseInputInvariantCheck()
+                new CaseInputInvariantCheck(),
+                new InPredicateIndexedColumnCheck(),
+                new NullableColumnIsNullCheck(),
+                new NarrowingCastCheck()
         );
     }
 }

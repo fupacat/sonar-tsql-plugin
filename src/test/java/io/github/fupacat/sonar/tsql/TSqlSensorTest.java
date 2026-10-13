@@ -3,6 +3,7 @@ package io.github.fupacat.sonar.tsql;
 import io.github.fupacat.TSqlParserToken;
 import io.github.fupacat.TSqlTokenType;
 import io.github.fupacat.ast.TSqlScript;
+import io.github.fupacat.sonar.tsql.catalog.ProjectSchemaCatalog;
 import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
 import io.github.fupacat.sonar.tsql.checks.CheckList;
 import io.github.fupacat.sonar.tsql.rules.TSqlRulesDefinition;
@@ -176,7 +177,7 @@ class TSqlSensorTest {
         child.firstTokenIndex = 0;
         child.lastTokenIndex = 1;
 
-        TSqlSensor.SensorCheckContext checkContext = new TSqlSensor.SensorCheckContext(inputFile, sensorContext, root);
+        TSqlSensor.SensorCheckContext checkContext = new TSqlSensor.SensorCheckContext(inputFile, sensorContext, root, ProjectSchemaCatalog.empty());
         assertThat(checkContext.getFile()).isSameAs(inputFile);
 
         AvoidSelectAllCheck check = new AvoidSelectAllCheck();

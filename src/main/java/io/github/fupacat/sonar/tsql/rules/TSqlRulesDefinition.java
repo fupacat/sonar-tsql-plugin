@@ -8,8 +8,11 @@ import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
 import io.github.fupacat.sonar.tsql.checks.CaseInputInvariantCheck;
 import io.github.fupacat.sonar.tsql.checks.CheckList;
 import io.github.fupacat.sonar.tsql.checks.DeleteAndUpdateWithoutWhereCheck;
+import io.github.fupacat.sonar.tsql.checks.InPredicateIndexedColumnCheck;
+import io.github.fupacat.sonar.tsql.checks.NarrowingCastCheck;
 import io.github.fupacat.sonar.tsql.checks.NotInSubqueryCheck;
 import io.github.fupacat.sonar.tsql.checks.NullComparisonCheck;
+import io.github.fupacat.sonar.tsql.checks.NullableColumnIsNullCheck;
 import io.github.fupacat.sonar.tsql.checks.TopWithoutOrderByCheck;
 import org.sonar.api.rule.RuleStatus;
 import org.sonar.api.rule.Severity;
@@ -165,7 +168,49 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setStatus(RuleStatus.READY)
                 .setTags(TAG_SQL_SERVER, "determinism", TAG_DATA_SAFETY);
 
-        // Rule 10: SyntaxError
+        // Rule 10: SR0004
+        repository.createRule(InPredicateIndexedColumnCheck.RULE_KEY)
+                .setName("Avoid using unindexed columns in IN predicates")
+                .setHtmlDescription(
+                        "<p>Using a column in an <code>IN</code> predicate without an index can force a scan of the entire table and may invalidate assumptions about predicate selectivity.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>SELECT Id FROM Orders WHERE CustomerId IN (1, 2, 3);</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>CREATE INDEX IX_Orders_CustomerId ON Orders(CustomerId); SELECT Id FROM Orders WHERE CustomerId IN (1, 2, 3);</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "performance", "indexing");
+
+        // Rule 11: SR0007
+        repository.createRule(NullableColumnIsNullCheck.RULE_KEY)
+                .setName("Use ISNULL on nullable columns in expressions")
+                .setHtmlDescription(
+                        "<p>Expressions that rely on nullable columns without a defaulting function can cause NULL propagation and logic errors.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>SELECT COALESCE(LastLogin, '1970-01-01') FROM Users;</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>SELECT ISNULL(LastLogin, '1970-01-01') FROM Users;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "null-handling", "logic");
+
+        // Rule 12: SR0014
+        repository.createRule(NarrowingCastCheck.RULE_KEY)
+                .setName("Data loss might occur when narrowing casts are used")
+                .setHtmlDescription(
+                        "<p>Converting or assigning a wider column value into a narrower type or shorter length can silently truncate or round data.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>SELECT CAST(BigNumber AS SMALLINT) FROM Orders;</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>SELECT CAST(BigNumber AS BIGINT) FROM Orders;</pre>")
+                .setSeverity(Severity.CRITICAL)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_DATA_SAFETY, "data-loss");
+
+        // Rule 13: SyntaxError
         repository.createRule(CheckList.SYNTAX_ERROR_RULE_KEY)
                 .setName("T-SQL syntax error")
                 .setHtmlDescription(
