@@ -200,7 +200,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
     }
 
     private void registerRule(NewRepository repository, String ruleKey, String name, String htmlDescription,
-            Severity severity, RuleType type, String... tags) {
+            String severity, RuleType type, String... tags) {
         repository.createRule(ruleKey)
                 .setName(name)
                 .setHtmlDescription(htmlDescription)
