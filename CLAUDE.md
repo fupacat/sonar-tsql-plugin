@@ -1,43 +1,42 @@
-# MCSWE v3 Protocol
+# Developer & Agent Guide (`sonar-tsql-plugin`)
 
-This repository is initialized with the **MCSWE v3** (Mission Control Software Engineering) gate-driven SDLC pipeline.
+## 1. Architecture Overview
 
-## Pipeline Workflow
+`sonar-tsql-plugin` is a SonarQube plugin for Microsoft Transact-SQL (T-SQL) powered by `io.github.fupacat:tsql-scriptdom-core:0.1.0` (`tsql-scriptdom-java`).
 
-```text
-INIT --triage--> TRIAGED --spec--> SPEC_LOCKED --architect--> ARCH_LOCKED --audit--> AUDITED
-                                                                     \--(anomaly)--> HEALING --audit--> ...
-```
+- **Language & Plugin Entry Point**:
+  - `TSqlPlugin` (`src/main/java/io/github/fupacat/sonar/tsql/TSqlPlugin.java`)
+  - `TSqlLanguage` (`src/main/java/io/github/fupacat/sonar/tsql/TSqlLanguage.java`)
+- **Sensor**:
+  - `TSqlSensor` (`src/main/java/io/github/fupacat/sonar/tsql/TSqlSensor.java`) — parses `.sql` / `.tsql` files with `TSqlParser.parse(content)` and invokes active `TSqlCheck` visitors.
+- **Rules & Quality Profile**:
+  - `TSqlRulesDefinition` (`src/main/java/io/github/fupacat/sonar/tsql/rules/TSqlRulesDefinition.java`)
+  - `TSqlQualityProfile` (`src/main/java/io/github/fupacat/sonar/tsql/rules/TSqlQualityProfile.java`)
+- **AST Checks**:
+  - `TSqlCheck` base class (`src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java`) — extends `TSqlFragmentVisitor` from `io.github.fupacat.ast`.
+  - `CheckList` (`src/main/java/io/github/fupacat/sonar/tsql/checks/CheckList.java`) — central registry of all check classes and instances.
 
-1. **Gate 0: Triage**
-   - Resolve decisions in `pre_protocol/DECISIONS.md` (remove any `[UNRESOLVED]` markers).
-   - Document any research bounds in `pre_protocol/RESEARCH_BOUNDS.md`.
-   - Run: `mcswe-v3 triage`
+## 2. How to Add a New T-SQL Check
 
-2. **Gate 1: Specification**
-   - Author requirements in `context/SRS.md` using `[REQ-001] ... SHALL ...` syntax (avoid banned terms: fast, efficient, secure, user-friendly, scalable).
-   - Provide exactly 1 fenced JSON acceptance record per requirement:
-     ```json
-     {"requirement":"REQ-001","kind":"categorical","precondition":"...","action":"...","expected":"...","method":"junit","expected_output":"..."}
-     ```
-   - Run: `mcswe-v3 spec`
+1. **Inspect `tsql-scriptdom-core` AST classes** (if needed):
+   ```bash
+   javap -cp ~/.m2/repository/io/github/fupacat/tsql-scriptdom-core/0.1.0/tsql-scriptdom-core-0.1.0.jar io.github.fupacat.ast.<AstClassName>
+   ```
+2. **Create `<RuleName>Check.java`** in `src/main/java/io/github/fupacat/sonar/tsql/checks/`:
+   - Extend `TSqlCheck`.
+   - Override `getRuleKey()` and the relevant `visit(<AstNode> node)` methods (calling `super.visit(node)` so child nodes are traversed).
+   - Call `reportIssue(node, "...")` when a violation is detected.
+3. **Register the check**:
+   - Add the class and instance to `CheckList.getChecks()` and `CheckList.instantiateChecks()`.
+   - Register the rule metadata in `TSqlRulesDefinition.define(Context)`.
+   - Activate the rule in `TSqlQualityProfile.define(Context)` if part of the built-in `"Sonar way"` profile.
+4. **Write unit tests**:
+   - Add `<RuleName>CheckTest.java` in `src/test/java/io/github/fupacat/sonar/tsql/checks/` using `CheckTestUtils.scan(check, sql)`.
+   - Update rule count assertions in `TSqlRulesDefinitionTest` and `TSqlQualityProfileTest`.
+   - Ensure test coverage on new code is $\ge 80\%$ (`mvn clean verify --batch-mode`).
 
-3. **Gate 2: Architecture**
-   - Author interface definitions in `context/ICD.md` with qualified symbols and exact AST-normalized signatures:
-     ```json
-     {"kind":"interface","id":"IF-001","path":"src/...","symbol":"...","signature":{"parameters":[],"return":"...","async":false},"dependencies":[],"exchanges":[]}
-     ```
-   - Run: `mcswe-v3 architect`
+## 3. MCSWE v3 Protocol
 
-4. **Implementation & Guard**
-   - Application source and test files must NOT be written unless `mcswe-v3 guard` passes.
-   - Claude Code PreToolUse hook (`.claude/settings.json`) enforces `mcswe-v3 hook`.
-   - Every function requires `// TRACEABILITY_MAPPING: REQ-NNN` within 3 lines above its declaration.
-
-5. **Gate 3: Audit & Verify**
-   - Run: `mcswe-v3 audit` to execute tests, generate `context/RTM.md`, and advance to `AUDITED` (or enter `HEALING`).
-   - Run: `mcswe-v3 verify` for a stateless full check across all gates without mutating `state.json`.
-
-## Note on Project Language & Adapters
-`sonar-tsql-plugin` is a Java/Maven repository powered by SonarQube Plugin API and `tsql-scriptdom-java`.
-MCSWE v3 is configured to use native `java-ast-v1` and `maven-surefire-v1` adapters.
+This repository uses the **MCSWE v3** traceability standard:
+- Place `// TRACEABILITY_MAPPING: REQ-NNN` immediately above methods/tests in scope.
+- When `mcswe-v3` is installed locally, run `mcswe-v3 verify` and `mcswe-v3 audit` after updating `context/SRS.md` and `context/ICD.md`.

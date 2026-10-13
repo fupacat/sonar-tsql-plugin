@@ -1,0 +1,36 @@
+name: "Auto-summon Copilot on CI Failure"
+
+on:
+  workflow_run:
+    workflows:
+      - "CI"
+      - "CodeQL Analysis"
+      - "SonarQube"
+    types:
+      - completed
+
+jobs:
+  notify-copilot-ci:
+    name: Notify Copilot on Build Failure
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.event == 'pull_request'
+    permissions:
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Comment on PR to Summon Copilot
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+        run: |
+          if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
+            echo "CI workflow '${WORKFLOW_NAME}' failed for PR #${PR_NUMBER}."
+            gh pr comment "${PR_NUMBER}" \
+              --body "@copilot The workflow **${WORKFLOW_NAME}** failed on this pull request. Please inspect the build failure logs at ${RUN_URL}, fix the issue, and commit the update."
+          else
+            echo "No associated pull request found for this workflow run."
+          fi
