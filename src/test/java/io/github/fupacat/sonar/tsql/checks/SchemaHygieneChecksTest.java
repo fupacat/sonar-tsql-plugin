@@ -115,9 +115,52 @@ class SchemaHygieneChecksTest {
     }
 
     @Test
+    void testPrimaryKeyWithNonPkConstraints() {
+        List<String> issues = CheckTestUtils.scan(primaryKeyRequiredCheck,
+                "CREATE TABLE Orders (OrderId INT NOT NULL, Total MONEY, CONSTRAINT UQ_Orders UNIQUE (OrderId));");
+        assertThat(issues).hasSize(1);
+    }
+
+    @Test
+    void testExplicitLengthInCastAndConvert() {
+        List<String> issues = CheckTestUtils.scan(explicitLengthCheck,
+                "SELECT CAST(Name AS VARCHAR), CONVERT(VARBINARY, Photo) FROM Users;");
+        assertThat(issues).hasSize(2);
+    }
+
+    @Test
+    void testExplicitLengthInCastAndConvertCompliant() {
+        List<String> issues = CheckTestUtils.scan(explicitLengthCheck,
+                "SELECT CAST(Name AS VARCHAR(50)), CONVERT(VARBINARY(128), Photo), CAST(Id AS INT) FROM Users;");
+        assertThat(issues).isEmpty();
+    }
+
+    @Test
+    void testAlterTableConstraintModification() {
+        List<String> issues = CheckTestUtils.scan(alterTableCheckEnforcementCheck,
+                "ALTER TABLE Orders NOCHECK CONSTRAINT CK_Order;");
+        assertThat(issues).hasSize(1);
+
+        List<String> compliant = CheckTestUtils.scan(alterTableCheckEnforcementCheck,
+                "ALTER TABLE Orders WITH CHECK CHECK CONSTRAINT CK_Order;");
+        assertThat(compliant).isEmpty();
+    }
+
+    @Test
+    void testExistsSelectStarCompliantAndMultiSelectViolated() {
+        List<String> starIssues = CheckTestUtils.scan(existsSelectOneCheck,
+                "SELECT * FROM Customers c WHERE EXISTS (SELECT * FROM Orders o WHERE o.CustomerId = c.Id);");
+        assertThat(starIssues).isEmpty();
+
+        List<String> multiIssues = CheckTestUtils.scan(existsSelectOneCheck,
+                "SELECT * FROM Customers c WHERE EXISTS (SELECT 1, 2 FROM Orders o);");
+        assertThat(multiIssues).hasSize(1);
+    }
+
+    @Test
     void testColumnReferenceDepthCompliant() {
         List<String> issues = CheckTestUtils.scan(columnReferenceDepthCheck,
-                "SELECT table.column FROM dbo.Table1;");
+                "SELECT OrderId, o.CustomerId FROM dbo.Orders o;");
         assertThat(issues).isEmpty();
     }
 }

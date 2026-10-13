@@ -1,8 +1,5 @@
 package io.github.fupacat.sonar.tsql.checks;
 
-import io.github.fupacat.ast.CastCall;
-import io.github.fupacat.ast.ConvertCall;
-import io.github.fupacat.ast.DataTypeReference;
 import io.github.fupacat.ast.SqlDataTypeOption;
 import io.github.fupacat.ast.SqlDataTypeReference;
 
@@ -26,24 +23,6 @@ public class ExplicitLengthForVariableTypesCheck extends TSqlCheck {
         super.visit(node);
     }
 
-    @Override
-    public void visit(CastCall node) {
-        checkDataType(node.DataType);
-        super.visit(node);
-    }
-
-    @Override
-    public void visit(ConvertCall node) {
-        checkDataType(node.DataType);
-        super.visit(node);
-    }
-
-    private void checkDataType(DataTypeReference type) {
-        if (type instanceof SqlDataTypeReference sqlType && requiresExplicitLength(sqlType.SqlDataTypeOption)
-                && (sqlType.Parameters == null || sqlType.Parameters.isEmpty())) {
-            reportIssue(sqlType, "Specify an explicit length for VARCHAR, NVARCHAR, and VARBINARY data types.");
-        }
-    }
 
     private boolean requiresExplicitLength(SqlDataTypeOption option) {
         return option == SqlDataTypeOption.VarChar
