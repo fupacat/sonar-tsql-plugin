@@ -1,0 +1,1615 @@
+{
+  "adapters": {
+    "controller": "3.0.0",
+    "fingerprints": {
+      "JavaAstScanner.java": "a3114cef184b0d3d04f9b5e7c67c5c8d57c2b5d4bde14f69369284621ec255cf",
+      "engine.py": "76b242a56c7c4a0902edf83ad0e1ff962c9fb767af38300cd0bd5de80c4551a6",
+      "java_adapter.py": "24636b44c1053d6b9f620a6d36436df56972fbb8f2e769624f58f4b9c3b8c379",
+      "maven_adapter.py": "1df8fcb3f32bdcc0966b0f966e841887d2e5d489078f680e3edf268919f59507",
+      "pytest_adapter.py": "176e5a615f0e4beb508c549d69e8d9befb742b2ef77ce3e09e77de7a43b33b61"
+    },
+    "parser": "java-ast-v1",
+    "runner": "maven-surefire",
+    "test": "maven-surefire-v1"
+  },
+  "diagnostics": [],
+  "enforcement": "advisory",
+  "exemptions": [],
+  "inputs": {
+    ".mcswe/config.json": "e3e87e28f5c11f09e52af61bb926c13a8f14d7a97cc12c524e08a175d45712f8",
+    "context/ICD.md": "e5da0865acdb6483fa66de23f1bb1a4ab2a45554a53ebd6197b18bddd5e50d98",
+    "context/SRS.md": "74ddf375e83984091d706e72964b9d87086d9e52c7d3f060c2d0f08d69a41653",
+    "pre_protocol/DECISIONS.md": "24b874ecd71fcad49d2e5b315b676490a7b5810fa498141f13218fe916ec2b55",
+    "pre_protocol/RESEARCH_BOUNDS.md": "24c2841684e14a648c1032004c2011ba5cc7b40bbd4e5858bf257f8cdbb15945",
+    "src/main/java/io/github/fupacat/sonar/tsql/TSqlLanguage.java": "65691b58002e1f74735c3dda85d2c4deec17ff2645f15e7565811f2ab4c84d1e",
+    "src/main/java/io/github/fupacat/sonar/tsql/TSqlPlugin.java": "5589a4ae3ca6b851721fe0914e36d64f07e7d76324af58d3db0af9228fdd181c",
+    "src/main/java/io/github/fupacat/sonar/tsql/TSqlSensor.java": "c027a69fd9baf2552637a493ddb484a617b20783b71ee04a17a0018c49c1eaa2",
+    "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheck.java": "79182a07c0378878e2890e148b8c2e4b1782869f0e9bcad41a916c80aaf06378",
+    "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheck.java": "d08f5af034beb47a029f0cbf74f1e244f3bcfec972dbb71df9743dae3945b7e1",
+    "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheck.java": "47c4168cb02f27902278212c1b9a1a3d8a3821efb4fa37d2222c9dd49299ebf0",
+    "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheck.java": "5e0b947c4fd3c640c47eb4b9523bd60e5420675b189a6bbabc4222ff8bb23a7b",
+    "src/main/java/io/github/fupacat/sonar/tsql/checks/CheckList.java": "094edf081f3c170a99f66eb2b092c2267014c52e08cccb2c6207cf5e721f8020",
+    "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java": "7f83ed8cd7780233153e20541a1b64b62840c874913bb70729865b1879d02c31",
+    "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheckContext.java": "ce60ad58563d77e6ae0af7c7a4e777b3c52edaaa6af7a17b905ea9a5d1649b58",
+    "src/main/java/io/github/fupacat/sonar/tsql/rules/TSqlQualityProfile.java": "fd5435b73186dc1b2112d89b81ae35aef81f48e27043679cb8bdb15ee1a6c8f5",
+    "src/main/java/io/github/fupacat/sonar/tsql/rules/TSqlRulesDefinition.java": "f6ba155ade6e86dedb5986a25c2481ee5219a2d53aeead1f7add741d3cfcc1b1",
+    "src/test/java/io/github/fupacat/sonar/tsql/TSqlLanguageTest.java": "08cc7a79a33028cfd24e5776a45e9e3876f995c7277a37d0d22f71e9f75e77a2",
+    "src/test/java/io/github/fupacat/sonar/tsql/TSqlPluginTest.java": "eee2c56702606428605931f430c81af0660a1868af23639251a7545a92155baa",
+    "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java": "6b2fbe015f532dd0cc50092de42f3d34199a751c561ec8efc087166a56c06fc5",
+    "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheckTest.java": "c58b45d06fe322fca85d78d2375f13a35e4d99bb771f7e3d0c75214054be2e95",
+    "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java": "fe4bd98a698ff957e63d6f01402e2706bc8e4057fbf9799a5ec876329ffef8ba",
+    "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheckTest.java": "46eda8f57a3bdc8f5d4502e47aef5c0eb24dcacad5dae33246d1c492029cf88d",
+    "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheckTest.java": "714483909899b2b523642e98bf1112ce20047c660eef2b8fd945e6412ae8e030",
+    "src/test/java/io/github/fupacat/sonar/tsql/checks/CheckTestUtils.java": "5670f802110673345f8049cde8b85aea9634df9dca24aefddbe795d064d164be",
+    "src/test/java/io/github/fupacat/sonar/tsql/rules/TSqlQualityProfileTest.java": "cbbbe38bfb64f5511055d141a0965fcc44add489b6c0fa819b34294d10a9fee7",
+    "src/test/java/io/github/fupacat/sonar/tsql/rules/TSqlRulesDefinitionTest.java": "9ba666a1ff92f681d603b3ff79c6581010896cd47c4118cc6360a8b8bbc367bb"
+  },
+  "result": {
+    "argv": [
+      "/home/eric/.local/bin/mvn",
+      "test",
+      "-q"
+    ],
+    "exit_status": 0,
+    "limit": null,
+    "stderr": "SLF4J: Failed to load class \"org.slf4j.impl.StaticLoggerBinder\".\nSLF4J: Defaulting to no-operation (NOP) logger implementation\nSLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.\nOpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended\n",
+    "stdout": ""
+  },
+  "revision": ".mcswe/locks/7eeffe20-cd6f-4cbf-8cb4-c850cef133ed.json",
+  "rows": [
+    {
+      "requirement": "REQ-001",
+      "source": [
+        {
+          "exported": true,
+          "ids": [
+            "REQ-001"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/TSqlLanguage.java",
+          "signature": {
+            "async": false,
+            "parameters": [],
+            "return": "String[]"
+          },
+          "span": [
+            27,
+            39
+          ],
+          "symbol": "TSqlLanguage.getFileSuffixes"
+        }
+      ],
+      "status": "VERIFIED",
+      "tests": [
+        "io.github.fupacat.sonar.tsql.TSqlLanguageTest::testLanguageDefaults",
+        "TSqlLanguageTest::testLanguageDefaults",
+        "src/test/java/io/github/fupacat/sonar/tsql/TSqlLanguageTest.java::TSqlLanguageTest::testLanguageDefaults",
+        "io.github.fupacat.sonar.tsql.TSqlLanguageTest::testCustomFileSuffixes",
+        "TSqlLanguageTest::testCustomFileSuffixes",
+        "src/test/java/io/github/fupacat/sonar/tsql/TSqlLanguageTest.java::TSqlLanguageTest::testCustomFileSuffixes",
+        "io.github.fupacat.sonar.tsql.TSqlLanguageTest::testNullConfiguration",
+        "TSqlLanguageTest::testNullConfiguration",
+        "src/test/java/io/github/fupacat/sonar/tsql/TSqlLanguageTest.java::TSqlLanguageTest::testNullConfiguration"
+      ]
+    },
+    {
+      "requirement": "REQ-002",
+      "source": [
+        {
+          "exported": true,
+          "ids": [
+            "REQ-002"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/TSqlPlugin.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "Context",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "context"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            14,
+            29
+          ],
+          "symbol": "TSqlPlugin.define"
+        }
+      ],
+      "status": "VERIFIED",
+      "tests": [
+        "io.github.fupacat.sonar.tsql.TSqlPluginTest::testPluginDefinesExpectedExtensions",
+        "TSqlPluginTest::testPluginDefinesExpectedExtensions",
+        "src/test/java/io/github/fupacat/sonar/tsql/TSqlPluginTest.java::TSqlPluginTest::testPluginDefinesExpectedExtensions"
+      ]
+    },
+    {
+      "requirement": "REQ-003",
+      "source": [
+        {
+          "exported": true,
+          "ids": [
+            "REQ-003"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/rules/TSqlRulesDefinition.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "Context",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "context"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            24,
+            101
+          ],
+          "symbol": "TSqlRulesDefinition.define"
+        }
+      ],
+      "status": "VERIFIED",
+      "tests": [
+        "io.github.fupacat.sonar.tsql.rules.TSqlRulesDefinitionTest::testRulesDefinition",
+        "TSqlRulesDefinitionTest::testRulesDefinition",
+        "src/test/java/io/github/fupacat/sonar/tsql/rules/TSqlRulesDefinitionTest.java::TSqlRulesDefinitionTest::testRulesDefinition"
+      ]
+    },
+    {
+      "requirement": "REQ-004",
+      "source": [
+        {
+          "exported": true,
+          "ids": [
+            "REQ-004"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/rules/TSqlQualityProfile.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "Context",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "context"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            19,
+            32
+          ],
+          "symbol": "TSqlQualityProfile.define"
+        }
+      ],
+      "status": "VERIFIED",
+      "tests": [
+        "io.github.fupacat.sonar.tsql.rules.TSqlQualityProfileTest::testQualityProfileDefinition",
+        "TSqlQualityProfileTest::testQualityProfileDefinition",
+        "src/test/java/io/github/fupacat/sonar/tsql/rules/TSqlQualityProfileTest.java::TSqlQualityProfileTest::testQualityProfileDefinition"
+      ]
+    },
+    {
+      "requirement": "REQ-005",
+      "source": [
+        {
+          "exported": true,
+          "ids": [
+            "REQ-005"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheckContext.java",
+          "signature": {
+            "async": false,
+            "parameters": [],
+            "return": "InputFile"
+          },
+          "span": [
+            15,
+            15
+          ],
+          "symbol": "TSqlCheckContext.getFile"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-005"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheckContext.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "TSqlCheck",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "check"
+              },
+              {
+                "annotation": "TSqlFragment",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "fragment"
+              },
+              {
+                "annotation": "String",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "message"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            25,
+            25
+          ],
+          "symbol": "TSqlCheckContext.reportIssue"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-005"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheckContext.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "TSqlCheck",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "check"
+              },
+              {
+                "annotation": "int",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "line"
+              },
+              {
+                "annotation": "String",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "message"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            35,
+            35
+          ],
+          "symbol": "TSqlCheckContext.reportIssueAtLine"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-005"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/TSqlSensor.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "SensorDescriptor",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "descriptor"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            39,
+            43
+          ],
+          "symbol": "TSqlSensor.describe"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-005"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/TSqlSensor.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "SensorContext",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "context"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            46,
+            58
+          ],
+          "symbol": "TSqlSensor.execute"
+        },
+        {
+          "exported": false,
+          "ids": [
+            "REQ-005"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/TSqlSensor.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "SensorContext",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "context"
+              }
+            ],
+            "return": "List<TSqlCheck>"
+          },
+          "span": [
+            61,
+            70
+          ],
+          "symbol": "TSqlSensor.getActiveChecks"
+        },
+        {
+          "exported": false,
+          "ids": [
+            "REQ-005"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/TSqlSensor.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "InputFile",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "inputFile"
+              },
+              {
+                "annotation": "SensorContext",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "context"
+              },
+              {
+                "annotation": "List<TSqlCheck>",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "activeChecks"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            73,
+            94
+          ],
+          "symbol": "TSqlSensor.analyzeFile"
+        },
+        {
+          "exported": false,
+          "ids": [
+            "REQ-005"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/TSqlSensor.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "InputFile",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "inputFile"
+              },
+              {
+                "annotation": "SensorContext",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "context"
+              },
+              {
+                "annotation": "ParseResult<TSqlScript>",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "result"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            97,
+            108
+          ],
+          "symbol": "TSqlSensor.reportParseErrors"
+        },
+        {
+          "exported": false,
+          "ids": [
+            "REQ-005"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/TSqlSensor.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "InputFile",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "inputFile"
+              },
+              {
+                "annotation": "SensorContext",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "context"
+              },
+              {
+                "annotation": "TSqlFragment",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "rootFragment"
+              },
+              {
+                "annotation": "List<TSqlCheck>",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "activeChecks"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            111,
+            123
+          ],
+          "symbol": "TSqlSensor.executeChecks"
+        },
+        {
+          "exported": false,
+          "ids": [
+            "REQ-005"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/TSqlSensor.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "InputFile",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "inputFile"
+              },
+              {
+                "annotation": "SensorContext",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "context"
+              },
+              {
+                "annotation": "int",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "line"
+              },
+              {
+                "annotation": "String",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "message"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            126,
+            136
+          ],
+          "symbol": "TSqlSensor.reportSyntaxError"
+        }
+      ],
+      "status": "VERIFIED",
+      "tests": [
+        "io.github.fupacat.sonar.tsql.TSqlSensorTest::testDescriptor",
+        "TSqlSensorTest::testDescriptor",
+        "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java::TSqlSensorTest::testDescriptor",
+        "io.github.fupacat.sonar.tsql.TSqlSensorTest::testExecutesActiveRuleOnValidSql",
+        "TSqlSensorTest::testExecutesActiveRuleOnValidSql",
+        "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java::TSqlSensorTest::testExecutesActiveRuleOnValidSql",
+        "io.github.fupacat.sonar.tsql.TSqlSensorTest::testReportsSyntaxError",
+        "TSqlSensorTest::testReportsSyntaxError",
+        "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java::TSqlSensorTest::testReportsSyntaxError",
+        "io.github.fupacat.sonar.tsql.TSqlSensorTest::testHandlesIOExceptionGracefully",
+        "TSqlSensorTest::testHandlesIOExceptionGracefully",
+        "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java::TSqlSensorTest::testHandlesIOExceptionGracefully",
+        "io.github.fupacat.sonar.tsql.TSqlSensorTest::testSensorCheckContextTokenRangeAndFallback",
+        "TSqlSensorTest::testSensorCheckContextTokenRangeAndFallback",
+        "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java::TSqlSensorTest::testSensorCheckContextTokenRangeAndFallback"
+      ]
+    },
+    {
+      "requirement": "REQ-006",
+      "source": [
+        {
+          "exported": true,
+          "ids": [
+            "REQ-006"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/CheckList.java",
+          "signature": {
+            "async": false,
+            "parameters": [],
+            "return": "List<Class<? extends TSqlCheck>>"
+          },
+          "span": [
+            23,
+            25
+          ],
+          "symbol": "CheckList.getChecks"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-006"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/CheckList.java",
+          "signature": {
+            "async": false,
+            "parameters": [],
+            "return": "List<TSqlCheck>"
+          },
+          "span": [
+            28,
+            35
+          ],
+          "symbol": "CheckList.instantiateChecks"
+        }
+      ],
+      "status": "VERIFIED",
+      "tests": [
+        "io.github.fupacat.sonar.tsql.rules.TSqlRulesDefinitionTest::testRulesDefinition",
+        "TSqlRulesDefinitionTest::testRulesDefinition",
+        "src/test/java/io/github/fupacat/sonar/tsql/rules/TSqlRulesDefinitionTest.java::TSqlRulesDefinitionTest::testRulesDefinition"
+      ]
+    },
+    {
+      "requirement": "REQ-007",
+      "source": [
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [],
+            "return": "String"
+          },
+          "span": [
+            15,
+            18
+          ],
+          "symbol": "AvoidSelectAllCheck.getRuleKey"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "SelectStarExpression",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "node"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            21,
+            25
+          ],
+          "symbol": "AvoidSelectAllCheck.visit"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007",
+            "REQ-008",
+            "REQ-009",
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [],
+            "return": "String"
+          },
+          "span": [
+            19,
+            19
+          ],
+          "symbol": "TSqlCheck.getRuleKey"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007",
+            "REQ-008",
+            "REQ-009",
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "TSqlFragment",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "root"
+              },
+              {
+                "annotation": "TSqlCheckContext",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "context"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            28,
+            39
+          ],
+          "symbol": "TSqlCheck.scan"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007",
+            "REQ-008",
+            "REQ-009",
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [],
+            "return": "TSqlFragment"
+          },
+          "span": [
+            45,
+            47
+          ],
+          "symbol": "TSqlCheck.getRoot"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007",
+            "REQ-008",
+            "REQ-009",
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "TSqlFragment",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "fragment"
+              },
+              {
+                "annotation": "String",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "message"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            56,
+            60
+          ],
+          "symbol": "TSqlCheck.reportIssue"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007",
+            "REQ-008",
+            "REQ-009",
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "int",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "line"
+              },
+              {
+                "annotation": "String",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "message"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            69,
+            73
+          ],
+          "symbol": "TSqlCheck.reportIssueAtLine"
+        }
+      ],
+      "status": "VERIFIED",
+      "tests": [
+        "io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheckTest::testFlagsSelectStar",
+        "AvoidSelectAllCheckTest::testFlagsSelectStar",
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheckTest.java::AvoidSelectAllCheckTest::testFlagsSelectStar",
+        "io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheckTest::testFlagsQualifiedSelectStar",
+        "AvoidSelectAllCheckTest::testFlagsQualifiedSelectStar",
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheckTest.java::AvoidSelectAllCheckTest::testFlagsQualifiedSelectStar",
+        "io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheckTest::testCompliantExplicitColumns",
+        "AvoidSelectAllCheckTest::testCompliantExplicitColumns",
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheckTest.java::AvoidSelectAllCheckTest::testCompliantExplicitColumns"
+      ]
+    },
+    {
+      "requirement": "REQ-008",
+      "source": [
+        {
+          "exported": true,
+          "ids": [
+            "REQ-008"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [],
+            "return": "String"
+          },
+          "span": [
+            16,
+            19
+          ],
+          "symbol": "AvoidLeadingWildcardInLikeCheck.getRuleKey"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-008"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "LikePredicate",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "node"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            22,
+            40
+          ],
+          "symbol": "AvoidLeadingWildcardInLikeCheck.visit"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007",
+            "REQ-008",
+            "REQ-009",
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [],
+            "return": "String"
+          },
+          "span": [
+            19,
+            19
+          ],
+          "symbol": "TSqlCheck.getRuleKey"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007",
+            "REQ-008",
+            "REQ-009",
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "TSqlFragment",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "root"
+              },
+              {
+                "annotation": "TSqlCheckContext",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "context"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            28,
+            39
+          ],
+          "symbol": "TSqlCheck.scan"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007",
+            "REQ-008",
+            "REQ-009",
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [],
+            "return": "TSqlFragment"
+          },
+          "span": [
+            45,
+            47
+          ],
+          "symbol": "TSqlCheck.getRoot"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007",
+            "REQ-008",
+            "REQ-009",
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "TSqlFragment",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "fragment"
+              },
+              {
+                "annotation": "String",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "message"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            56,
+            60
+          ],
+          "symbol": "TSqlCheck.reportIssue"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007",
+            "REQ-008",
+            "REQ-009",
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "int",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "line"
+              },
+              {
+                "annotation": "String",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "message"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            69,
+            73
+          ],
+          "symbol": "TSqlCheck.reportIssueAtLine"
+        }
+      ],
+      "status": "VERIFIED",
+      "tests": [
+        "io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheckTest::testFlagsLeadingPercentWildcard",
+        "AvoidLeadingWildcardInLikeCheckTest::testFlagsLeadingPercentWildcard",
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java::AvoidLeadingWildcardInLikeCheckTest::testFlagsLeadingPercentWildcard",
+        "io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheckTest::testFlagsLeadingUnderscoreWildcard",
+        "AvoidLeadingWildcardInLikeCheckTest::testFlagsLeadingUnderscoreWildcard",
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java::AvoidLeadingWildcardInLikeCheckTest::testFlagsLeadingUnderscoreWildcard",
+        "io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheckTest::testCompliantTrailingWildcard",
+        "AvoidLeadingWildcardInLikeCheckTest::testCompliantTrailingWildcard",
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java::AvoidLeadingWildcardInLikeCheckTest::testCompliantTrailingWildcard",
+        "io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheckTest::testCompliantExactMatch",
+        "AvoidLeadingWildcardInLikeCheckTest::testCompliantExactMatch",
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java::AvoidLeadingWildcardInLikeCheckTest::testCompliantExactMatch"
+      ]
+    },
+    {
+      "requirement": "REQ-009",
+      "source": [
+        {
+          "exported": true,
+          "ids": [
+            "REQ-009"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [],
+            "return": "String"
+          },
+          "span": [
+            18,
+            21
+          ],
+          "symbol": "AvoidNoLockHintCheck.getRuleKey"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-009"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "TableHint",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "node"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            24,
+            31
+          ],
+          "symbol": "AvoidNoLockHintCheck.visit"
+        },
+        {
+          "exported": false,
+          "ids": [
+            "REQ-009"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "TableHint",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "node"
+              }
+            ],
+            "return": "boolean"
+          },
+          "span": [
+            34,
+            47
+          ],
+          "symbol": "AvoidNoLockHintCheck.isNoLockHint"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007",
+            "REQ-008",
+            "REQ-009",
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [],
+            "return": "String"
+          },
+          "span": [
+            19,
+            19
+          ],
+          "symbol": "TSqlCheck.getRuleKey"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007",
+            "REQ-008",
+            "REQ-009",
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "TSqlFragment",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "root"
+              },
+              {
+                "annotation": "TSqlCheckContext",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "context"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            28,
+            39
+          ],
+          "symbol": "TSqlCheck.scan"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007",
+            "REQ-008",
+            "REQ-009",
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [],
+            "return": "TSqlFragment"
+          },
+          "span": [
+            45,
+            47
+          ],
+          "symbol": "TSqlCheck.getRoot"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007",
+            "REQ-008",
+            "REQ-009",
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "TSqlFragment",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "fragment"
+              },
+              {
+                "annotation": "String",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "message"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            56,
+            60
+          ],
+          "symbol": "TSqlCheck.reportIssue"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007",
+            "REQ-008",
+            "REQ-009",
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "int",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "line"
+              },
+              {
+                "annotation": "String",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "message"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            69,
+            73
+          ],
+          "symbol": "TSqlCheck.reportIssueAtLine"
+        }
+      ],
+      "status": "VERIFIED",
+      "tests": [
+        "io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheckTest::testFlagsNoLockHint",
+        "AvoidNoLockHintCheckTest::testFlagsNoLockHint",
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheckTest.java::AvoidNoLockHintCheckTest::testFlagsNoLockHint",
+        "io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheckTest::testFlagsReadUncommittedHint",
+        "AvoidNoLockHintCheckTest::testFlagsReadUncommittedHint",
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheckTest.java::AvoidNoLockHintCheckTest::testFlagsReadUncommittedHint",
+        "io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheckTest::testCompliantQueryWithoutHint",
+        "AvoidNoLockHintCheckTest::testCompliantQueryWithoutHint",
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheckTest.java::AvoidNoLockHintCheckTest::testCompliantQueryWithoutHint"
+      ]
+    },
+    {
+      "requirement": "REQ-010",
+      "source": [
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007",
+            "REQ-008",
+            "REQ-009",
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [],
+            "return": "String"
+          },
+          "span": [
+            19,
+            19
+          ],
+          "symbol": "TSqlCheck.getRuleKey"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007",
+            "REQ-008",
+            "REQ-009",
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "TSqlFragment",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "root"
+              },
+              {
+                "annotation": "TSqlCheckContext",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "context"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            28,
+            39
+          ],
+          "symbol": "TSqlCheck.scan"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007",
+            "REQ-008",
+            "REQ-009",
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [],
+            "return": "TSqlFragment"
+          },
+          "span": [
+            45,
+            47
+          ],
+          "symbol": "TSqlCheck.getRoot"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007",
+            "REQ-008",
+            "REQ-009",
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "TSqlFragment",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "fragment"
+              },
+              {
+                "annotation": "String",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "message"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            56,
+            60
+          ],
+          "symbol": "TSqlCheck.reportIssue"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-007",
+            "REQ-008",
+            "REQ-009",
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TSqlCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "int",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "line"
+              },
+              {
+                "annotation": "String",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "message"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            69,
+            73
+          ],
+          "symbol": "TSqlCheck.reportIssueAtLine"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [],
+            "return": "String"
+          },
+          "span": [
+            16,
+            19
+          ],
+          "symbol": "AvoidDeprecatedTypesCheck.getRuleKey"
+        },
+        {
+          "exported": true,
+          "ids": [
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "SqlDataTypeReference",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "node"
+              }
+            ],
+            "return": "void"
+          },
+          "span": [
+            22,
+            34
+          ],
+          "symbol": "AvoidDeprecatedTypesCheck.visit"
+        },
+        {
+          "exported": false,
+          "ids": [
+            "REQ-010"
+          ],
+          "kind": "function",
+          "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheck.java",
+          "signature": {
+            "async": false,
+            "parameters": [
+              {
+                "annotation": "SqlDataTypeOption",
+                "default": null,
+                "kind": "positional_or_keyword",
+                "name": "option"
+              }
+            ],
+            "return": "String"
+          },
+          "span": [
+            37,
+            44
+          ],
+          "symbol": "AvoidDeprecatedTypesCheck.getRecommendedReplacement"
+        }
+      ],
+      "status": "VERIFIED",
+      "tests": [
+        "io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedTypesCheckTest::testFlagsDeprecatedTypes",
+        "AvoidDeprecatedTypesCheckTest::testFlagsDeprecatedTypes",
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheckTest.java::AvoidDeprecatedTypesCheckTest::testFlagsDeprecatedTypes",
+        "io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedTypesCheckTest::testCompliantModernTypes",
+        "AvoidDeprecatedTypesCheckTest::testCompliantModernTypes",
+        "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheckTest.java::AvoidDeprecatedTypesCheckTest::testCompliantModernTypes"
+      ]
+    }
+  ],
+  "run_id": "a98ec4ca-3e20-4aec-8661-019cbe1ca8b5",
+  "schema_version": 3,
+  "test_report": {
+    "collected": [
+      "io.github.fupacat.sonar.tsql.TSqlLanguageTest::testLanguageDefaults",
+      "TSqlLanguageTest::testLanguageDefaults",
+      "src/test/java/io/github/fupacat/sonar/tsql/TSqlLanguageTest.java::TSqlLanguageTest::testLanguageDefaults",
+      "io.github.fupacat.sonar.tsql.TSqlLanguageTest::testNullConfiguration",
+      "TSqlLanguageTest::testNullConfiguration",
+      "src/test/java/io/github/fupacat/sonar/tsql/TSqlLanguageTest.java::TSqlLanguageTest::testNullConfiguration",
+      "io.github.fupacat.sonar.tsql.TSqlLanguageTest::testCustomFileSuffixes",
+      "TSqlLanguageTest::testCustomFileSuffixes",
+      "src/test/java/io/github/fupacat/sonar/tsql/TSqlLanguageTest.java::TSqlLanguageTest::testCustomFileSuffixes",
+      "io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheckTest::testFlagsLeadingPercentWildcard",
+      "AvoidLeadingWildcardInLikeCheckTest::testFlagsLeadingPercentWildcard",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java::AvoidLeadingWildcardInLikeCheckTest::testFlagsLeadingPercentWildcard",
+      "io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheckTest::testCompliantTrailingWildcard",
+      "AvoidLeadingWildcardInLikeCheckTest::testCompliantTrailingWildcard",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java::AvoidLeadingWildcardInLikeCheckTest::testCompliantTrailingWildcard",
+      "io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheckTest::testCompliantExactMatch",
+      "AvoidLeadingWildcardInLikeCheckTest::testCompliantExactMatch",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java::AvoidLeadingWildcardInLikeCheckTest::testCompliantExactMatch",
+      "io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheckTest::testFlagsLeadingUnderscoreWildcard",
+      "AvoidLeadingWildcardInLikeCheckTest::testFlagsLeadingUnderscoreWildcard",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java::AvoidLeadingWildcardInLikeCheckTest::testFlagsLeadingUnderscoreWildcard",
+      "io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedTypesCheckTest::testFlagsDeprecatedTypes",
+      "AvoidDeprecatedTypesCheckTest::testFlagsDeprecatedTypes",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheckTest.java::AvoidDeprecatedTypesCheckTest::testFlagsDeprecatedTypes",
+      "io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedTypesCheckTest::testCompliantModernTypes",
+      "AvoidDeprecatedTypesCheckTest::testCompliantModernTypes",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheckTest.java::AvoidDeprecatedTypesCheckTest::testCompliantModernTypes",
+      "io.github.fupacat.sonar.tsql.TSqlSensorTest::testDescriptor",
+      "TSqlSensorTest::testDescriptor",
+      "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java::TSqlSensorTest::testDescriptor",
+      "io.github.fupacat.sonar.tsql.TSqlSensorTest::testHandlesIOExceptionGracefully",
+      "TSqlSensorTest::testHandlesIOExceptionGracefully",
+      "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java::TSqlSensorTest::testHandlesIOExceptionGracefully",
+      "io.github.fupacat.sonar.tsql.TSqlSensorTest::testReportsSyntaxError",
+      "TSqlSensorTest::testReportsSyntaxError",
+      "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java::TSqlSensorTest::testReportsSyntaxError",
+      "io.github.fupacat.sonar.tsql.TSqlSensorTest::testExecutesActiveRuleOnValidSql",
+      "TSqlSensorTest::testExecutesActiveRuleOnValidSql",
+      "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java::TSqlSensorTest::testExecutesActiveRuleOnValidSql",
+      "io.github.fupacat.sonar.tsql.TSqlSensorTest::testSensorCheckContextTokenRangeAndFallback",
+      "TSqlSensorTest::testSensorCheckContextTokenRangeAndFallback",
+      "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java::TSqlSensorTest::testSensorCheckContextTokenRangeAndFallback",
+      "io.github.fupacat.sonar.tsql.rules.TSqlRulesDefinitionTest::testRulesDefinition",
+      "TSqlRulesDefinitionTest::testRulesDefinition",
+      "src/test/java/io/github/fupacat/sonar/tsql/rules/TSqlRulesDefinitionTest.java::TSqlRulesDefinitionTest::testRulesDefinition",
+      "io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheckTest::testCompliantExplicitColumns",
+      "AvoidSelectAllCheckTest::testCompliantExplicitColumns",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheckTest.java::AvoidSelectAllCheckTest::testCompliantExplicitColumns",
+      "io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheckTest::testFlagsQualifiedSelectStar",
+      "AvoidSelectAllCheckTest::testFlagsQualifiedSelectStar",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheckTest.java::AvoidSelectAllCheckTest::testFlagsQualifiedSelectStar",
+      "io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheckTest::testFlagsSelectStar",
+      "AvoidSelectAllCheckTest::testFlagsSelectStar",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheckTest.java::AvoidSelectAllCheckTest::testFlagsSelectStar",
+      "io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheckTest::testFlagsNoLockHint",
+      "AvoidNoLockHintCheckTest::testFlagsNoLockHint",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheckTest.java::AvoidNoLockHintCheckTest::testFlagsNoLockHint",
+      "io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheckTest::testCompliantQueryWithoutHint",
+      "AvoidNoLockHintCheckTest::testCompliantQueryWithoutHint",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheckTest.java::AvoidNoLockHintCheckTest::testCompliantQueryWithoutHint",
+      "io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheckTest::testFlagsReadUncommittedHint",
+      "AvoidNoLockHintCheckTest::testFlagsReadUncommittedHint",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheckTest.java::AvoidNoLockHintCheckTest::testFlagsReadUncommittedHint",
+      "io.github.fupacat.sonar.tsql.TSqlPluginTest::testPluginDefinesExpectedExtensions",
+      "TSqlPluginTest::testPluginDefinesExpectedExtensions",
+      "src/test/java/io/github/fupacat/sonar/tsql/TSqlPluginTest.java::TSqlPluginTest::testPluginDefinesExpectedExtensions",
+      "io.github.fupacat.sonar.tsql.rules.TSqlQualityProfileTest::testQualityProfileDefinition",
+      "TSqlQualityProfileTest::testQualityProfileDefinition",
+      "src/test/java/io/github/fupacat/sonar/tsql/rules/TSqlQualityProfileTest.java::TSqlQualityProfileTest::testQualityProfileDefinition"
+    ],
+    "exit_status": 0,
+    "outcomes": {
+      "AvoidDeprecatedTypesCheckTest::testCompliantModernTypes": "passed",
+      "AvoidDeprecatedTypesCheckTest::testFlagsDeprecatedTypes": "passed",
+      "AvoidLeadingWildcardInLikeCheckTest::testCompliantExactMatch": "passed",
+      "AvoidLeadingWildcardInLikeCheckTest::testCompliantTrailingWildcard": "passed",
+      "AvoidLeadingWildcardInLikeCheckTest::testFlagsLeadingPercentWildcard": "passed",
+      "AvoidLeadingWildcardInLikeCheckTest::testFlagsLeadingUnderscoreWildcard": "passed",
+      "AvoidNoLockHintCheckTest::testCompliantQueryWithoutHint": "passed",
+      "AvoidNoLockHintCheckTest::testFlagsNoLockHint": "passed",
+      "AvoidNoLockHintCheckTest::testFlagsReadUncommittedHint": "passed",
+      "AvoidSelectAllCheckTest::testCompliantExplicitColumns": "passed",
+      "AvoidSelectAllCheckTest::testFlagsQualifiedSelectStar": "passed",
+      "AvoidSelectAllCheckTest::testFlagsSelectStar": "passed",
+      "TSqlLanguageTest::testCustomFileSuffixes": "passed",
+      "TSqlLanguageTest::testLanguageDefaults": "passed",
+      "TSqlLanguageTest::testNullConfiguration": "passed",
+      "TSqlPluginTest::testPluginDefinesExpectedExtensions": "passed",
+      "TSqlQualityProfileTest::testQualityProfileDefinition": "passed",
+      "TSqlRulesDefinitionTest::testRulesDefinition": "passed",
+      "TSqlSensorTest::testDescriptor": "passed",
+      "TSqlSensorTest::testExecutesActiveRuleOnValidSql": "passed",
+      "TSqlSensorTest::testHandlesIOExceptionGracefully": "passed",
+      "TSqlSensorTest::testReportsSyntaxError": "passed",
+      "TSqlSensorTest::testSensorCheckContextTokenRangeAndFallback": "passed",
+      "io.github.fupacat.sonar.tsql.TSqlLanguageTest::testCustomFileSuffixes": "passed",
+      "io.github.fupacat.sonar.tsql.TSqlLanguageTest::testLanguageDefaults": "passed",
+      "io.github.fupacat.sonar.tsql.TSqlLanguageTest::testNullConfiguration": "passed",
+      "io.github.fupacat.sonar.tsql.TSqlPluginTest::testPluginDefinesExpectedExtensions": "passed",
+      "io.github.fupacat.sonar.tsql.TSqlSensorTest::testDescriptor": "passed",
+      "io.github.fupacat.sonar.tsql.TSqlSensorTest::testExecutesActiveRuleOnValidSql": "passed",
+      "io.github.fupacat.sonar.tsql.TSqlSensorTest::testHandlesIOExceptionGracefully": "passed",
+      "io.github.fupacat.sonar.tsql.TSqlSensorTest::testReportsSyntaxError": "passed",
+      "io.github.fupacat.sonar.tsql.TSqlSensorTest::testSensorCheckContextTokenRangeAndFallback": "passed",
+      "io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedTypesCheckTest::testCompliantModernTypes": "passed",
+      "io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedTypesCheckTest::testFlagsDeprecatedTypes": "passed",
+      "io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheckTest::testCompliantExactMatch": "passed",
+      "io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheckTest::testCompliantTrailingWildcard": "passed",
+      "io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheckTest::testFlagsLeadingPercentWildcard": "passed",
+      "io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheckTest::testFlagsLeadingUnderscoreWildcard": "passed",
+      "io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheckTest::testCompliantQueryWithoutHint": "passed",
+      "io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheckTest::testFlagsNoLockHint": "passed",
+      "io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheckTest::testFlagsReadUncommittedHint": "passed",
+      "io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheckTest::testCompliantExplicitColumns": "passed",
+      "io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheckTest::testFlagsQualifiedSelectStar": "passed",
+      "io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheckTest::testFlagsSelectStar": "passed",
+      "io.github.fupacat.sonar.tsql.rules.TSqlQualityProfileTest::testQualityProfileDefinition": "passed",
+      "io.github.fupacat.sonar.tsql.rules.TSqlRulesDefinitionTest::testRulesDefinition": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/TSqlLanguageTest.java::TSqlLanguageTest::testCustomFileSuffixes": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/TSqlLanguageTest.java::TSqlLanguageTest::testLanguageDefaults": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/TSqlLanguageTest.java::TSqlLanguageTest::testNullConfiguration": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/TSqlPluginTest.java::TSqlPluginTest::testPluginDefinesExpectedExtensions": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java::TSqlSensorTest::testDescriptor": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java::TSqlSensorTest::testExecutesActiveRuleOnValidSql": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java::TSqlSensorTest::testHandlesIOExceptionGracefully": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java::TSqlSensorTest::testReportsSyntaxError": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/TSqlSensorTest.java::TSqlSensorTest::testSensorCheckContextTokenRangeAndFallback": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheckTest.java::AvoidDeprecatedTypesCheckTest::testCompliantModernTypes": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidDeprecatedTypesCheckTest.java::AvoidDeprecatedTypesCheckTest::testFlagsDeprecatedTypes": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java::AvoidLeadingWildcardInLikeCheckTest::testCompliantExactMatch": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java::AvoidLeadingWildcardInLikeCheckTest::testCompliantTrailingWildcard": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java::AvoidLeadingWildcardInLikeCheckTest::testFlagsLeadingPercentWildcard": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidLeadingWildcardInLikeCheckTest.java::AvoidLeadingWildcardInLikeCheckTest::testFlagsLeadingUnderscoreWildcard": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheckTest.java::AvoidNoLockHintCheckTest::testCompliantQueryWithoutHint": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheckTest.java::AvoidNoLockHintCheckTest::testFlagsNoLockHint": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidNoLockHintCheckTest.java::AvoidNoLockHintCheckTest::testFlagsReadUncommittedHint": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheckTest.java::AvoidSelectAllCheckTest::testCompliantExplicitColumns": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheckTest.java::AvoidSelectAllCheckTest::testFlagsQualifiedSelectStar": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/checks/AvoidSelectAllCheckTest.java::AvoidSelectAllCheckTest::testFlagsSelectStar": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/rules/TSqlQualityProfileTest.java::TSqlQualityProfileTest::testQualityProfileDefinition": "passed",
+      "src/test/java/io/github/fupacat/sonar/tsql/rules/TSqlRulesDefinitionTest.java::TSqlRulesDefinitionTest::testRulesDefinition": "passed"
+    },
+    "runner_version": "maven-surefire"
+  }
+}

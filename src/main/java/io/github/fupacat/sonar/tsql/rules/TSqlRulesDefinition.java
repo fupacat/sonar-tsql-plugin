@@ -18,6 +18,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
 
     public static final String REPOSITORY_KEY = "tsql";
     public static final String REPOSITORY_NAME = "SonarQube T-SQL Analyzer";
+    private static final String TAG_SQL_SERVER = "sql-server";
 
     // TRACEABILITY_MAPPING: REQ-003
     @Override
@@ -38,7 +39,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags("sql-server", "performance", "pitfall");
+                .setTags(TAG_SQL_SERVER, "performance", "pitfall");
 
         // Rule 2: AvoidLeadingWildcardInLike
         repository.createRule(AvoidLeadingWildcardInLikeCheck.RULE_KEY)
@@ -53,7 +54,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.CRITICAL)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags("sql-server", "performance", "indexing");
+                .setTags(TAG_SQL_SERVER, "performance", "indexing");
 
         // Rule 3: AvoidNoLockHint
         repository.createRule(AvoidNoLockHintCheck.RULE_KEY)
@@ -69,7 +70,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags("sql-server", "concurrency", "data-integrity");
+                .setTags(TAG_SQL_SERVER, "concurrency", "data-integrity");
 
         // Rule 4: AvoidDeprecatedTypes
         repository.createRule(AvoidDeprecatedTypesCheck.RULE_KEY)
@@ -84,7 +85,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags("sql-server", "obsolete", "maintenance");
+                .setTags(TAG_SQL_SERVER, "obsolete", "maintenance");
 
         // Rule 5: SyntaxError
         repository.createRule(CheckList.SYNTAX_ERROR_RULE_KEY)
@@ -94,7 +95,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.BLOCKER)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags("sql-server", "syntax-error");
+                .setTags(TAG_SQL_SERVER, "syntax-error");
 
         repository.done();
     }
