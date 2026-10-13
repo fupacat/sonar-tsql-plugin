@@ -28,6 +28,9 @@ public class AvoidSpecialCharactersInObjectNamesCheck extends TSqlCheck {
     }
 
     private boolean hasSpecialCharacters(SchemaObjectName node) {
+        if (node == null || node.Identifiers == null) {
+            return false;
+        }
         for (Identifier identifier : node.Identifiers) {
             if (identifier == null || identifier.Value == null) {
                 continue;
@@ -36,7 +39,7 @@ public class AvoidSpecialCharactersInObjectNamesCheck extends TSqlCheck {
             if (!value.isEmpty() && !value.matches("[A-Za-z0-9_#$]+")) {
                 return true;
             }
-            if (value.length() > 0 && Character.isDigit(value.charAt(0)) && !value.startsWith("#")) {
+            if (!value.isEmpty() && Character.isDigit(value.charAt(0)) && !value.startsWith("#")) {
                 return true;
             }
         }

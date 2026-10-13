@@ -42,17 +42,40 @@ public class SargableWhereCheck extends TSqlCheck {
             return false;
         }
         if (expression instanceof BinaryExpression binaryExpression) {
-            return hasEmbeddedColumn(binaryExpression.FirstExpression)
-                    || hasEmbeddedColumn(binaryExpression.SecondExpression);
+            return containsColumnReference(binaryExpression.FirstExpression)
+                    || containsColumnReference(binaryExpression.SecondExpression);
         }
         if (expression instanceof FunctionCall functionCall) {
             if (functionCall.Parameters == null) {
                 return false;
             }
-            return functionCall.Parameters.stream().anyMatch(this::hasEmbeddedColumn);
+            return functionCall.Parameters.stream().anyMatch(this::containsColumnReference);
         }
         if (expression instanceof ParenthesisExpression parenthesisExpression) {
-            return hasEmbeddedColumn(parenthesisExpression.Expression);
+            return containsColumnReference(parenthesisExpression.Expression);
+        }
+        return false;
+    }
+
+    private boolean containsColumnReference(ScalarExpression expression) {
+        if (expression == null) {
+            return false;
+        }
+        if (expression instanceof ColumnReferenceExpression) {
+            return true;
+        }
+        if (expression instanceof BinaryExpression binaryExpression) {
+            return containsColumnReference(binaryExpression.FirstExpression)
+                    || containsColumnReference(binaryExpression.SecondExpression);
+        }
+        if (expression instanceof FunctionCall functionCall) {
+            if (functionCall.Parameters == null) {
+                return false;
+            }
+            return functionCall.Parameters.stream().anyMatch(this::containsColumnReference);
+        }
+        if (expression instanceof ParenthesisExpression parenthesisExpression) {
+            return containsColumnReference(parenthesisExpression.Expression);
         }
         return false;
     }

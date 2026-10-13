@@ -6,6 +6,11 @@ import io.github.fupacat.ast.TSqlFragment;
 import io.github.fupacat.ast.TSqlScript;
 import org.sonar.api.batch.fs.InputFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Proxy;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +31,18 @@ public final class CheckTestUtils {
         }
 
         CollectingContext context = new CollectingContext();
+        check.scan(result.fragment(), context);
+        return context.issues;
+    }
+
+    public static List<String> scanWithContents(TSqlCheck check, String sql) {
+        TSqlParser parser = new TSqlParser();
+        ParseResult<TSqlScript> result = parser.parse(sql);
+        if (result.fragment() == null) {
+            throw new IllegalArgumentException("Failed to parse SQL: " + sql + ", errors: " + result.errors());
+        }
+
+        CollectingContext context = new CollectingContext(sql);
         check.scan(result.fragment(), context);
         return context.issues;
     }

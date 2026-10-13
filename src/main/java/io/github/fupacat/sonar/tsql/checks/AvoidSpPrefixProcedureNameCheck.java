@@ -29,7 +29,7 @@ public class AvoidSpPrefixProcedureNameCheck extends TSqlCheck {
         Identifier baseIdentifier = name.BaseIdentifier != null ? name.BaseIdentifier : (name.Identifiers != null && !name.Identifiers.isEmpty() ? name.Identifiers.get(name.Identifiers.size() - 1) : null);
         if (baseIdentifier != null && baseIdentifier.Value != null) {
             String value = baseIdentifier.Value.trim();
-            if (value.regionMatches(true, 0, "sp_", 0, 3) || value.regionMatches(true, 0, "sp", 0, 2)) {
+            if (value.regionMatches(true, 0, "sp_", 0, 3)) {
                 reportIssue(node, "Avoid the 'sp_' prefix for user-defined stored procedures; use a distinct, application-specific prefix instead.");
             }
         }

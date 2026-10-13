@@ -1,11 +1,10 @@
 package io.github.fupacat.sonar.tsql.checks;
 
-import io.github.fupacat.ast.AssignmentSetClause;
 import io.github.fupacat.ast.CreateProcedureStatement;
 import io.github.fupacat.ast.ParameterModifier;
 import io.github.fupacat.ast.ProcedureParameter;
+import io.github.fupacat.ast.SetVariableStatement;
 import io.github.fupacat.ast.TSqlConcreteFragmentVisitor;
-import io.github.fupacat.ast.TSqlFragment;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -39,19 +38,24 @@ public class StoredProcedureOutputParameterCheck extends TSqlCheck {
             if (parameter != null && parameter.VariableName != null
                     && parameter.VariableName.Value != null
                     && parameter.Modifier == ParameterModifier.Output) {
-                outputParameters.add(parameter.VariableName.Value.trim().toLowerCase(Locale.ROOT));
+                String name = parameter.VariableName.Value.trim().replaceFirst("^@", "");
+                outputParameters.add(name.toLowerCase(Locale.ROOT));
             }
         }
         if (!outputParameters.isEmpty()) {
             Set<String> assignedParameters = new HashSet<>();
             TSqlConcreteFragmentVisitor collector = new TSqlConcreteFragmentVisitor() {
                 @Override
-                public void visit(AssignmentSetClause assignmentSetClause) {
-                    if (assignmentSetClause != null && assignmentSetClause.Variable != null
-                            && assignmentSetClause.Variable.Name != null) {
-                        assignedParameters.add(assignmentSetClause.Variable.Name.trim().toLowerCase(Locale.ROOT));
+                public void visit(SetVariableStatement setVariableStatement) {
+                    if (setVariableStatement != null && setVariableStatement.Variable != null
+                            && setVariableStatement.Variable.Name != null) {
+                        String name = setVariableStatement.Variable.Name.trim();
+                        if (name.startsWith("@")) {
+                            name = name.substring(1);
+                        }
+                        assignedParameters.add(name.toLowerCase(Locale.ROOT));
                     }
-                    super.visit(assignmentSetClause);
+                    super.visit(setVariableStatement);
                 }
             };
             if (node.StatementList != null) {

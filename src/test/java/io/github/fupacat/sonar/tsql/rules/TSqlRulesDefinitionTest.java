@@ -1,16 +1,25 @@
 package io.github.fupacat.sonar.tsql.rules;
 
 import io.github.fupacat.sonar.tsql.TSqlLanguage;
+import io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedJoinSyntaxCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedTypesCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheck;
+import io.github.fupacat.sonar.tsql.checks.AvoidReservedWordsInObjectNamesCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
+import io.github.fupacat.sonar.tsql.checks.AvoidSpPrefixProcedureNameCheck;
+import io.github.fupacat.sonar.tsql.checks.AvoidSpecialCharactersInObjectNamesCheck;
+import io.github.fupacat.sonar.tsql.checks.AvoidVariableLengthDataTypeCheck;
 import io.github.fupacat.sonar.tsql.checks.CaseInputInvariantCheck;
 import io.github.fupacat.sonar.tsql.checks.CheckList;
 import io.github.fupacat.sonar.tsql.checks.DeleteAndUpdateWithoutWhereCheck;
+import io.github.fupacat.sonar.tsql.checks.DeterministicFunctionInWhereCheck;
 import io.github.fupacat.sonar.tsql.checks.NotInSubqueryCheck;
 import io.github.fupacat.sonar.tsql.checks.NullComparisonCheck;
+import io.github.fupacat.sonar.tsql.checks.SargableWhereCheck;
+import io.github.fupacat.sonar.tsql.checks.StoredProcedureOutputParameterCheck;
 import io.github.fupacat.sonar.tsql.checks.TopWithoutOrderByCheck;
+import io.github.fupacat.sonar.tsql.checks.UseScopeIdentityCheck;
 import org.junit.jupiter.api.Test;
 import org.sonar.api.rule.Severity;
 import org.sonar.api.rules.RuleType;
@@ -32,8 +41,8 @@ class TSqlRulesDefinitionTest {
         assertThat(repository.name()).isEqualTo(TSqlRulesDefinition.REPOSITORY_NAME);
         assertThat(repository.language()).isEqualTo(TSqlLanguage.KEY);
 
-        // Verify all 10 rules are registered
-        assertThat(repository.rules()).hasSize(10);
+        // Verify the current built-in rule set is registered.
+        assertThat(repository.rules()).hasSize(19);
 
         RulesDefinition.Rule selectAllRule = repository.rule(AvoidSelectAllCheck.RULE_KEY);
         assertThat(selectAllRule).isNotNull();
@@ -80,6 +89,51 @@ class TSqlRulesDefinitionTest {
         assertThat(caseInvariantRule).isNotNull();
         assertThat(caseInvariantRule.severity()).isEqualTo(Severity.CRITICAL);
         assertThat(caseInvariantRule.type()).isEqualTo(RuleType.BUG);
+
+        RulesDefinition.Rule sargableRule = repository.rule(SargableWhereCheck.RULE_KEY);
+        assertThat(sargableRule).isNotNull();
+        assertThat(sargableRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(sargableRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule scopeIdentityRule = repository.rule(UseScopeIdentityCheck.RULE_KEY);
+        assertThat(scopeIdentityRule).isNotNull();
+        assertThat(scopeIdentityRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(scopeIdentityRule.type()).isEqualTo(RuleType.BUG);
+
+        RulesDefinition.Rule variableLengthTypeRule = repository.rule(AvoidVariableLengthDataTypeCheck.RULE_KEY);
+        assertThat(variableLengthTypeRule).isNotNull();
+        assertThat(variableLengthTypeRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(variableLengthTypeRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule deprecatedJoinRule = repository.rule(AvoidDeprecatedJoinSyntaxCheck.RULE_KEY);
+        assertThat(deprecatedJoinRule).isNotNull();
+        assertThat(deprecatedJoinRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(deprecatedJoinRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule specialCharactersRule = repository.rule(AvoidSpecialCharactersInObjectNamesCheck.RULE_KEY);
+        assertThat(specialCharactersRule).isNotNull();
+        assertThat(specialCharactersRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(specialCharactersRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule reservedWordsRule = repository.rule(AvoidReservedWordsInObjectNamesCheck.RULE_KEY);
+        assertThat(reservedWordsRule).isNotNull();
+        assertThat(reservedWordsRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(reservedWordsRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule outputParamRule = repository.rule(StoredProcedureOutputParameterCheck.RULE_KEY);
+        assertThat(outputParamRule).isNotNull();
+        assertThat(outputParamRule.severity()).isEqualTo(Severity.CRITICAL);
+        assertThat(outputParamRule.type()).isEqualTo(RuleType.BUG);
+
+        RulesDefinition.Rule deterministicFunctionRule = repository.rule(DeterministicFunctionInWhereCheck.RULE_KEY);
+        assertThat(deterministicFunctionRule).isNotNull();
+        assertThat(deterministicFunctionRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(deterministicFunctionRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule spPrefixRule = repository.rule(AvoidSpPrefixProcedureNameCheck.RULE_KEY);
+        assertThat(spPrefixRule).isNotNull();
+        assertThat(spPrefixRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(spPrefixRule.type()).isEqualTo(RuleType.CODE_SMELL);
 
         RulesDefinition.Rule syntaxErrorRule = repository.rule(CheckList.SYNTAX_ERROR_RULE_KEY);
         assertThat(syntaxErrorRule).isNotNull();

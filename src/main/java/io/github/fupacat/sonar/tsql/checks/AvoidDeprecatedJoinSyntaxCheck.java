@@ -18,16 +18,17 @@ public class AvoidDeprecatedJoinSyntaxCheck extends TSqlCheck {
     // TRACEABILITY_MAPPING: REQ-019
     @Override
     public void scan(io.github.fupacat.ast.TSqlFragment root, TSqlCheckContext context) {
-        if (context != null && context.getFile() != null) {
-            InputFile inputFile = context.getFile();
-            try {
-                String content = inputFile.contents();
-                if (content != null && (content.contains("*=") || content.contains("=*"))) {
-                    reportIssueAtLine(1, "Avoid using deprecated join syntax ('*=' or '=*'); use explicit JOIN conditions instead.");
-                }
-            } catch (Exception ignored) {
-                // The check is intentionally conservative when file contents are unavailable.
+        if (context == null || context.getFile() == null) {
+            return;
+        }
+
+        try {
+            String content = context.getFile().contents();
+            if (content != null && (content.contains("*=") || content.contains("=*"))) {
+                reportIssueAtLine(1, "Avoid using deprecated join syntax ('*=' or '=*'); use explicit JOIN conditions instead.");
             }
+        } catch (Exception ignored) {
+            // The check is intentionally conservative when file contents are unavailable.
         }
     }
 }
