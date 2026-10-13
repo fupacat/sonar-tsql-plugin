@@ -6,11 +6,6 @@ import io.github.fupacat.ast.TSqlFragment;
 import io.github.fupacat.ast.TSqlScript;
 import org.sonar.api.batch.fs.InputFile;
 
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Proxy;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 

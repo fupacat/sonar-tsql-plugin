@@ -33,8 +33,25 @@ public class StoredProcedureOutputParameterCheck extends TSqlCheck {
             return;
         }
 
+        List<String> outputParameters = extractOutputParameterNames(node.Parameters);
+        if (outputParameters.isEmpty()) {
+            super.visit(node);
+            return;
+        }
+
+        Set<String> assignedParameters = collectAssignedParameters(node.StatementList);
+        for (String parameterName : outputParameters) {
+            if (!assignedParameters.contains(parameterName)) {
+                reportIssue(node, "Ensure OUTPUT parameter '@" + parameterName + "' is assigned in all code paths before the stored procedure returns.");
+                break;
+            }
+        }
+        super.visit(node);
+    }
+
+    private List<String> extractOutputParameterNames(List<ProcedureParameter> parameters) {
         List<String> outputParameters = new ArrayList<>();
-        for (ProcedureParameter parameter : node.Parameters) {
+        for (ProcedureParameter parameter : parameters) {
             if (parameter != null && parameter.VariableName != null
                     && parameter.VariableName.Value != null
                     && parameter.Modifier == ParameterModifier.Output) {
@@ -42,33 +59,29 @@ public class StoredProcedureOutputParameterCheck extends TSqlCheck {
                 outputParameters.add(name.toLowerCase(Locale.ROOT));
             }
         }
-        if (!outputParameters.isEmpty()) {
-            Set<String> assignedParameters = new HashSet<>();
-            TSqlConcreteFragmentVisitor collector = new TSqlConcreteFragmentVisitor() {
-                @Override
-                public void visit(SetVariableStatement setVariableStatement) {
-                    if (setVariableStatement != null && setVariableStatement.Variable != null
-                            && setVariableStatement.Variable.Name != null) {
-                        String name = setVariableStatement.Variable.Name.trim();
-                        if (name.startsWith("@")) {
-                            name = name.substring(1);
-                        }
-                        assignedParameters.add(name.toLowerCase(Locale.ROOT));
-                    }
-                    super.visit(setVariableStatement);
-                }
-            };
-            if (node.StatementList != null) {
-                node.StatementList.accept(collector);
-            }
+        return outputParameters;
+    }
 
-            for (String parameterName : outputParameters) {
-                if (!assignedParameters.contains(parameterName)) {
-                    reportIssue(node, "Ensure OUTPUT parameter '@" + parameterName + "' is assigned in all code paths before the stored procedure returns.");
-                    break;
-                }
-            }
+    private Set<String> collectAssignedParameters(io.github.fupacat.ast.StatementList statementList) {
+        Set<String> assignedParameters = new HashSet<>();
+        if (statementList == null) {
+            return assignedParameters;
         }
-        super.visit(node);
+        TSqlConcreteFragmentVisitor collector = new TSqlConcreteFragmentVisitor() {
+            @Override
+            public void visit(SetVariableStatement setVariableStatement) {
+                if (setVariableStatement != null && setVariableStatement.Variable != null
+                        && setVariableStatement.Variable.Name != null) {
+                    String name = setVariableStatement.Variable.Name.trim();
+                    if (name.startsWith("@")) {
+                        name = name.substring(1);
+                    }
+                    assignedParameters.add(name.toLowerCase(Locale.ROOT));
+                }
+                super.visit(setVariableStatement);
+            }
+        };
+        statementList.accept(collector);
+        return assignedParameters;
     }
 }

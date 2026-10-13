@@ -37,8 +37,12 @@ class SSDTRulesCheckTest {
     void testAvoidSpecialAndReservedWordsInObjectNamesCheck() {
         assertThat(CheckTestUtils.scan(avoidSpecialCharactersInObjectNamesCheck,
                 "CREATE TABLE dbo.[Order$] (Id INT);")).hasSize(1);
+        assertThat(CheckTestUtils.scan(avoidSpecialCharactersInObjectNamesCheck,
+                "CREATE TABLE dbo.OrderSummary (Id INT);")).isEmpty();
         assertThat(CheckTestUtils.scan(avoidReservedWordsInObjectNamesCheck,
                 "CREATE TABLE dbo.[Order] (Id INT);")).hasSize(1);
+        assertThat(CheckTestUtils.scan(avoidReservedWordsInObjectNamesCheck,
+                "CREATE TABLE dbo.Orders (Id INT);")).isEmpty();
     }
     @Test
     void testStoredProcedureOutputParameterCheck() {

@@ -3,7 +3,8 @@ package io.github.fupacat.sonar.tsql.checks;
 import io.github.fupacat.ast.Identifier;
 import io.github.fupacat.ast.SchemaObjectName;
 
-import java.util.Locale;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Rule: Avoid special characters in DDL object names.
@@ -33,25 +34,23 @@ public class AvoidSpecialCharactersInObjectNamesCheck extends TSqlCheck {
         }
 
         for (Identifier identifier : extractIdentifiers(node)) {
-            if (identifier == null || identifier.Value == null) {
-                continue;
-            }
-            String value = normalizeIdentifier(identifier.Value);
+            String value = normalizeIdentifier(identifier == null ? null : identifier.Value);
             if (value.isEmpty()) {
                 continue;
             }
-            if (!value.matches("[A-Za-z0-9_#]+")) {
-                return true;
-            }
-            if (Character.isDigit(value.charAt(0)) && !value.startsWith("#")) {
+            if (isDisallowedName(value)) {
                 return true;
             }
         }
         return false;
     }
 
-    private java.util.List<Identifier> extractIdentifiers(SchemaObjectName node) {
-        java.util.List<Identifier> identifiers = new java.util.ArrayList<>();
+    private boolean isDisallowedName(String value) {
+        return !value.matches("[A-Za-z0-9_#]+") || (Character.isDigit(value.charAt(0)) && !value.startsWith("#"));
+    }
+
+    private List<Identifier> extractIdentifiers(SchemaObjectName node) {
+        List<Identifier> identifiers = new ArrayList<>();
         if (node.Identifiers != null) {
             identifiers.addAll(node.Identifiers);
         }
@@ -71,6 +70,9 @@ public class AvoidSpecialCharactersInObjectNamesCheck extends TSqlCheck {
     }
 
     private String normalizeIdentifier(String value) {
+        if (value == null) {
+            return "";
+        }
         String trimmed = value.trim();
         if (trimmed.startsWith("[") && trimmed.endsWith("]") && trimmed.length() >= 2) {
             trimmed = trimmed.substring(1, trimmed.length() - 1);

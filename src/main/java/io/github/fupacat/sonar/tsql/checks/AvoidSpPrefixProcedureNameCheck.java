@@ -2,7 +2,6 @@ package io.github.fupacat.sonar.tsql.checks;
 
 import io.github.fupacat.ast.CreateProcedureStatement;
 import io.github.fupacat.ast.Identifier;
-import io.github.fupacat.ast.ProcedureReference;
 import io.github.fupacat.ast.SchemaObjectName;
 
 /**
