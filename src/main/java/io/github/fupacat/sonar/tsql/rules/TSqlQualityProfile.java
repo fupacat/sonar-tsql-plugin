@@ -5,12 +5,21 @@ import io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedTypesCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
+import io.github.fupacat.sonar.tsql.checks.CaseElseMissingCheck;
 import io.github.fupacat.sonar.tsql.checks.CaseInputInvariantCheck;
 import io.github.fupacat.sonar.tsql.checks.CheckList;
+import io.github.fupacat.sonar.tsql.checks.ControlStructureBlockCheck;
 import io.github.fupacat.sonar.tsql.checks.DeleteAndUpdateWithoutWhereCheck;
+import io.github.fupacat.sonar.tsql.checks.DuplicateBinaryOperandCheck;
+import io.github.fupacat.sonar.tsql.checks.DuplicateIfConditionCheck;
+import io.github.fupacat.sonar.tsql.checks.GotoStatementCheck;
+import io.github.fupacat.sonar.tsql.checks.IdenticalBranchCheck;
+import io.github.fupacat.sonar.tsql.checks.NestedIfMergeCheck;
 import io.github.fupacat.sonar.tsql.checks.NotInSubqueryCheck;
 import io.github.fupacat.sonar.tsql.checks.NullComparisonCheck;
+import io.github.fupacat.sonar.tsql.checks.RepeatedUnaryOperatorCheck;
 import io.github.fupacat.sonar.tsql.checks.TopWithoutOrderByCheck;
+import io.github.fupacat.sonar.tsql.checks.WhereClauseRedundancyCheck;
 import org.sonar.api.server.profile.BuiltInQualityProfilesDefinition;
 
 /**
@@ -36,6 +45,15 @@ public class TSqlQualityProfile implements BuiltInQualityProfilesDefinition {
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, NullComparisonCheck.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, TopWithoutOrderByCheck.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, CaseInputInvariantCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, DuplicateBinaryOperandCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, DuplicateIfConditionCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, IdenticalBranchCheck.RULE_KEY_S1871);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, RepeatedUnaryOperatorCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, WhereClauseRedundancyCheck.RULE_KEY_S3633);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, ControlStructureBlockCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, CaseElseMissingCheck.RULE_KEY_S131);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, GotoStatementCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, NestedIfMergeCheck.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, CheckList.SYNTAX_ERROR_RULE_KEY);
 
         profile.done();

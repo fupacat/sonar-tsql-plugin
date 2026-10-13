@@ -5,12 +5,21 @@ import io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedTypesCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
+import io.github.fupacat.sonar.tsql.checks.CaseElseMissingCheck;
 import io.github.fupacat.sonar.tsql.checks.CaseInputInvariantCheck;
 import io.github.fupacat.sonar.tsql.checks.CheckList;
+import io.github.fupacat.sonar.tsql.checks.ControlStructureBlockCheck;
 import io.github.fupacat.sonar.tsql.checks.DeleteAndUpdateWithoutWhereCheck;
+import io.github.fupacat.sonar.tsql.checks.DuplicateBinaryOperandCheck;
+import io.github.fupacat.sonar.tsql.checks.DuplicateIfConditionCheck;
+import io.github.fupacat.sonar.tsql.checks.GotoStatementCheck;
+import io.github.fupacat.sonar.tsql.checks.IdenticalBranchCheck;
+import io.github.fupacat.sonar.tsql.checks.NestedIfMergeCheck;
 import io.github.fupacat.sonar.tsql.checks.NotInSubqueryCheck;
 import io.github.fupacat.sonar.tsql.checks.NullComparisonCheck;
+import io.github.fupacat.sonar.tsql.checks.RepeatedUnaryOperatorCheck;
 import io.github.fupacat.sonar.tsql.checks.TopWithoutOrderByCheck;
+import io.github.fupacat.sonar.tsql.checks.WhereClauseRedundancyCheck;
 import org.junit.jupiter.api.Test;
 import org.sonar.api.rule.Severity;
 import org.sonar.api.rules.RuleType;
@@ -32,8 +41,8 @@ class TSqlRulesDefinitionTest {
         assertThat(repository.name()).isEqualTo(TSqlRulesDefinition.REPOSITORY_NAME);
         assertThat(repository.language()).isEqualTo(TSqlLanguage.KEY);
 
-        // Verify all 10 rules are registered
-        assertThat(repository.rules()).hasSize(10);
+        // Verify all 19 rules are registered
+        assertThat(repository.rules()).hasSize(19);
 
         RulesDefinition.Rule selectAllRule = repository.rule(AvoidSelectAllCheck.RULE_KEY);
         assertThat(selectAllRule).isNotNull();
@@ -80,6 +89,51 @@ class TSqlRulesDefinitionTest {
         assertThat(caseInvariantRule).isNotNull();
         assertThat(caseInvariantRule.severity()).isEqualTo(Severity.CRITICAL);
         assertThat(caseInvariantRule.type()).isEqualTo(RuleType.BUG);
+
+        RulesDefinition.Rule duplicateBinaryRule = repository.rule(DuplicateBinaryOperandCheck.RULE_KEY);
+        assertThat(duplicateBinaryRule).isNotNull();
+        assertThat(duplicateBinaryRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(duplicateBinaryRule.type()).isEqualTo(RuleType.BUG);
+
+        RulesDefinition.Rule duplicateIfRule = repository.rule(DuplicateIfConditionCheck.RULE_KEY);
+        assertThat(duplicateIfRule).isNotNull();
+        assertThat(duplicateIfRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(duplicateIfRule.type()).isEqualTo(RuleType.BUG);
+
+        RulesDefinition.Rule identicalBranchRule = repository.rule(IdenticalBranchCheck.RULE_KEY_S1871);
+        assertThat(identicalBranchRule).isNotNull();
+        assertThat(identicalBranchRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(identicalBranchRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule repeatedUnaryRule = repository.rule(RepeatedUnaryOperatorCheck.RULE_KEY);
+        assertThat(repeatedUnaryRule).isNotNull();
+        assertThat(repeatedUnaryRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(repeatedUnaryRule.type()).isEqualTo(RuleType.BUG);
+
+        RulesDefinition.Rule redundancyRule = repository.rule(WhereClauseRedundancyCheck.RULE_KEY_S3633);
+        assertThat(redundancyRule).isNotNull();
+        assertThat(redundancyRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(redundancyRule.type()).isEqualTo(RuleType.BUG);
+
+        RulesDefinition.Rule blockRule = repository.rule(ControlStructureBlockCheck.RULE_KEY);
+        assertThat(blockRule).isNotNull();
+        assertThat(blockRule.severity()).isEqualTo(Severity.CRITICAL);
+        assertThat(blockRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule elseRule = repository.rule(CaseElseMissingCheck.RULE_KEY_S131);
+        assertThat(elseRule).isNotNull();
+        assertThat(elseRule.severity()).isEqualTo(Severity.CRITICAL);
+        assertThat(elseRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule gotoRule = repository.rule(GotoStatementCheck.RULE_KEY);
+        assertThat(gotoRule).isNotNull();
+        assertThat(gotoRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(gotoRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule nestedIfRule = repository.rule(NestedIfMergeCheck.RULE_KEY);
+        assertThat(nestedIfRule).isNotNull();
+        assertThat(nestedIfRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(nestedIfRule.type()).isEqualTo(RuleType.CODE_SMELL);
 
         RulesDefinition.Rule syntaxErrorRule = repository.rule(CheckList.SYNTAX_ERROR_RULE_KEY);
         assertThat(syntaxErrorRule).isNotNull();
