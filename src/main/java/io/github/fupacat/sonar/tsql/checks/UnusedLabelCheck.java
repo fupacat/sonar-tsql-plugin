@@ -19,6 +19,7 @@ public class UnusedLabelCheck extends TSqlCheck {
 
     private final Map<String, LabelStatement> labels = new HashMap<>();
     private final Set<String> referencedLabels = new HashSet<>();
+    private TSqlCheckContext analysisContext;
 
     @Override
     public String getRuleKey() {
@@ -51,8 +52,7 @@ public class UnusedLabelCheck extends TSqlCheck {
     public void scan(TSqlFragment root, TSqlCheckContext context) {
         labels.clear();
         referencedLabels.clear();
-        setField("context", context);
-        setField("root", root);
+        analysisContext = context;
         try {
             if (root != null) {
                 root.accept(this);
@@ -63,8 +63,14 @@ public class UnusedLabelCheck extends TSqlCheck {
                 }
             }
         } finally {
-            setField("context", null);
-            setField("root", null);
+            analysisContext = null;
+        }
+    }
+
+    @Override
+    protected void reportIssue(TSqlFragment fragment, String message) {
+        if (analysisContext != null) {
+            analysisContext.reportIssue(this, fragment, message);
         }
     }
 
@@ -77,15 +83,5 @@ public class UnusedLabelCheck extends TSqlCheck {
             return null;
         }
         return candidate.toLowerCase(Locale.ROOT);
-    }
-
-    private void setField(String fieldName, Object value) {
-        try {
-            java.lang.reflect.Field field = TSqlCheck.class.getDeclaredField(fieldName);
-            field.setAccessible(true);
-            field.set(this, value);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Unable to set field " + fieldName, e);
-        }
     }
 }

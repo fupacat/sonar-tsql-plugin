@@ -6,7 +6,6 @@ import io.github.fupacat.ast.SetVariableStatement;
 import io.github.fupacat.ast.TSqlFragment;
 import io.github.fupacat.ast.VariableReference;
 
-import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -22,6 +21,7 @@ public class UnusedLocalVariableCheck extends TSqlCheck {
 
     private final Map<String, DeclareVariableElement> declaredVariables = new HashMap<>();
     private final Set<String> usedVariables = new HashSet<>();
+    private TSqlCheckContext analysisContext;
 
     @Override
     public String getRuleKey() {
@@ -32,8 +32,7 @@ public class UnusedLocalVariableCheck extends TSqlCheck {
     public void scan(TSqlFragment root, TSqlCheckContext context) {
         declaredVariables.clear();
         usedVariables.clear();
-        setField("context", context);
-        setField("root", root);
+        analysisContext = context;
         try {
             if (root != null) {
                 root.accept(this);
@@ -44,8 +43,14 @@ public class UnusedLocalVariableCheck extends TSqlCheck {
                 }
             }
         } finally {
-            setField("context", null);
-            setField("root", null);
+            analysisContext = null;
+        }
+    }
+
+    @Override
+    protected void reportIssue(TSqlFragment fragment, String message) {
+        if (analysisContext != null) {
+            analysisContext.reportIssue(this, fragment, message);
         }
     }
 
@@ -86,15 +91,5 @@ public class UnusedLocalVariableCheck extends TSqlCheck {
 
     private static String normalizeName(String value) {
         return value.toLowerCase(Locale.ROOT);
-    }
-
-    private void setField(String fieldName, Object value) {
-        try {
-            Field field = TSqlCheck.class.getDeclaredField(fieldName);
-            field.setAccessible(true);
-            field.set(this, value);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Unable to set field " + fieldName, e);
-        }
     }
 }

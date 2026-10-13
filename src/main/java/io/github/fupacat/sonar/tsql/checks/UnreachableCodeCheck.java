@@ -95,25 +95,15 @@ public class UnreachableCodeCheck extends TSqlCheck {
 
         int comparisonResult = Integer.compare(left, right);
         switch (comparison.ComparisonType) {
-            case Equals:
-                return comparisonResult == 0;
-            case NotEqualToBrackets:
-            case NotEqualToExclamation:
-                return comparisonResult != 0;
-            case GreaterThan:
-                return comparisonResult > 0;
-            case GreaterThanOrEqualTo:
-                return comparisonResult >= 0;
-            case LessThan:
-                return comparisonResult < 0;
-            case LessThanOrEqualTo:
-                return comparisonResult <= 0;
-            case NotGreaterThan:
-                return comparisonResult <= 0;
-            case NotLessThan:
-                return comparisonResult >= 0;
-            default:
-                return false;
+            case Equals -> { return comparisonResult == 0; }
+            case NotEqualToBrackets, NotEqualToExclamation -> { return comparisonResult != 0; }
+            case GreaterThan -> { return comparisonResult > 0; }
+            case GreaterThanOrEqualTo -> { return comparisonResult >= 0; }
+            case LessThan -> { return comparisonResult < 0; }
+            case LessThanOrEqualTo -> { return comparisonResult <= 0; }
+            case NotGreaterThan -> { return comparisonResult <= 0; }
+            case NotLessThan -> { return comparisonResult >= 0; }
+            default -> { return false; }
         }
     }
 

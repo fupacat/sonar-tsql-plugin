@@ -33,6 +33,16 @@ public class TSqlRulesDefinition implements RulesDefinition {
     public static final String REPOSITORY_NAME = "SonarQube T-SQL Analyzer";
     private static final String TAG_SQL_SERVER = "sql-server";
     private static final String TAG_DATA_SAFETY = "data-safety";
+    private static final String TAG_MAINTAINABILITY = "maintainability";
+    private static final String TAG_CONTROL_FLOW = "control-flow";
+    private static final String TAG_LOGIC = "logic";
+    private static final String TAG_UNUSED_CODE = "unused-code";
+    private static final String TAG_NULL_HANDLING = "null-handling";
+    private static final String TAG_DETERMINISM = "determinism";
+    private static final String TAG_ERROR_HANDLING = "error-handling";
+    private static final String TAG_LOGGING = "logging";
+    private static final String TAG_LOOP = "loop";
+    private static final String TAG_ASSIGNMENT = "assignment";
     private static final String NONCOMPLIANT_HEADER = "<h3>Noncompliant Code Example</h3>";
     private static final String COMPLIANT_HEADER = "<h3>Compliant Solution</h3>";
 

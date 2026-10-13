@@ -23,6 +23,7 @@ public class UnusedParameterCheck extends TSqlCheck {
     private final Map<ProcedureStatementBodyBase, Map<String, ProcedureParameter>> parametersByProcedure = new HashMap<>();
     private final Map<ProcedureStatementBodyBase, Set<String>> usedParametersByProcedure = new HashMap<>();
     private final Deque<ProcedureStatementBodyBase> activeProcedureStack = new ArrayDeque<>();
+    private TSqlCheckContext analysisContext;
 
     @Override
     public String getRuleKey() {
@@ -108,8 +109,7 @@ public class UnusedParameterCheck extends TSqlCheck {
         parametersByProcedure.clear();
         usedParametersByProcedure.clear();
         activeProcedureStack.clear();
-        setField("context", context);
-        setField("root", root);
+        analysisContext = context;
         try {
             if (root != null) {
                 root.accept(this);
@@ -124,22 +124,18 @@ public class UnusedParameterCheck extends TSqlCheck {
                 }
             }
         } finally {
-            setField("context", null);
-            setField("root", null);
+            analysisContext = null;
+        }
+    }
+
+    @Override
+    protected void reportIssue(TSqlFragment fragment, String message) {
+        if (analysisContext != null) {
+            analysisContext.reportIssue(this, fragment, message);
         }
     }
 
     private static String normalizeName(String value) {
         return value.toLowerCase(Locale.ROOT);
-    }
-
-    private void setField(String fieldName, Object value) {
-        try {
-            java.lang.reflect.Field field = TSqlCheck.class.getDeclaredField(fieldName);
-            field.setAccessible(true);
-            field.set(this, value);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Unable to set field " + fieldName, e);
-        }
     }
 }

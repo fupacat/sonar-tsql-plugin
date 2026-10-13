@@ -1,6 +1,5 @@
 package io.github.fupacat.sonar.tsql.checks;
 
-import io.github.fupacat.ast.StatementList;
 import io.github.fupacat.ast.ThrowStatement;
 import io.github.fupacat.ast.TryCatchStatement;
 
