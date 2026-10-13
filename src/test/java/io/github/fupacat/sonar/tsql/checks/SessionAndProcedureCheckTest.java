@@ -26,10 +26,24 @@ class SessionAndProcedureCheckTest {
     }
 
     @Test
+    void testSetNoCountIsCompliantWhenEnabled() {
+        List<String> issues = CheckTestUtils.scan(setNoCountCheck,
+                "CREATE PROCEDURE p AS BEGIN SET NOCOUNT ON; SELECT 1; END");
+        assertThat(issues).isEmpty();
+    }
+
+    @Test
     void testSetWarningsRule() {
         List<String> issues = CheckTestUtils.scan(warningsCheck,
                 "SET ANSI_WARNINGS OFF; SET ARITHABORT OFF;");
         assertThat(issues).hasSize(1);
+    }
+
+    @Test
+    void testSetWarningsAreCompliantWhenEnabled() {
+        List<String> issues = CheckTestUtils.scan(warningsCheck,
+                "SET ANSI_WARNINGS ON; SET ARITHABORT ON;");
+        assertThat(issues).isEmpty();
     }
 
     @Test
@@ -40,10 +54,24 @@ class SessionAndProcedureCheckTest {
     }
 
     @Test
+    void testSetAnsiNullsAreCompliantWhenEnabled() {
+        List<String> issues = CheckTestUtils.scan(ansiNullsCheck,
+                "SET ANSI_NULLS ON; SET ANSI_PADDING ON; SET CONCAT_NULL_YIELDS_NULL ON;");
+        assertThat(issues).isEmpty();
+    }
+
+    @Test
     void testDeprecatedSystemTablesRule() {
         List<String> issues = CheckTestUtils.scan(deprecatedTablesCheck,
                 "SELECT * FROM sysobjects;");
         assertThat(issues).hasSize(1);
+    }
+
+    @Test
+    void testDeprecatedSystemTablesAreCompliantWhenUsingSysCatalogViews() {
+        List<String> issues = CheckTestUtils.scan(deprecatedTablesCheck,
+                "SELECT * FROM sys.objects;");
+        assertThat(issues).isEmpty();
     }
 
     @Test
@@ -54,10 +82,24 @@ class SessionAndProcedureCheckTest {
     }
 
     @Test
+    void testFetchIntoCursorCountIsCompliantWhenCountsMatch() {
+        List<String> issues = CheckTestUtils.scan(fetchIntoCursorCountCheck,
+                "DECLARE c CURSOR FOR SELECT a, b FROM dbo.T; FETCH NEXT FROM c INTO @a, @b;");
+        assertThat(issues).isEmpty();
+    }
+
+    @Test
     void testCaseSubqueryRule() {
         List<String> issues = CheckTestUtils.scan(caseSubqueryCheck,
                 "SELECT COALESCE((SELECT MAX(Id) FROM Orders), 0);");
         assertThat(issues).hasSize(1);
+    }
+
+    @Test
+    void testCaseSubqueryIsCompliantWhenUsingSimpleValues() {
+        List<String> issues = CheckTestUtils.scan(caseSubqueryCheck,
+                "SELECT COALESCE(LastOrderId, 0) AS LastOrderId FROM dbo.Customers;");
+        assertThat(issues).isEmpty();
     }
 
     @Test
@@ -68,6 +110,13 @@ class SessionAndProcedureCheckTest {
     }
 
     @Test
+    void testTriggerResultSetIsCompliantWithoutResultEmission() {
+        List<String> issues = CheckTestUtils.scan(triggerResultSetCheck,
+                "CREATE TRIGGER t ON dbo.Test AFTER UPDATE AS SET NOCOUNT ON; UPDATE dbo.Test SET Value = Value + 1;");
+        assertThat(issues).isEmpty();
+    }
+
+    @Test
     void testLikeWithoutWildcardRule() {
         List<String> issues = CheckTestUtils.scan(likeWithoutWildcardCheck,
                 "SELECT Id FROM Customers WHERE CompanyName LIKE 'Acme';");
@@ -75,9 +124,23 @@ class SessionAndProcedureCheckTest {
     }
 
     @Test
+    void testLikeWithoutWildcardIsCompliantWhenUsingWildcards() {
+        List<String> issues = CheckTestUtils.scan(likeWithoutWildcardCheck,
+                "SELECT Id FROM Customers WHERE CompanyName LIKE '%Acme%';");
+        assertThat(issues).isEmpty();
+    }
+
+    @Test
     void testNonStandardComparisonRule() {
         List<String> issues = CheckTestUtils.scan(nonStandardComparisonCheck,
                 "SELECT Id FROM Customers WHERE Name != 'Acme' OR Amount !< 10 OR Score !> 9;");
         assertThat(issues).hasSize(3);
+    }
+
+    @Test
+    void testNonStandardComparisonIsCompliantWhenUsingIsoOperators() {
+        List<String> issues = CheckTestUtils.scan(nonStandardComparisonCheck,
+                "SELECT Id FROM Customers WHERE Name <> 'Acme' OR Amount <= 10 OR Score >= 9;");
+        assertThat(issues).isEmpty();
     }
 }
