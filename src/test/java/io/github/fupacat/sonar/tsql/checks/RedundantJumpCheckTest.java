@@ -24,4 +24,18 @@ class RedundantJumpCheckTest {
         List<String> issues = CheckTestUtils.scan(check, sql);
         assertThat(issues).isEmpty();
     }
+
+    @Test
+    void testFlagsNestedTrailingReturnInCreateOrAlterProcedure() {
+        String sql = "CREATE OR ALTER PROCEDURE dbo.p AS BEGIN BEGIN RETURN; END END;";
+        List<String> issues = CheckTestUtils.scan(check, sql);
+        assertThat(issues).hasSize(1);
+    }
+
+    @Test
+    void testAllowsAlterProcedureWithoutTrailingReturn() {
+        String sql = "ALTER PROCEDURE dbo.p AS BEGIN SELECT 1; END;";
+        List<String> issues = CheckTestUtils.scan(check, sql);
+        assertThat(issues).isEmpty();
+    }
 }
