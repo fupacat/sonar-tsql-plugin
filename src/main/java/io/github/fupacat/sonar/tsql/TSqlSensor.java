@@ -148,6 +148,10 @@ public class TSqlSensor implements Sensor {
             this(inputFile, sensorContext, rootFragment, null, null);
         }
 
+        public SensorCheckContext(InputFile inputFile, SensorContext sensorContext, TSqlFragment rootFragment, ProjectSchemaCatalog projectSchema) {
+            this(inputFile, sensorContext, rootFragment, null, projectSchema);
+        }
+
         public SensorCheckContext(InputFile inputFile, SensorContext sensorContext, TSqlFragment rootFragment, String sourceText, ProjectSchemaCatalog projectSchema) {
             this.inputFile = inputFile;
             this.sensorContext = sensorContext;
