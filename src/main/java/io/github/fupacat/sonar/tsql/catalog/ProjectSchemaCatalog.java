@@ -163,23 +163,6 @@ public final class ProjectSchemaCatalog {
         }
     }
 
-    private String schemaName(SchemaObjectName name) {
-        if (name == null) {
-            return "";
-        }
-        StringBuilder builder = new StringBuilder();
-        if (name.DatabaseIdentifier != null && name.DatabaseIdentifier.Value != null) {
-            builder.append(name.DatabaseIdentifier.Value).append('.');
-        }
-        if (name.SchemaIdentifier != null && name.SchemaIdentifier.Value != null) {
-            builder.append(name.SchemaIdentifier.Value).append('.');
-        }
-        if (name.BaseIdentifier != null && name.BaseIdentifier.Value != null) {
-            builder.append(name.BaseIdentifier.Value);
-        }
-        return builder.toString();
-    }
-
     private String normalizeTableName(String tableName) {
         if (tableName == null || tableName.isBlank()) {
             return "";
@@ -345,10 +328,10 @@ public final class ProjectSchemaCatalog {
             }
             int thisSize = effectiveLength();
             int otherSize = other.effectiveLength();
-            if (thisSize <= 0 || otherSize <= 0) {
+            if (thisSize <= 0 || otherSize <= 0 || thisSize >= otherSize) {
                 return false;
             }
-            return thisSize < otherSize;
+            return true;
         }
 
         private TypeFamily family() {
@@ -408,6 +391,23 @@ public final class ProjectSchemaCatalog {
         public void visit(CreateIndexStatement node) {
             registerStandaloneIndex(node);
             super.visit(node);
+        }
+
+        private String schemaName(SchemaObjectName name) {
+            if (name == null) {
+                return "";
+            }
+            StringBuilder builder = new StringBuilder();
+            if (name.DatabaseIdentifier != null && name.DatabaseIdentifier.Value != null) {
+                builder.append(name.DatabaseIdentifier.Value).append('.');
+            }
+            if (name.SchemaIdentifier != null && name.SchemaIdentifier.Value != null) {
+                builder.append(name.SchemaIdentifier.Value).append('.');
+            }
+            if (name.BaseIdentifier != null && name.BaseIdentifier.Value != null) {
+                builder.append(name.BaseIdentifier.Value);
+            }
+            return builder.toString();
         }
 
         private void indexTableDefinition(TableSchema table, CreateTableStatement node) {

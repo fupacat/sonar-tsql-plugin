@@ -8,11 +8,13 @@ public class InPredicateIndexedColumnCheck extends TSqlCheck {
 
     public static final String RULE_KEY = "SR0004";
 
+    // TRACEABILITY_MAPPING: REQ-016
     @Override
     public String getRuleKey() {
         return RULE_KEY;
     }
 
+    // TRACEABILITY_MAPPING: REQ-016
     @Override
     public void visit(InPredicate node) {
         ProjectSchemaCatalog catalog = getProjectSchema();

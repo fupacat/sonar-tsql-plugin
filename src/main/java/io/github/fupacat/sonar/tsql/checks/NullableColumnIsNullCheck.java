@@ -8,11 +8,13 @@ public class NullableColumnIsNullCheck extends TSqlCheck {
 
     public static final String RULE_KEY = "SR0007";
 
+    // TRACEABILITY_MAPPING: REQ-017
     @Override
     public String getRuleKey() {
         return RULE_KEY;
     }
 
+    // TRACEABILITY_MAPPING: REQ-017
     @Override
     public void visit(CoalesceExpression node) {
         ProjectSchemaCatalog catalog = getProjectSchema();

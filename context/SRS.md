@@ -212,3 +212,45 @@
 }
 ```
 
+[REQ-016] InPredicateIndexedColumnCheck SHALL flag IN predicates whose left-hand column is not known to be indexed.
+
+```json
+{
+  "requirement": "REQ-016",
+  "kind": "categorical",
+  "precondition": "IN predicate against a table column parsed",
+  "action": "invoke InPredicateIndexedColumnCheck scan",
+  "expected": "issue reported when the column is absent from the project schema catalog or not indexed",
+  "method": "junit",
+  "expected_output": "void"
+}
+```
+
+[REQ-017] NullableColumnIsNullCheck SHALL flag COALESCE expressions that take a nullable column as the first argument.
+
+```json
+{
+  "requirement": "REQ-017",
+  "kind": "categorical",
+  "precondition": "COALESCE expression over a nullable table column parsed",
+  "action": "invoke NullableColumnIsNullCheck scan",
+  "expected": "issue reported for nullable-column COALESCE patterns",
+  "method": "junit",
+  "expected_output": "void"
+}
+```
+
+[REQ-018] NarrowingCastCheck SHALL flag CAST/CONVERT/TRY_CONVERT operations that narrow a source column into a shorter or smaller type.
+
+```json
+{
+  "requirement": "REQ-018",
+  "kind": "categorical",
+  "precondition": "CAST/CONVERT target type and source column metadata resolved from project schema",
+  "action": "invoke NarrowingCastCheck scan",
+  "expected": "issue reported when target type or length is narrower than the source column",
+  "method": "junit",
+  "expected_output": "void"
+}
+```
+

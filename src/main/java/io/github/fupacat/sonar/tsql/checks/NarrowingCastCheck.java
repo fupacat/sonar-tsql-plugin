@@ -14,23 +14,27 @@ public class NarrowingCastCheck extends TSqlCheck {
     public static final String RULE_KEY = "SR0014";
     private static final String UNKNOWN_TYPE = "unknown";
 
+    // TRACEABILITY_MAPPING: REQ-018
     @Override
     public String getRuleKey() {
         return RULE_KEY;
     }
 
+    // TRACEABILITY_MAPPING: REQ-018
     @Override
     public void visit(CastCall node) {
         checkCast(node.DataType, node.Parameter, node);
         super.visit(node);
     }
 
+    // TRACEABILITY_MAPPING: REQ-018
     @Override
     public void visit(ConvertCall node) {
         checkCast(node.DataType, node.Parameter, node);
         super.visit(node);
     }
 
+    // TRACEABILITY_MAPPING: REQ-018
     @Override
     public void visit(TryConvertCall node) {
         checkCast(node.DataType, node.Parameter, node);
