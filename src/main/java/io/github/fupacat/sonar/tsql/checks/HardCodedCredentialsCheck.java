@@ -94,7 +94,15 @@ public class HardCodedCredentialsCheck extends TSqlCheck {
     }
 
     private boolean isNonEmptyString(Literal literal) {
-        return literal != null && literal.Value != null && !literal.Value.isBlank();
+        if (literal == null || literal.Value == null) {
+            return false;
+        }
+        String val = literal.Value.trim();
+        if ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith("N'") && val.endsWith("'"))) {
+            int start = val.startsWith("N'") ? 2 : 1;
+            val = val.substring(start, val.length() - 1);
+        }
+        return !val.isBlank();
     }
 
     private String safeLiteralValue(Literal literal) {
