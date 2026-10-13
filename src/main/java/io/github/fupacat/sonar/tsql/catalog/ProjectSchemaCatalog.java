@@ -54,7 +54,7 @@ public final class ProjectSchemaCatalog {
             if (inputFile != null) {
                 try {
                     String content = inputFile.contents();
-                    ParseResult<TSqlScript> result = new TSqlParser().parse(content);
+                    ParseResult<TSqlScript> result = TSqlParser.parse(content);
                     if (result != null && result.fragment() != null) {
                         catalog.indexScript(result.fragment());
                     }
@@ -151,18 +151,7 @@ public final class ProjectSchemaCatalog {
         return resolveColumn(expression).map(ColumnInfo::toTypeInfo);
     }
 
-    private void registerTable(String tableName, TableSchema table) {
-        if (tableName == null || tableName.isBlank()) {
-            return;
-        }
-        String normalized = normalizeTableName(tableName);
-        TableSchema target = tables.computeIfAbsent(normalized, key -> new TableSchema(normalized));
-        for (Map.Entry<String, ColumnInfo> entry : table.columns.entrySet()) {
-            target.columns.putIfAbsent(entry.getKey(), entry.getValue());
-        }
-    }
-
-    private String normalizeTableName(String tableName) {
+    static String normalizeTableName(String tableName) {
         if (tableName == null || tableName.isBlank()) {
             return "";
         }
@@ -174,14 +163,14 @@ public final class ProjectSchemaCatalog {
         return normalized.toLowerCase(Locale.ROOT);
     }
 
-    private String normalizeColumnName(String columnName) {
+    private static String normalizeColumnName(String columnName) {
         if (columnName == null || columnName.isBlank()) {
             return "";
         }
         return stripDelimiters(columnName.trim()).toLowerCase(Locale.ROOT);
     }
 
-    private String stripDelimiters(String value) {
+    private static String stripDelimiters(String value) {
         if (value == null || value.isBlank()) {
             return "";
         }
@@ -195,7 +184,7 @@ public final class ProjectSchemaCatalog {
         return builder.toString();
     }
 
-    private String tableNameFrom(MultiPartIdentifier multiPartIdentifier) {
+    private static String tableNameFrom(MultiPartIdentifier multiPartIdentifier) {
         if (multiPartIdentifier == null || multiPartIdentifier.Identifiers == null || multiPartIdentifier.Identifiers.isEmpty()) {
             return null;
         }
@@ -205,21 +194,12 @@ public final class ProjectSchemaCatalog {
         return null;
     }
 
-    private String lastIdentifier(MultiPartIdentifier multiPartIdentifier) {
+    private static String lastIdentifier(MultiPartIdentifier multiPartIdentifier) {
         if (multiPartIdentifier == null || multiPartIdentifier.Identifiers == null || multiPartIdentifier.Identifiers.isEmpty()) {
             return "";
         }
         Identifier identifier = multiPartIdentifier.Identifiers.get(multiPartIdentifier.Identifiers.size() - 1);
         return identifier != null ? identifier.Value : "";
-    }
-
-    private void registerIndex(String tableName, List<String> columns) {
-        if (tableName == null || tableName.isBlank() || columns == null || columns.isEmpty()) {
-            return;
-        }
-        String normalized = normalizeTableName(tableName);
-        indexedColumnsByTable.computeIfAbsent(normalized, key -> new HashSet<>())
-                .addAll(columns.stream().map(this::normalizeColumnName).toList());
     }
 
     public static final class TableSchema {
@@ -432,33 +412,54 @@ public final class ProjectSchemaCatalog {
             }
         }
 
+        private void registerTable(String tableName, TableSchema table) {
+            if (tableName == null || tableName.isBlank()) {
+                return;
+            }
+            String normalized = normalizeTableName(tableName);
+            TableSchema target = tables.computeIfAbsent(normalized, key -> new TableSchema(normalized));
+            for (Map.Entry<String, ColumnInfo> entry : table.columns.entrySet()) {
+                target.columns.putIfAbsent(entry.getKey(), entry.getValue());
+            }
+        }
+
+        private void registerIndex(String tableName, List<String> columns) {
+            if (tableName == null || tableName.isBlank() || columns == null || columns.isEmpty()) {
+                return;
+            }
+            String normalized = normalizeTableName(tableName);
+            indexedColumnsByTable.computeIfAbsent(normalized, key -> new HashSet<>())
+                    .addAll(columns.stream().map(ProjectSchemaCatalog::normalizeColumnName).toList());
+        }
+
         private void registerInlineColumnIndexes(String tableName, List<ColumnDefinition> columnDefinitions) {
             if (tableName == null || tableName.isBlank() || columnDefinitions == null) {
                 return;
             }
             for (ColumnDefinition columnDefinition : columnDefinitions) {
-                if (columnDefinition == null || columnDefinition.Constraints == null) {
-                    continue;
+                if (columnDefinition != null && columnDefinition.Constraints != null) {
+                    registerColumnConstraintIndexes(tableName, columnDefinition);
                 }
-                for (ConstraintDefinition constraint : columnDefinition.Constraints) {
-                    if (!(constraint instanceof UniqueConstraintDefinition uniqueConstraint)) {
-                        continue;
-                    }
-                    List<String> columnNames = new ArrayList<>();
-                    if (uniqueConstraint.Columns != null && !uniqueConstraint.Columns.isEmpty()) {
-                        columnNames.addAll(extractIndexColumns(uniqueConstraint.Columns));
-                    }
-                    if (columnNames.isEmpty()) {
-                        String columnName = columnDefinition.ColumnIdentifier != null ? columnDefinition.ColumnIdentifier.Value : null;
-                        if (columnName != null && !columnName.isBlank()) {
-                            columnNames.add(columnName);
-                        }
-                    }
+            }
+        }
+
+        private void registerColumnConstraintIndexes(String tableName, ColumnDefinition columnDefinition) {
+            for (ConstraintDefinition constraint : columnDefinition.Constraints) {
+                if (constraint instanceof UniqueConstraintDefinition uniqueConstraint) {
+                    List<String> columnNames = extractConstraintColumnNames(columnDefinition, uniqueConstraint);
                     if (!columnNames.isEmpty()) {
                         registerIndex(tableName, columnNames);
                     }
                 }
             }
+        }
+
+        private List<String> extractConstraintColumnNames(ColumnDefinition columnDefinition, UniqueConstraintDefinition uniqueConstraint) {
+            if (uniqueConstraint.Columns != null && !uniqueConstraint.Columns.isEmpty()) {
+                return extractIndexColumns(uniqueConstraint.Columns);
+            }
+            String columnName = columnDefinition.ColumnIdentifier != null ? columnDefinition.ColumnIdentifier.Value : null;
+            return (columnName != null && !columnName.isBlank()) ? List.of(columnName) : List.of();
         }
 
         private boolean isNullable(List<ConstraintDefinition> constraints) {
@@ -524,20 +525,11 @@ public final class ProjectSchemaCatalog {
         }
 
         private Integer parseLengthLiteral(Literal literal) {
-            if (literal == null || literal.Value == null) {
-                return null;
-            }
-            String cleaned = literal.Value.trim();
-            if (cleaned.startsWith("N'") && cleaned.endsWith("'") && cleaned.length() > 2) {
-                cleaned = cleaned.substring(2, cleaned.length() - 1);
-            } else if (cleaned.startsWith("'") && cleaned.endsWith("'") && cleaned.length() > 1) {
-                cleaned = cleaned.substring(1, cleaned.length() - 1);
-            }
-            if (cleaned.isBlank()) {
+            if (literal == null || literal.Value == null || literal.Value.isBlank()) {
                 return null;
             }
             try {
-                return Integer.parseInt(cleaned);
+                return Integer.parseInt(literal.Value.trim());
             } catch (NumberFormatException ignored) {
                 // ignore non-numeric parameters such as precision/scale pairs
                 return null;

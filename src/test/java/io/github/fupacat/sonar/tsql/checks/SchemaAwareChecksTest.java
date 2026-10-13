@@ -129,6 +129,18 @@ class SchemaAwareChecksTest {
         assertThat(issues).isEmpty();
     }
 
+    // TRACEABILITY_MAPPING: REQ-009
+    @Test
+    void testUserDefinedTypeAndNullCheckInNarrowingCast() {
+        List<String> issues = CheckTestUtils.scan(narrowingCastCheck,
+                "CREATE TABLE Items (Code VARCHAR(100)); " +
+                        "SELECT CAST(Code AS VARCHAR(10)) FROM Items;");
+        assertThat(issues).hasSize(1);
+
+        // Null target / source
+        assertThat(CheckTestUtils.scan(narrowingCastCheck, "SELECT 1;")).isEmpty();
+    }
+
     // TRACEABILITY_MAPPING: REQ-016
     @Test
     void testProjectSchemaCatalogTracksTableMetadata() {

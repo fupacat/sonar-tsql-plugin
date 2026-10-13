@@ -249,6 +249,22 @@ class ProjectSchemaCatalogTest {
         assertThat(inlineIndexCatalog.getTable("Products").orElseThrow().getColumn("Code")).isPresent();
         assertThat(inlineIndexCatalog.getTable("Products").orElseThrow().getColumn("Code").orElseThrow().getSqlType()).isEqualTo("MyCustomType");
         assertThat(inlineIndexCatalog.getTable("Products").orElseThrow().getColumn("Code").orElseThrow().getLength()).isEqualTo(25);
+
+        // Column with inline UniqueConstraintDefinition
+        ProjectSchemaCatalog uqCatalog = new ProjectSchemaCatalog();
+        var createStmt = new io.github.fupacat.ast.CreateTableStatement();
+        createStmt.SchemaObjectName = new io.github.fupacat.ast.SchemaObjectName();
+        createStmt.SchemaObjectName.BaseIdentifier = new io.github.fupacat.ast.Identifier();
+        createStmt.SchemaObjectName.BaseIdentifier.Value = "TestTable";
+        createStmt.Definition = new io.github.fupacat.ast.TableDefinition();
+        var colDef = new io.github.fupacat.ast.ColumnDefinition();
+        colDef.ColumnIdentifier = new io.github.fupacat.ast.Identifier();
+        colDef.ColumnIdentifier.Value = "ColA";
+        var uq = new io.github.fupacat.ast.UniqueConstraintDefinition();
+        colDef.Constraints = List.of(uq);
+        createStmt.Definition.ColumnDefinitions = List.of(colDef);
+        uqCatalog.indexScript(createStmt);
+        assertThat(uqCatalog.hasTable("TestTable")).isTrue();
     }
 
     private static ProjectSchemaCatalog catalogFromSql(String sql) {

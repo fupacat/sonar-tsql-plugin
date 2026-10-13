@@ -70,23 +70,19 @@ public class NarrowingCastCheck extends TSqlCheck {
             return null;
         }
         String typeName = UNKNOWN_TYPE;
-        Integer length = null;
         if (dataTypeReference instanceof SqlDataTypeReference sqlDataTypeReference) {
             if (sqlDataTypeReference.SqlDataTypeOption != null) {
                 typeName = sqlDataTypeReference.SqlDataTypeOption.name();
             }
-            length = readLength(sqlDataTypeReference);
-        } else if (dataTypeReference instanceof ParameterizedDataTypeReference parameterizedDataTypeReference) {
-            if (parameterizedDataTypeReference.Name != null && parameterizedDataTypeReference.Name.BaseIdentifier != null) {
-                typeName = parameterizedDataTypeReference.Name.BaseIdentifier.Value;
-            }
-            length = readLength(parameterizedDataTypeReference);
+        } else if (dataTypeReference.Name != null && dataTypeReference.Name.BaseIdentifier != null) {
+            typeName = dataTypeReference.Name.BaseIdentifier.Value;
         }
-        return typeName == null ? null : new ProjectSchemaCatalog.TypeInfo(typeName, length);
+        Integer length = dataTypeReference instanceof ParameterizedDataTypeReference parameterized ? readLength(parameterized) : null;
+        return new ProjectSchemaCatalog.TypeInfo(typeName, length);
     }
 
     private Integer readLength(ParameterizedDataTypeReference typeReference) {
-        if (typeReference == null || typeReference.Parameters == null) {
+        if (typeReference.Parameters == null) {
             return null;
         }
         for (var literal : typeReference.Parameters) {
@@ -102,14 +98,8 @@ public class NarrowingCastCheck extends TSqlCheck {
         if (value == null || value.isBlank()) {
             return null;
         }
-        String cleaned = value.trim();
-        if (cleaned.startsWith("N'") && cleaned.endsWith("'") && cleaned.length() > 2) {
-            cleaned = cleaned.substring(2, cleaned.length() - 1);
-        } else if (cleaned.startsWith("'") && cleaned.endsWith("'") && cleaned.length() > 1) {
-            cleaned = cleaned.substring(1, cleaned.length() - 1);
-        }
         try {
-            return Integer.parseInt(cleaned);
+            return Integer.parseInt(value.trim());
         } catch (NumberFormatException ignored) {
             // ignore metadata that is not a scalar length value
             return null;
