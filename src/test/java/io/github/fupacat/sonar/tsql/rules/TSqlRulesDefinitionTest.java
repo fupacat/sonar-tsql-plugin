@@ -23,8 +23,8 @@ class TSqlRulesDefinitionTest {
         assertThat(repository.name()).isEqualTo(TSqlRulesDefinition.REPOSITORY_NAME);
         assertThat(repository.language()).isEqualTo(TSqlLanguage.KEY);
 
-        // Verify all 30 rules are registered
-        assertThat(repository.rules()).hasSize(30);
+        // Verify all 33 rules are registered
+        assertThat(repository.rules()).hasSize(33);
 
         RulesDefinition.Rule selectAllRule = repository.rule(AvoidSelectAllCheck.RULE_KEY);
         assertThat(selectAllRule).isNotNull();
@@ -71,6 +71,21 @@ class TSqlRulesDefinitionTest {
         assertThat(caseInvariantRule).isNotNull();
         assertThat(caseInvariantRule.severity()).isEqualTo(Severity.CRITICAL);
         assertThat(caseInvariantRule.type()).isEqualTo(RuleType.BUG);
+
+        RulesDefinition.Rule dynamicSqlRule = repository.rule(DynamicSqlExecutionCheck.RULE_KEY);
+        assertThat(dynamicSqlRule).isNotNull();
+        assertThat(dynamicSqlRule.severity()).isEqualTo(Severity.CRITICAL);
+        assertThat(dynamicSqlRule.type()).isEqualTo(RuleType.VULNERABILITY);
+
+        RulesDefinition.Rule weakHashRule = repository.rule(WeakHashCheck.RULE_KEY);
+        assertThat(weakHashRule).isNotNull();
+        assertThat(weakHashRule.severity()).isEqualTo(Severity.CRITICAL);
+        assertThat(weakHashRule.type()).isEqualTo(RuleType.VULNERABILITY);
+
+        RulesDefinition.Rule hardCodedCredentialsRule = repository.rule(HardCodedCredentialsCheck.RULE_KEY);
+        assertThat(hardCodedCredentialsRule).isNotNull();
+        assertThat(hardCodedCredentialsRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(hardCodedCredentialsRule.type()).isEqualTo(RuleType.VULNERABILITY);
 
         RulesDefinition.Rule primaryKeyRule = repository.rule(PrimaryKeyRequiredCheck.RULE_KEY);
         assertThat(primaryKeyRule).isNotNull();
