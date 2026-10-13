@@ -372,6 +372,7 @@ public final class ProjectSchemaCatalog {
             }
             indexColumns(table, node.Definition.ColumnDefinitions);
             registerConstraintIndexes(table.tableName, node.Definition.TableConstraints);
+            registerPrimaryKeyNullability(table, node.Definition.TableConstraints);
             registerInlineColumnIndexes(table.tableName, node.Definition.ColumnDefinitions);
             if (node.Definition.Indexes != null) {
                 for (IndexDefinition indexDefinition : node.Definition.Indexes) {
@@ -408,6 +409,20 @@ public final class ProjectSchemaCatalog {
             for (ConstraintDefinition constraint : constraints) {
                 if (constraint instanceof UniqueConstraintDefinition uniqueConstraint) {
                     registerIndex(tableName, extractIndexColumns(uniqueConstraint.Columns));
+                }
+            }
+        }
+
+        private void registerPrimaryKeyNullability(TableSchema table, List<ConstraintDefinition> constraints) {
+            if (table == null || constraints == null) {
+                return;
+            }
+            for (ConstraintDefinition constraint : constraints) {
+                if (!(constraint instanceof UniqueConstraintDefinition uniqueConstraint) || !uniqueConstraint.IsPrimaryKey || uniqueConstraint.Columns == null) {
+                    continue;
+                }
+                for (String columnName : extractIndexColumns(uniqueConstraint.Columns)) {
+                    table.getColumn(columnName).ifPresent(column -> table.addColumn(new ColumnInfo(column.name(), false, column.sqlType(), column.length())));
                 }
             }
         }
@@ -469,6 +484,9 @@ public final class ProjectSchemaCatalog {
             for (ConstraintDefinition constraint : constraints) {
                 if (constraint instanceof NullableConstraintDefinition nullableConstraint) {
                     return nullableConstraint.Nullable;
+                }
+                if (constraint instanceof UniqueConstraintDefinition uniqueConstraint && uniqueConstraint.IsPrimaryKey) {
+                    return false;
                 }
             }
             return true;

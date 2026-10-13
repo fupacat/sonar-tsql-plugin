@@ -60,6 +60,16 @@ class SchemaAwareChecksTest {
 
     // TRACEABILITY_MAPPING: REQ-009
     @Test
+    void testPrimaryKeyColumnIsNotTreatedAsNullable() {
+        List<String> issues = CheckTestUtils.scan(nullableColumnCheck,
+                "CREATE TABLE Orders (OrderId INT NOT NULL PRIMARY KEY, CustomerId INT NULL); " +
+                        "SELECT COALESCE(CustomerId, 0) FROM Orders;");
+        assertThat(issues).hasSize(1);
+        assertThat(issues.get(0)).contains("Use ISNULL");
+    }
+
+    // TRACEABILITY_MAPPING: REQ-009
+    @Test
     void testNarrowingCastFlagged() {
         List<String> issues = CheckTestUtils.scan(narrowingCastCheck,
                 "CREATE TABLE Orders (CustomerId INT, OrderId INT); " +
