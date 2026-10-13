@@ -11,6 +11,7 @@ public abstract class TSqlCheck extends TSqlConcreteFragmentVisitor {
 
     private TSqlCheckContext context;
     private TSqlFragment root;
+    private String sourceText;
 
     /**
      * @return unique rule key registered in SonarQube rules repository
@@ -28,13 +29,9 @@ public abstract class TSqlCheck extends TSqlConcreteFragmentVisitor {
     public void scan(TSqlFragment root, TSqlCheckContext context) {
         this.context = context;
         this.root = root;
-        try {
-            if (root != null) {
-                root.accept(this);
-            }
-        } finally {
-            this.context = null;
-            this.root = null;
+        this.sourceText = context != null ? context.getSourceText() : null;
+        if (root != null) {
+            root.accept(this);
         }
     }
 
@@ -46,14 +43,12 @@ public abstract class TSqlCheck extends TSqlConcreteFragmentVisitor {
         return root;
     }
 
-    /**
-     * @return the raw source text associated with the current root fragment, if any
-     */
     protected String getSourceText() {
-        if (root != null && root.Value != null) {
-            return root.Value;
-        }
-        return "";
+        return sourceText;
+    }
+
+    protected void setSourceText(String sourceText) {
+        this.sourceText = sourceText;
     }
 
     /**

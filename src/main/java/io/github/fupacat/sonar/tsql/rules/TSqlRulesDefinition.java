@@ -527,6 +527,132 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setStatus(RuleStatus.READY)
                 .setTags(TAG_SQL_SERVER, "naming");
 
+        repository.createRule(SetNoCountCheck.RULE_KEY)
+                .setName("SET NOCOUNT ON should be enabled in procedures and triggers")
+                .setHtmlDescription(
+                        "<p>Stored procedures and triggers should set <code>NOCOUNT</code> to <code>ON</code> to avoid sending row count messages to clients.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>CREATE PROCEDURE p AS BEGIN SET NOCOUNT OFF; SELECT 1; END</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>CREATE PROCEDURE p AS BEGIN SET NOCOUNT ON; SELECT 1; END</pre>")
+                .setSeverity(Severity.CRITICAL)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "performance", "procedure");
+
+        // Rule 11: S6498
+        repository.createRule(SetAnsiWarningsAndArithabortCheck.RULE_KEY)
+                .setName("ANSI_WARNINGS and ARITHABORT should not be set to OFF")
+                .setHtmlDescription(
+                        "<p>Turning off <code>ANSI_WARNINGS</code> or <code>ARITHABORT</code> can hide errors and change query semantics.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>SET ANSI_WARNINGS OFF; SET ARITHABORT OFF;</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>SET ANSI_WARNINGS ON; SET ARITHABORT ON;</pre>")
+                .setSeverity(Severity.CRITICAL)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "session-settings");
+
+        // Rule 12: S4154
+        repository.createRule(SetAnsiNullsCheck.RULE_KEY)
+                .setName("ANSI_NULLS, ANSI_PADDING, and CONCAT_NULL_YIELDS_NULL should not be toggled off")
+                .setHtmlDescription(
+                        "<p>Disabling these session settings changes comparison and concatenation semantics in ways that can produce unexpected results.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>SET ANSI_NULLS OFF; SET ANSI_PADDING OFF; SET CONCAT_NULL_YIELDS_NULL OFF;</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>SET ANSI_NULLS ON; SET ANSI_PADDING ON; SET CONCAT_NULL_YIELDS_NULL ON;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "session-settings");
+
+        // Rule 13: S4155
+        repository.createRule(AvoidDeprecatedSystemTablesCheck.RULE_KEY)
+                .setName("Deprecated SQL Server system tables should be replaced")
+                .setHtmlDescription(
+                        "<p>Legacy compatibility tables such as <code>sysobjects</code> or <code>syscolumns</code> are deprecated; prefer the modern <code>sys</code> catalog views.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>SELECT * FROM sysobjects;</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>SELECT * FROM sys.objects;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "obsolete");
+
+        // Rule 14: S4103
+        repository.createRule(FetchIntoCursorCountCheck.RULE_KEY)
+                .setName("FETCH INTO variable count must match cursor column count")
+                .setHtmlDescription(
+                        "<p>Every variable in a <code>FETCH INTO</code> must correspond to one selected column in the cursor declaration.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>DECLARE c CURSOR FOR SELECT a, b FROM t; FETCH NEXT FROM c INTO @a;</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>DECLARE c CURSOR FOR SELECT a, b FROM t; FETCH NEXT FROM c INTO @a, @b;</pre>")
+                .setSeverity(Severity.CRITICAL)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "cursor");
+
+        // Rule 15: S4104
+        repository.createRule(CaseSubqueryCheck.RULE_KEY)
+                .setName("CASE, COALESCE, and IIF inputs should not contain subqueries")
+                .setHtmlDescription(
+                        "<p>Subqueries used as expression inputs to <code>COALESCE</code>, <code>IIF</code>, or <code>CASE</code> make logic less predictable and harder to optimize.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>SELECT COALESCE((SELECT MAX(Id) FROM Orders), 0);</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>SELECT COALESCE(LastOrderId, 0);</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "logic");
+
+        // Rule 16: S4109
+        repository.createRule(TriggerResultSetCheck.RULE_KEY)
+                .setName("Triggers should not return result sets")
+                .setHtmlDescription(
+                        "<p>Triggers should not issue <code>SELECT</code>, <code>PRINT</code>, or <code>FETCH</code> statements that return rows or messages to callers.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>CREATE TRIGGER t ON dbo.Test AFTER UPDATE AS SELECT 1;</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>CREATE TRIGGER t ON dbo.Test AFTER UPDATE AS SET NOCOUNT ON;</pre>")
+                .setSeverity(Severity.MINOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "trigger");
+
+        // Rule 17: S3643
+        repository.createRule(AvoidLikeWithoutWildcardCheck.RULE_KEY)
+                .setName("LIKE predicates without wildcards should use =")
+                .setHtmlDescription(
+                        "<p>When a predicate does not contain wildcard characters, use <code>=</code> instead of <code>LIKE</code>.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>WHERE Name LIKE 'Acme';</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>WHERE Name = 'Acme';</pre>")
+                .setSeverity(Severity.MINOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "readability");
+
+        // Rule 18: S1742
+        repository.createRule(AvoidNonStandardComparisonOperatorsCheck.RULE_KEY)
+                .setName("Replace non-standard comparison operators with ISO equivalents")
+                .setHtmlDescription(
+                        "<p>Non-standard operators such as <code>!=</code>, <code>!<</code>, and <code>!></code> are less readable than the ISO forms <code><></code>, <code>>=</code>, and <code><=</code>.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>WHERE a != b OR c !< d OR e !> f;</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>WHERE a <> b OR c <= d OR e >= f;</pre>")
+                .setSeverity(Severity.MINOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "readability");
+
+        // Rule 19: SyntaxError
         repository.createRule(CheckList.SYNTAX_ERROR_RULE_KEY)
                 .setName("T-SQL syntax error")
                 .setHtmlDescription(
