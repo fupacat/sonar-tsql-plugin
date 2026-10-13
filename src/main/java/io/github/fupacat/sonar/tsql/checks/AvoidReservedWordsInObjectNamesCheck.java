@@ -66,23 +66,10 @@ public class AvoidReservedWordsInObjectNamesCheck extends TSqlCheck {
     }
 
     private java.util.List<Identifier> extractIdentifiers(SchemaObjectName node) {
-        java.util.List<Identifier> identifiers = new java.util.ArrayList<>();
-        if (node.Identifiers != null) {
-            identifiers.addAll(node.Identifiers);
+        if (node.Identifiers != null && !node.Identifiers.isEmpty()) {
+            return node.Identifiers;
         }
-        if (node.BaseIdentifier != null) {
-            identifiers.add(node.BaseIdentifier);
-        }
-        if (node.SchemaIdentifier != null) {
-            identifiers.add(node.SchemaIdentifier);
-        }
-        if (node.DatabaseIdentifier != null) {
-            identifiers.add(node.DatabaseIdentifier);
-        }
-        if (node.ServerIdentifier != null) {
-            identifiers.add(node.ServerIdentifier);
-        }
-        return identifiers;
+        return node.BaseIdentifier != null ? java.util.List.of(node.BaseIdentifier) : java.util.List.of();
     }
 
     private String normalizeIdentifier(String value) {

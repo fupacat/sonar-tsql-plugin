@@ -34,47 +34,25 @@ public class SargableWhereCheck extends TSqlCheck {
     }
 
     private boolean isNonSargable(BooleanExpression expression) {
-        if (expression == null) {
-            return false;
-        }
         if (expression instanceof BooleanBinaryExpression booleanBinaryExpression) {
             return isNonSargable(booleanBinaryExpression.FirstExpression)
                     || isNonSargable(booleanBinaryExpression.SecondExpression);
         }
         if (expression instanceof BooleanComparisonExpression comparisonExpression) {
-            return hasEmbeddedColumn(comparisonExpression.FirstExpression)
-                    || hasEmbeddedColumn(comparisonExpression.SecondExpression);
+            return containsEmbeddedColumn(comparisonExpression.FirstExpression)
+                    || containsEmbeddedColumn(comparisonExpression.SecondExpression);
         }
         return false;
     }
 
-    private boolean hasEmbeddedColumn(ScalarExpression expression) {
-        if (expression == null) {
-            return false;
-        }
+    private boolean containsEmbeddedColumn(ScalarExpression expression) {
         if (expression instanceof ColumnReferenceExpression) {
             return false;
         }
-        if (expression instanceof BinaryExpression binaryExpression) {
-            return containsColumnReference(binaryExpression.FirstExpression)
-                    || containsColumnReference(binaryExpression.SecondExpression);
-        }
-        if (expression instanceof FunctionCall functionCall) {
-            if (functionCall.Parameters == null) {
-                return false;
-            }
-            return functionCall.Parameters.stream().anyMatch(this::containsColumnReference);
-        }
-        if (expression instanceof ParenthesisExpression parenthesisExpression) {
-            return containsColumnReference(parenthesisExpression.Expression);
-        }
-        return false;
+        return containsColumnReference(expression);
     }
 
     private boolean containsColumnReference(ScalarExpression expression) {
-        if (expression == null) {
-            return false;
-        }
         if (expression instanceof ColumnReferenceExpression) {
             return true;
         }
@@ -82,10 +60,7 @@ public class SargableWhereCheck extends TSqlCheck {
             return containsColumnReference(binaryExpression.FirstExpression)
                     || containsColumnReference(binaryExpression.SecondExpression);
         }
-        if (expression instanceof FunctionCall functionCall) {
-            if (functionCall.Parameters == null) {
-                return false;
-            }
+        if (expression instanceof FunctionCall functionCall && functionCall.Parameters != null) {
             return functionCall.Parameters.stream().anyMatch(this::containsColumnReference);
         }
         if (expression instanceof ParenthesisExpression parenthesisExpression) {

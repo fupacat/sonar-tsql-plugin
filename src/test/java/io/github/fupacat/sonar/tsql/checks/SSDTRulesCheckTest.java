@@ -24,14 +24,20 @@ class SSDTRulesCheckTest {
     }
     @Test
     void testAvoidVariableLengthDataTypeCheck() {
-        List<String> issues = CheckTestUtils.scan(avoidVariableLengthDataTypeCheck, "CREATE TABLE T (Code VARCHAR(1), Name NVARCHAR(2), Value VARCHAR(10));");
-        assertThat(issues).hasSize(2);
+        List<String> issues = CheckTestUtils.scan(avoidVariableLengthDataTypeCheck, "CREATE TABLE T (Code VARCHAR(1), Name NVARCHAR(2), Photo VARBINARY(1), Value VARCHAR(10), Other INT);");
+        assertThat(issues).hasSize(3);
     }
     @Test
     void testAvoidDeprecatedJoinSyntaxCheck() {
         List<String> issues = CheckTestUtils.scanWithContents(avoidDeprecatedJoinSyntaxCheck,
                 "SELECT * FROM Customers c, Orders o WHERE c.Id *= o.CustomerId;");
         assertThat(issues).hasSize(1);
+        List<String> issues2 = CheckTestUtils.scanWithContents(avoidDeprecatedJoinSyntaxCheck,
+                "SELECT * FROM Customers c, Orders o WHERE c.Id =* o.CustomerId;");
+        assertThat(issues2).hasSize(1);
+        List<String> ok = CheckTestUtils.scanWithContents(avoidDeprecatedJoinSyntaxCheck,
+                "SELECT * FROM Customers c LEFT JOIN Orders o ON c.Id = o.CustomerId;");
+        assertThat(ok).isEmpty();
     }
     @Test
     void testAvoidSpecialAndReservedWordsInObjectNamesCheck() {
@@ -58,6 +64,9 @@ class SSDTRulesCheckTest {
         assertThat(CheckTestUtils.scan(storedProcedureOutputParameterCheck,
                 "CREATE PROCEDURE dbo.GetValue @Result INT OUTPUT AS SELECT 1;"))
                 .hasSize(1);
+        assertThat(CheckTestUtils.scan(storedProcedureOutputParameterCheck,
+                "CREATE PROCEDURE dbo.GetValue @Input INT AS SELECT 1;"))
+                .isEmpty();
     }
 
     @Test
