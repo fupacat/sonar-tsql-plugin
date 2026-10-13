@@ -1,0 +1,52 @@
+name: "PR Lifecycle Automation"
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - converted_to_draft
+      - edited
+      - labeled
+
+jobs:
+  manage-pr:
+    name: Manage PR State & Auto-merge
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      # 1. Undraft: If PR is a draft and doesn't start with [WIP], mark it as ready for review
+      - name: Mark Draft as Ready for Review
+        if: github.event.pull_request.draft == true && !startsWith(github.event.pull_request.title, '[WIP]')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NODE_ID: ${{ github.event.pull_request.node_id }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          echo "Marking PR #${PR_NUMBER} as ready for review..."
+          gh api graphql -f query='
+            mutation($id: ID!) {
+              markPullRequestReadyForReview(input: {pullRequestId: $id}) {
+                pullRequest {
+                  id
+                  isDraft
+                }
+              }
+            }
+          ' -f id="${PR_NODE_ID}"
+
+      # 2. Auto-merge: If PR is open, not draft, not WIP, and authored by repo member/collaborator/owner, enable auto-merge (squash)
+      - name: Enable Auto-Merge
+        if: |
+          github.event.pull_request.state == 'open' &&
+          !startsWith(github.event.pull_request.title, '[WIP]') &&
+          contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          echo "Enabling auto-merge for PR #${PR_NUMBER}..."
+          gh pr merge "${PR_NUMBER}" --auto --squash || echo "Auto-merge could not be enabled (may already be enabled or repo settings require manual merge)."
