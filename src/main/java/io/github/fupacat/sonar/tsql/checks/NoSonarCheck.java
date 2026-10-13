@@ -15,8 +15,7 @@ public class NoSonarCheck extends TSqlCheck {
 
     @Override
     public void visit(TSqlScript node) {
-        TextRuleSupport.reportIssues(this, TextRuleSupport.sourceOf(node),
-                line -> TextRuleSupport.containsAnyIgnoreCase(line, "nosonar"),
+        TextRuleSupport.reportKeywordIssues(this, TextRuleSupport.sourceOf(node), "nosonar",
                 "NOSONAR comments should be reviewed and removed when not needed.");
         super.visit(node);
     }
