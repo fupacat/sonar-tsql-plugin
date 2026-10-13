@@ -21,16 +21,25 @@ jobs:
     steps:
       - name: Comment on PR to Summon Copilot
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.COPILOT_DISPATCH_TOKEN || secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
           RUN_URL: ${{ github.event.workflow_run.html_url }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
         run: |
           if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
-            echo "CI workflow '${WORKFLOW_NAME}' failed for PR #${PR_NUMBER}."
+            MARKER="<!-- copilot-ci-sha:${HEAD_SHA} -->"
+            EXISTING=$(gh api "repos/${GH_REPO}/issues/${PR_NUMBER}/comments" --jq "[.[] | select(.body | contains(\"${MARKER}\"))] | length")
+            if [ "${EXISTING:-0}" -gt 0 ]; then
+              echo "Already summoned Copilot for commit ${HEAD_SHA} on PR #${PR_NUMBER}; skipping duplicate comment."
+              exit 0
+            fi
+            echo "CI workflow '${WORKFLOW_NAME}' failed for PR #${PR_NUMBER} (commit ${HEAD_SHA})."
             gh pr comment "${PR_NUMBER}" \
-              --body "@copilot The workflow **${WORKFLOW_NAME}** failed on this pull request. Please inspect the build failure logs at ${RUN_URL}, fix the issue, and commit the update."
+              --body "${MARKER}
+          @copilot The workflow **${WORKFLOW_NAME}** failed on this pull request. Please inspect the build failure logs at ${RUN_URL}, fix the issue, and commit the update."
           else
             echo "No associated pull request found for this workflow run."
           fi
+
