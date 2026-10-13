@@ -35,6 +35,11 @@ import java.util.Set;
 
 public final class ProjectSchemaCatalog {
 
+    private static final String UNKNOWN_TYPE = "unknown";
+    private static final char DOT = '.';
+    private static final char OPEN_BRACKET = '[';
+    private static final char CLOSE_BRACKET = ']';
+
     private final Map<String, TableSchema> tables = new LinkedHashMap<>();
     private final Map<String, Set<String>> indexedColumnsByTable = new HashMap<>();
 
@@ -180,9 +185,9 @@ public final class ProjectSchemaCatalog {
             return "";
         }
         String normalized = tableName.trim();
-        if (normalized.contains(".")) {
-            String[] parts = normalized.split("\\.");
-            normalized = parts[parts.length - 1];
+        int lastDot = normalized.lastIndexOf(DOT);
+        if (lastDot >= 0 && lastDot < normalized.length() - 1) {
+            normalized = normalized.substring(lastDot + 1);
         }
         return normalized.toLowerCase(Locale.ROOT);
     }
@@ -191,7 +196,21 @@ public final class ProjectSchemaCatalog {
         if (columnName == null || columnName.isBlank()) {
             return "";
         }
-        return columnName.trim().replace("[", "").replace("]", "").toLowerCase(Locale.ROOT);
+        return stripDelimiters(columnName.trim()).toLowerCase(Locale.ROOT);
+    }
+
+    private String stripDelimiters(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder(value.length());
+        for (int i = 0; i < value.length(); i++) {
+            char ch = value.charAt(i);
+            if (ch != OPEN_BRACKET && ch != CLOSE_BRACKET) {
+                builder.append(ch);
+            }
+        }
+        return builder.toString();
     }
 
     private String tableNameFrom(MultiPartIdentifier multiPartIdentifier) {
@@ -287,6 +306,14 @@ public final class ProjectSchemaCatalog {
     }
 
     public static final class TypeInfo {
+        private enum TypeFamily {
+            NUMERIC,
+            CHARACTER,
+            TEMPORAL,
+            BINARY,
+            OTHER
+        }
+
         private final String typeName;
         private final Integer length;
 
@@ -304,11 +331,16 @@ public final class ProjectSchemaCatalog {
         }
 
         public static TypeInfo fromSqlType(String sqlType, Integer length) {
-            return new TypeInfo(sqlType == null ? "unknown" : sqlType.toLowerCase(Locale.ROOT), length);
+            return new TypeInfo(sqlType == null ? UNKNOWN_TYPE : sqlType.toLowerCase(Locale.ROOT), length);
         }
 
         public boolean isNarrowerThan(TypeInfo other) {
             if (other == null) {
+                return false;
+            }
+            TypeFamily thisFamily = family();
+            TypeFamily otherFamily = other.family();
+            if (thisFamily == TypeFamily.OTHER || thisFamily != otherFamily) {
                 return false;
             }
             int thisSize = effectiveLength();
@@ -317,6 +349,19 @@ public final class ProjectSchemaCatalog {
                 return false;
             }
             return thisSize < otherSize;
+        }
+
+        private TypeFamily family() {
+            String normalized = typeName == null ? "" : typeName.toLowerCase(Locale.ROOT);
+            return switch (normalized) {
+                case "tinyint", "smallint", "int", "integer", "bigint", "bit",
+                     "smallmoney", "money", "real", "float", "decimal", "numeric" -> TypeFamily.NUMERIC;
+                case "char", "nchar", "varchar", "nvarchar", "text", "ntext", "nvarcharmax", "varcharmax" ->
+                        TypeFamily.CHARACTER;
+                case "date", "time", "datetime", "smalldatetime", "datetime2", "datetimeoffset" -> TypeFamily.TEMPORAL;
+                case "binary", "varbinary", "image" -> TypeFamily.BINARY;
+                default -> TypeFamily.OTHER;
+            };
         }
 
         private int effectiveLength() {
@@ -352,90 +397,92 @@ public final class ProjectSchemaCatalog {
                 super.visit(node);
                 return;
             }
-            TableSchema table = new TableSchema(normalizeTableName(schemaName(node.SchemaObjectName)));
-            if (node.Definition != null) {
-                if (node.Definition.ColumnDefinitions != null) {
-                    for (ColumnDefinition columnDefinition : node.Definition.ColumnDefinitions) {
-                        if (columnDefinition == null) {
-                            continue;
-                        }
-                        String columnName = columnDefinition.ColumnIdentifier != null && columnDefinition.ColumnIdentifier.Value != null
-                                ? columnDefinition.ColumnIdentifier.Value
-                                : "";
-                        boolean nullable = true;
-                        if (columnDefinition.Constraints != null) {
-                            for (ConstraintDefinition constraint : columnDefinition.Constraints) {
-                                if (constraint instanceof NullableConstraintDefinition nullableConstraint) {
-                                    nullable = nullableConstraint.Nullable;
-                                }
-                            }
-                        }
-                        String sqlType = extractSqlType(columnDefinition.DataType);
-                        Integer length = extractLength(columnDefinition.DataType);
-                        table.addColumn(new ColumnInfo(columnName, nullable, sqlType, length));
-                    }
-                }
-                if (node.Definition.Indexes != null) {
-                    for (IndexDefinition indexDefinition : node.Definition.Indexes) {
-                        if (indexDefinition == null || indexDefinition.Columns == null || indexDefinition.Columns.isEmpty()) {
-                            continue;
-                        }
-                        List<String> columns = new ArrayList<>();
-                        for (var columnWithSortOrder : indexDefinition.Columns) {
-                            if (columnWithSortOrder != null && columnWithSortOrder.Column != null
-                                    && columnWithSortOrder.Column.MultiPartIdentifier != null) {
-                                columns.add(lastIdentifier(columnWithSortOrder.Column.MultiPartIdentifier));
-                            }
-                        }
-                        registerIndex(table.tableName, columns);
-                    }
-                }
-            }
+            String tableName = normalizeTableName(schemaName(node.SchemaObjectName));
+            TableSchema table = new TableSchema(tableName);
+            indexTableDefinition(table, node);
             registerTable(table.tableName, table);
             super.visit(node);
         }
 
         @Override
         public void visit(CreateIndexStatement node) {
-            if (node != null && node.OnName != null && node.Columns != null) {
-                String tableName = schemaName(node.OnName);
-                List<String> columns = new ArrayList<>();
-                for (var columnWithSortOrder : node.Columns) {
-                    if (columnWithSortOrder != null && columnWithSortOrder.Column != null
-                            && columnWithSortOrder.Column.MultiPartIdentifier != null) {
-                        columns.add(lastIdentifier(columnWithSortOrder.Column.MultiPartIdentifier));
-                    }
-                }
-                registerIndex(tableName, columns);
-            }
+            registerStandaloneIndex(node);
             super.visit(node);
         }
 
-        private String schemaName(SchemaObjectName name) {
-            if (name == null) {
-                return "";
+        private void indexTableDefinition(TableSchema table, CreateTableStatement node) {
+            if (table == null || node == null || node.Definition == null) {
+                return;
             }
-            StringBuilder builder = new StringBuilder();
-            if (name.DatabaseIdentifier != null && name.DatabaseIdentifier.Value != null) {
-                builder.append(name.DatabaseIdentifier.Value).append('.');
+            indexColumns(table, node.Definition.ColumnDefinitions);
+            if (node.Definition.Indexes != null) {
+                for (IndexDefinition indexDefinition : node.Definition.Indexes) {
+                    registerIndex(table.tableName, extractIndexColumns(indexDefinition == null ? null : indexDefinition.Columns));
+                }
             }
-            if (name.SchemaIdentifier != null && name.SchemaIdentifier.Value != null) {
-                builder.append(name.SchemaIdentifier.Value).append('.');
+        }
+
+        private void indexColumns(TableSchema table, List<ColumnDefinition> columnDefinitions) {
+            if (table == null || columnDefinitions == null) {
+                return;
             }
-            if (name.BaseIdentifier != null && name.BaseIdentifier.Value != null) {
-                builder.append(name.BaseIdentifier.Value);
+            for (ColumnDefinition columnDefinition : columnDefinitions) {
+                if (columnDefinition == null) {
+                    continue;
+                }
+                String columnName = columnDefinition.ColumnIdentifier != null && columnDefinition.ColumnIdentifier.Value != null
+                        ? columnDefinition.ColumnIdentifier.Value
+                        : "";
+                boolean nullable = isNullable(columnDefinition.Constraints);
+                String sqlType = extractSqlType(columnDefinition.DataType);
+                Integer length = extractLength(columnDefinition.DataType);
+                table.addColumn(new ColumnInfo(columnName, nullable, sqlType, length));
             }
-            return builder.toString();
+        }
+
+        private boolean isNullable(List<ConstraintDefinition> constraints) {
+            if (constraints == null) {
+                return true;
+            }
+            for (ConstraintDefinition constraint : constraints) {
+                if (constraint instanceof NullableConstraintDefinition nullableConstraint) {
+                    return nullableConstraint.Nullable;
+                }
+            }
+            return true;
+        }
+
+        private void registerStandaloneIndex(CreateIndexStatement node) {
+            if (node == null || node.OnName == null || node.Columns == null) {
+                return;
+            }
+            String tableName = schemaName(node.OnName);
+            registerIndex(tableName, extractIndexColumns(node.Columns));
+        }
+
+        private List<String> extractIndexColumns(List<?> indexedColumns) {
+            if (indexedColumns == null || indexedColumns.isEmpty()) {
+                return List.of();
+            }
+            List<String> columns = new ArrayList<>();
+            for (Object entry : indexedColumns) {
+                if (entry instanceof io.github.fupacat.ast.ColumnWithSortOrder columnWithSortOrder
+                        && columnWithSortOrder.Column != null
+                        && columnWithSortOrder.Column.MultiPartIdentifier != null) {
+                    columns.add(lastIdentifier(columnWithSortOrder.Column.MultiPartIdentifier));
+                }
+            }
+            return columns;
         }
 
         private String extractSqlType(DataTypeReference dataType) {
             if (dataType == null) {
-                return "unknown";
+                return UNKNOWN_TYPE;
             }
             if (dataType instanceof SqlDataTypeReference sqlDataTypeReference) {
                 return sqlDataTypeReference.SqlDataTypeOption != null
                         ? sqlDataTypeReference.SqlDataTypeOption.name()
-                        : "unknown";
+                        : UNKNOWN_TYPE;
             }
             if (dataType instanceof ParameterizedDataTypeReference parameterizedDataTypeReference) {
                 if (parameterizedDataTypeReference.Name != null && parameterizedDataTypeReference.Name.BaseIdentifier != null) {
@@ -450,15 +497,33 @@ public final class ProjectSchemaCatalog {
                 return null;
             }
             for (Literal literal : parameterizedDataTypeReference.Parameters) {
-                if (literal != null && literal.Value != null) {
-                    try {
-                        return Integer.parseInt(literal.Value.replace("'", "").replace("N", ""));
-                    } catch (NumberFormatException ignored) {
-                        // ignore non-numeric parameters such as precision/scale pairs
-                    }
+                Integer parsed = parseLengthLiteral(literal);
+                if (parsed != null) {
+                    return parsed;
                 }
             }
             return null;
+        }
+
+        private Integer parseLengthLiteral(Literal literal) {
+            if (literal == null || literal.Value == null) {
+                return null;
+            }
+            String cleaned = literal.Value.trim();
+            if (cleaned.startsWith("N'") && cleaned.endsWith("'") && cleaned.length() > 2) {
+                cleaned = cleaned.substring(2, cleaned.length() - 1);
+            } else if (cleaned.startsWith("'") && cleaned.endsWith("'") && cleaned.length() > 1) {
+                cleaned = cleaned.substring(1, cleaned.length() - 1);
+            }
+            if (cleaned.isBlank()) {
+                return null;
+            }
+            try {
+                return Integer.parseInt(cleaned);
+            } catch (NumberFormatException ignored) {
+                // ignore non-numeric parameters such as precision/scale pairs
+                return null;
+            }
         }
     }
 }

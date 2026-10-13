@@ -12,6 +12,7 @@ import io.github.fupacat.sonar.tsql.catalog.ProjectSchemaCatalog;
 public class NarrowingCastCheck extends TSqlCheck {
 
     public static final String RULE_KEY = "SR0014";
+    private static final String UNKNOWN_TYPE = "unknown";
 
     @Override
     public String getRuleKey() {
@@ -56,7 +57,7 @@ public class NarrowingCastCheck extends TSqlCheck {
         if (dataTypeReference == null) {
             return null;
         }
-        String typeName = "unknown";
+        String typeName = UNKNOWN_TYPE;
         Integer length = null;
         if (dataTypeReference instanceof SqlDataTypeReference sqlDataTypeReference) {
             if (sqlDataTypeReference.SqlDataTypeOption != null) {
@@ -77,14 +78,29 @@ public class NarrowingCastCheck extends TSqlCheck {
             return null;
         }
         for (var literal : typeReference.Parameters) {
-            if (literal != null && literal.Value != null) {
-                try {
-                    return Integer.parseInt(literal.Value.replace("'", "").replace("N", ""));
-                } catch (NumberFormatException ignored) {
-                    // ignore metadata that is not a scalar length value
-                }
+            Integer parsed = parseLengthLiteral(literal == null ? null : literal.Value);
+            if (parsed != null) {
+                return parsed;
             }
         }
         return null;
+    }
+
+    private Integer parseLengthLiteral(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String cleaned = value.trim();
+        if (cleaned.startsWith("N'") && cleaned.endsWith("'") && cleaned.length() > 2) {
+            cleaned = cleaned.substring(2, cleaned.length() - 1);
+        } else if (cleaned.startsWith("'") && cleaned.endsWith("'") && cleaned.length() > 1) {
+            cleaned = cleaned.substring(1, cleaned.length() - 1);
+        }
+        try {
+            return Integer.parseInt(cleaned);
+        } catch (NumberFormatException ignored) {
+            // ignore metadata that is not a scalar length value
+            return null;
+        }
     }
 }

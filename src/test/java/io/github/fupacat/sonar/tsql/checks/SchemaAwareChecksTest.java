@@ -18,6 +18,7 @@ class SchemaAwareChecksTest {
     private final NullableColumnIsNullCheck nullableColumnCheck = new NullableColumnIsNullCheck();
     private final NarrowingCastCheck narrowingCastCheck = new NarrowingCastCheck();
 
+    // TRACEABILITY_MAPPING: REQ-009
     @Test
     void testInPredicateOnUnindexedColumn() {
         List<String> issues = CheckTestUtils.scan(indexedColumnCheck,
@@ -25,8 +26,10 @@ class SchemaAwareChecksTest {
                         "CREATE INDEX IX_Orders_OrderId ON Orders(OrderId); " +
                         "SELECT CustomerId FROM Orders WHERE CustomerId IN (1, 2, 3);");
         assertThat(issues).hasSize(1);
+        assertThat(issues.get(0)).contains("not indexed");
     }
 
+    // TRACEABILITY_MAPPING: REQ-009
     @Test
     void testInPredicateOnIndexedColumnIsCompliant() {
         List<String> issues = CheckTestUtils.scan(indexedColumnCheck,
@@ -36,14 +39,17 @@ class SchemaAwareChecksTest {
         assertThat(issues).isEmpty();
     }
 
+    // TRACEABILITY_MAPPING: REQ-009
     @Test
     void testNullableColumnUsesIsNull() {
         List<String> issues = CheckTestUtils.scan(nullableColumnCheck,
                 "CREATE TABLE Users (Id INT NOT NULL, LastLogin DATETIME NULL); " +
                         "SELECT COALESCE(LastLogin, '1970-01-01') FROM Users;");
         assertThat(issues).hasSize(1);
+        assertThat(issues.get(0)).contains("Use ISNULL");
     }
 
+    // TRACEABILITY_MAPPING: REQ-009
     @Test
     void testNullableColumnAlreadyUsingIsNullIsCompliant() {
         List<String> issues = CheckTestUtils.scan(nullableColumnCheck,
@@ -52,14 +58,17 @@ class SchemaAwareChecksTest {
         assertThat(issues).isEmpty();
     }
 
+    // TRACEABILITY_MAPPING: REQ-009
     @Test
     void testNarrowingCastFlagged() {
         List<String> issues = CheckTestUtils.scan(narrowingCastCheck,
                 "CREATE TABLE Orders (CustomerId INT, OrderId INT); " +
                         "SELECT CAST(CustomerId AS SMALLINT) FROM Orders;");
         assertThat(issues).hasSize(1);
+        assertThat(issues.get(0)).contains("Data loss");
     }
 
+    // TRACEABILITY_MAPPING: REQ-009
     @Test
     void testWideningCastIsCompliant() {
         List<String> issues = CheckTestUtils.scan(narrowingCastCheck,
@@ -68,6 +77,55 @@ class SchemaAwareChecksTest {
         assertThat(issues).isEmpty();
     }
 
+    // TRACEABILITY_MAPPING: REQ-009
+    @Test
+    void testCrossFamilyCastIsCompliant() {
+        List<String> issues = CheckTestUtils.scan(narrowingCastCheck,
+                "CREATE TABLE Orders (CustomerCode VARCHAR(100)); " +
+                        "SELECT CAST(CustomerCode AS INT) FROM Orders;");
+        assertThat(issues).isEmpty();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-009
+    @Test
+    void testNarrowingConvertAndTryConvertAreFlagged() {
+        List<String> convertIssues = CheckTestUtils.scan(narrowingCastCheck,
+                "CREATE TABLE Orders (CustomerId BIGINT); " +
+                        "SELECT CONVERT(INT, CustomerId) FROM Orders;");
+        List<String> tryConvertIssues = CheckTestUtils.scan(narrowingCastCheck,
+                "CREATE TABLE Orders (CustomerId BIGINT); " +
+                        "SELECT TRY_CONVERT(INT, CustomerId) FROM Orders;");
+        assertThat(convertIssues).hasSize(1);
+        assertThat(tryConvertIssues).hasSize(1);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-009
+    @Test
+    void testNarrowingCharacterLengthIsFlagged() {
+        List<String> issues = CheckTestUtils.scan(narrowingCastCheck,
+                "CREATE TABLE Orders (CustomerCode NVARCHAR(100)); " +
+                        "SELECT CAST(CustomerCode AS NVARCHAR(10)) FROM Orders;");
+        assertThat(issues).hasSize(1);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-009
+    @Test
+    void testLiteralCastIsIgnored() {
+        List<String> issues = CheckTestUtils.scan(narrowingCastCheck,
+                "SELECT CAST(123 AS SMALLINT);");
+        assertThat(issues).isEmpty();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-009
+    @Test
+    void testParameterizedTargetWithMaxLengthIsHandled() {
+        List<String> issues = CheckTestUtils.scan(narrowingCastCheck,
+                "CREATE TABLE Orders (CustomerCode NVARCHAR(100)); " +
+                        "SELECT CAST(CustomerCode AS NVARCHAR(MAX)) FROM Orders;");
+        assertThat(issues).isEmpty();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-009
     @Test
     void testProjectSchemaCatalogTracksTableMetadata() {
         ParseResult<TSqlScript> result = new TSqlParser().parse(
