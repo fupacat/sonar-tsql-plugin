@@ -23,8 +23,8 @@ class TSqlRulesDefinitionTest {
         assertThat(repository.name()).isEqualTo(TSqlRulesDefinition.REPOSITORY_NAME);
         assertThat(repository.language()).isEqualTo(TSqlLanguage.KEY);
 
-        // Verify all 33 rules are registered
-        assertThat(repository.rules()).hasSize(33);
+        // Verify all 42 rules are registered
+        assertThat(repository.rules()).hasSize(42);
 
         RulesDefinition.Rule selectAllRule = repository.rule(AvoidSelectAllCheck.RULE_KEY);
         assertThat(selectAllRule).isNotNull();
@@ -71,6 +71,51 @@ class TSqlRulesDefinitionTest {
         assertThat(caseInvariantRule).isNotNull();
         assertThat(caseInvariantRule.severity()).isEqualTo(Severity.CRITICAL);
         assertThat(caseInvariantRule.type()).isEqualTo(RuleType.BUG);
+
+        RulesDefinition.Rule sargableRule = repository.rule(SargableWhereCheck.RULE_KEY);
+        assertThat(sargableRule).isNotNull();
+        assertThat(sargableRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(sargableRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule scopeIdentityRule = repository.rule(UseScopeIdentityCheck.RULE_KEY);
+        assertThat(scopeIdentityRule).isNotNull();
+        assertThat(scopeIdentityRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(scopeIdentityRule.type()).isEqualTo(RuleType.BUG);
+
+        RulesDefinition.Rule variableLengthTypeRule = repository.rule(AvoidVariableLengthDataTypeCheck.RULE_KEY);
+        assertThat(variableLengthTypeRule).isNotNull();
+        assertThat(variableLengthTypeRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(variableLengthTypeRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule deprecatedJoinRule = repository.rule(AvoidDeprecatedJoinSyntaxCheck.RULE_KEY);
+        assertThat(deprecatedJoinRule).isNotNull();
+        assertThat(deprecatedJoinRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(deprecatedJoinRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule specialCharactersRule = repository.rule(AvoidSpecialCharactersInObjectNamesCheck.RULE_KEY);
+        assertThat(specialCharactersRule).isNotNull();
+        assertThat(specialCharactersRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(specialCharactersRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule reservedWordsRule = repository.rule(AvoidReservedWordsInObjectNamesCheck.RULE_KEY);
+        assertThat(reservedWordsRule).isNotNull();
+        assertThat(reservedWordsRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(reservedWordsRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule outputParamRule = repository.rule(StoredProcedureOutputParameterCheck.RULE_KEY);
+        assertThat(outputParamRule).isNotNull();
+        assertThat(outputParamRule.severity()).isEqualTo(Severity.CRITICAL);
+        assertThat(outputParamRule.type()).isEqualTo(RuleType.BUG);
+
+        RulesDefinition.Rule deterministicFunctionRule = repository.rule(DeterministicFunctionInWhereCheck.RULE_KEY);
+        assertThat(deterministicFunctionRule).isNotNull();
+        assertThat(deterministicFunctionRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(deterministicFunctionRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule spPrefixRule = repository.rule(AvoidSpPrefixProcedureNameCheck.RULE_KEY);
+        assertThat(spPrefixRule).isNotNull();
+        assertThat(spPrefixRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(spPrefixRule.type()).isEqualTo(RuleType.CODE_SMELL);
 
         RulesDefinition.Rule dynamicSqlRule = repository.rule(DynamicSqlExecutionCheck.RULE_KEY);
         assertThat(dynamicSqlRule).isNotNull();

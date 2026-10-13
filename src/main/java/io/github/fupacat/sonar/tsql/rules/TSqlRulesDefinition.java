@@ -401,6 +401,132 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setStatus(RuleStatus.READY)
                 .setTags(TAG_SQL_SERVER, TAG_SECURITY, "authentication");
 
+        // Rule 10: SR0006
+        repository.createRule(SargableWhereCheck.RULE_KEY)
+                .setName("WHERE predicates should be SARGable")
+                .setHtmlDescription(
+                        "<p>Columns should be placed on one side of the comparison and not wrapped in functions or arithmetic in <code>WHERE</code> clauses.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>SELECT * FROM Orders WHERE ABS(OrderTotal) > 100;</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>SELECT * FROM Orders WHERE OrderTotal > 100;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "performance", "indexing");
+
+        // Rule 11: S4108
+        repository.createRule(UseScopeIdentityCheck.RULE_KEY)
+                .setName("Use SCOPE_IDENTITY() instead of @@IDENTITY")
+                .setHtmlDescription(
+                        "<p><code>@@IDENTITY</code> returns the last identity value across all scopes, which can produce misleading results in nested triggers or procedures.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>SELECT @@IDENTITY;</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>SELECT SCOPE_IDENTITY();</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "identity", "scope");
+
+        // Rule 12: SR0009
+        repository.createRule(AvoidVariableLengthDataTypeCheck.RULE_KEY)
+                .setName("Avoid variable-length data types of length 1 or 2")
+                .setHtmlDescription(
+                        "<p>Using <code>VARCHAR(1)</code>, <code>NVARCHAR(2)</code>, or similar types is often a design smell and can reduce readability.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>CREATE TABLE T (Code VARCHAR(1), Name NVARCHAR(2));</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>CREATE TABLE T (Code VARCHAR(10), Name NVARCHAR(50));</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_MAINTAINABILITY);
+
+        // Rule 13: SR0010
+        repository.createRule(AvoidDeprecatedJoinSyntaxCheck.RULE_KEY)
+                .setName("Avoid deprecated join syntax")
+                .setHtmlDescription(
+                        "<p>The old outer join operators <code>*=</code> and <code>=*</code> are deprecated and should be replaced with explicit JOIN syntax.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>SELECT * FROM Customers c, Orders o WHERE c.Id *= o.CustomerId;</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>SELECT * FROM Customers c LEFT JOIN Orders o ON c.Id = o.CustomerId;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "compatibility");
+
+        // Rule 14: SR0011
+        repository.createRule(AvoidSpecialCharactersInObjectNamesCheck.RULE_KEY)
+                .setName("Avoid special characters in DDL object names")
+                .setHtmlDescription(
+                        "<p>Special characters in database object names make scripting and maintenance harder and can trigger quoting issues.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>CREATE TABLE dbo.[Order$] (Id int);</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>CREATE TABLE dbo.OrderSummary (Id int);</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "naming");
+
+        // Rule 15: S4413
+        repository.createRule(AvoidReservedWordsInObjectNamesCheck.RULE_KEY)
+                .setName("Avoid reserved words in object and type names")
+                .setHtmlDescription(
+                        "<p>Database object and type names should not reuse SQL reserved words because it can degrade readability and produce ambiguous references.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>CREATE TABLE Order (Id int);</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>CREATE TABLE Orders (Id int);</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "naming");
+
+        // Rule 16: S4196
+        repository.createRule(StoredProcedureOutputParameterCheck.RULE_KEY)
+                .setName("OUTPUT parameters should be assigned in stored procedures")
+                .setHtmlDescription(
+                        "<p>Stored procedure OUTPUT parameters should be assigned in the procedure body before return so callers receive valid values.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>CREATE PROCEDURE dbo.GetValue @Result INT OUTPUT AS SELECT 1;</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>CREATE PROCEDURE dbo.GetValue @Result INT OUTPUT AS SET @Result = 1;</pre>")
+                .setSeverity(Severity.CRITICAL)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "procedure", TAG_DATA_SAFETY);
+
+        // Rule 17: SR0015
+        repository.createRule(DeterministicFunctionInWhereCheck.RULE_KEY)
+                .setName("Extract deterministic functions from WHERE predicates")
+                .setHtmlDescription(
+                        "<p>Deterministic function calls in predicate expressions can hide indexable conditions and force evaluation on the wrong side of comparisons.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>SELECT * FROM Orders WHERE ABS(Total) > 500;</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>SELECT * FROM Orders WHERE Total > 500;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "performance", "indexing");
+
+        // Rule 18: SR0016
+        repository.createRule(AvoidSpPrefixProcedureNameCheck.RULE_KEY)
+                .setName("Avoid the sp_ prefix for user-defined stored procedures")
+                .setHtmlDescription(
+                        "<p>Stored procedures that begin with <code>sp_</code> will be resolved in the master database first, which can cause confusing behavior.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>CREATE PROCEDURE dbo.sp_GetOrders AS SELECT 1;</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>CREATE PROCEDURE dbo.GetOrders AS SELECT 1;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "naming");
+
         repository.createRule(CheckList.SYNTAX_ERROR_RULE_KEY)
                 .setName("T-SQL syntax error")
                 .setHtmlDescription(
