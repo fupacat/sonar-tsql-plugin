@@ -29,7 +29,7 @@ public class HardCodedCredentialsCheck extends TSqlCheck {
     // TRACEABILITY_MAPPING: REQ-018
     @Override
     public void visit(CreateLoginStatement node) {
-        if (node.Source instanceof PasswordCreateLoginSource source && source.Password != null && isNonEmptyString(source.Password)) {
+        if (node.Source instanceof PasswordCreateLoginSource source && isNonEmptyString(source.Password)) {
             reportIssue(node, "Do not hard-code passwords in CREATE LOGIN statements.");
         }
         super.visit(node);
@@ -40,8 +40,7 @@ public class HardCodedCredentialsCheck extends TSqlCheck {
     public void visit(AlterLoginOptionsStatement node) {
         if (node.Options != null) {
             for (PrincipalOption option : node.Options) {
-                if (option instanceof PasswordAlterPrincipalOption passwordOption && passwordOption.Password != null
-                        && isNonEmptyString(passwordOption.Password)) {
+                if (option instanceof PasswordAlterPrincipalOption passwordOption && isNonEmptyString(passwordOption.Password)) {
                     reportIssue(node, "Do not hard-code passwords in ALTER LOGIN statements.");
                     break;
                 }
@@ -57,7 +56,6 @@ public class HardCodedCredentialsCheck extends TSqlCheck {
             for (PrincipalOption option : node.UserOptions) {
                 if (option instanceof LiteralPrincipalOption literalPrincipalOption
                         && option.OptionKind == PrincipalOptionKind.Password
-                        && literalPrincipalOption.Value != null
                         && isNonEmptyString(literalPrincipalOption.Value)) {
                     reportIssue(node, "Do not hard-code passwords in CREATE USER statements.");
                     break;
@@ -77,20 +75,18 @@ public class HardCodedCredentialsCheck extends TSqlCheck {
     }
 
     private boolean hasEmbeddedCredentials(OpenRowsetTableReference node) {
-        if ((node.UserId != null && isNonEmptyString(node.UserId))
-                || (node.Password != null && isNonEmptyString(node.Password))) {
+        if (isNonEmptyString(node.UserId) || isNonEmptyString(node.Password)) {
             return true;
         }
 
-        String providerString = safeLiteralValue(node.ProviderString);
-        if (providerString == null) {
-            return false;
+        if (node.ProviderString != null && node.ProviderString.Value != null) {
+            String normalized = node.ProviderString.Value.toLowerCase(Locale.ROOT);
+            return normalized.contains("user=")
+                    || normalized.contains("uid=")
+                    || normalized.contains("password=")
+                    || normalized.contains("pwd=");
         }
-
-        String normalized = providerString.toLowerCase(Locale.ROOT);
-        return normalized.contains("user=")
-                || normalized.contains("uid=")
-                || normalized.contains("pwd=");
+        return false;
     }
 
     private boolean isNonEmptyString(Literal literal) {
@@ -98,14 +94,10 @@ public class HardCodedCredentialsCheck extends TSqlCheck {
             return false;
         }
         String val = literal.Value.trim();
-        if ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith("N'") && val.endsWith("'"))) {
+        if (val.length() >= 2 && ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith("N'") && val.endsWith("'")))) {
             int start = val.startsWith("N'") ? 2 : 1;
             val = val.substring(start, val.length() - 1);
         }
         return !val.isBlank();
-    }
-
-    private String safeLiteralValue(Literal literal) {
-        return literal != null && literal.Value != null && !literal.Value.isBlank() ? literal.Value : null;
     }
 }
