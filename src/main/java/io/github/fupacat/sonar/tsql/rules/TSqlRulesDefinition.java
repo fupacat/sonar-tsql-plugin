@@ -36,6 +36,8 @@ public class TSqlRulesDefinition implements RulesDefinition {
     private static final String TAG_DATA_SAFETY = "data-safety";
     private static final String NONCOMPLIANT_HEADER = "<h3>Noncompliant Code Example</h3>";
     private static final String COMPLIANT_HEADER = "<h3>Compliant Solution</h3>";
+    private static final String TAG_LOGIC = "logic";
+    private static final String TAG_CONTROL_FLOW = "control-flow";
 
     // TRACEABILITY_MAPPING: REQ-003
     @Override
@@ -144,7 +146,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "null-handling", "logic");
+                .setTags(TAG_SQL_SERVER, "null-handling", TAG_LOGIC);
 
         // Rule 8: S4054
         repository.createRule(TopWithoutOrderByCheck.RULE_KEY)
@@ -186,7 +188,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "logic", "bug");
+                .setTags(TAG_SQL_SERVER, TAG_LOGIC, "bug");
 
         // Rule 11: S1862
         repository.createRule(DuplicateIfConditionCheck.RULE_KEY)
@@ -200,7 +202,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "logic", "conditionals");
+                .setTags(TAG_SQL_SERVER, TAG_LOGIC, "conditionals");
 
         // Rule 12: S1871
         repository.createRule(IdenticalBranchCheck.RULE_KEY_S1871)
@@ -228,7 +230,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "logic", "operators");
+                .setTags(TAG_SQL_SERVER, TAG_LOGIC, "operators");
 
         // Rule 14: S3633
         repository.createRule(WhereClauseRedundancyCheck.RULE_KEY_S3633)
@@ -242,7 +244,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "logic", "query");
+                .setTags(TAG_SQL_SERVER, TAG_LOGIC, "query");
 
         // Rule 15: S121
         repository.createRule(ControlStructureBlockCheck.RULE_KEY)
@@ -256,7 +258,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.CRITICAL)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "maintainability", "control-flow");
+                .setTags(TAG_SQL_SERVER, "maintainability", TAG_CONTROL_FLOW);
 
         // Rule 16: S131
         repository.createRule(CaseElseMissingCheck.RULE_KEY_S131)
@@ -270,7 +272,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.CRITICAL)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "logic", "control-flow");
+                .setTags(TAG_SQL_SERVER, TAG_LOGIC, TAG_CONTROL_FLOW);
 
         // Rule 17: S907
         repository.createRule(GotoStatementCheck.RULE_KEY)
@@ -284,7 +286,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "control-flow", "complexity");
+                .setTags(TAG_SQL_SERVER, TAG_CONTROL_FLOW, "complexity");
 
         // Rule 18: S1066
         repository.createRule(NestedIfMergeCheck.RULE_KEY)

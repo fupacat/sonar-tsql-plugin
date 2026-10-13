@@ -27,7 +27,7 @@ public class RepeatedUnaryOperatorCheck extends TSqlCheck {
     @Override
     public void visit(BooleanNotExpression node) {
         BooleanExpression inner = unwrapParenthesis(node.Expression);
-        if (inner instanceof BooleanNotExpression nested) {
+        if (inner instanceof BooleanNotExpression) {
             reportIssue(node, "Repeated unary operators should not be used.");
         }
         super.visit(node);

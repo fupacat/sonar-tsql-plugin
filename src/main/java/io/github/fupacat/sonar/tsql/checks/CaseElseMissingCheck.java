@@ -35,12 +35,9 @@ public class CaseElseMissingCheck extends TSqlCheck {
         while (current != null && current.ElseStatement != null) {
             if (current.ElseStatement instanceof IfStatement nestedIf) {
                 current = nestedIf;
-                continue;
-            }
-            if (current.ElseStatement != null) {
+            } else {
                 return;
             }
-            break;
         }
         if (node.ElseStatement == null) {
             reportIssue(node, "IF/ELSE IF chains should end with ELSE.");

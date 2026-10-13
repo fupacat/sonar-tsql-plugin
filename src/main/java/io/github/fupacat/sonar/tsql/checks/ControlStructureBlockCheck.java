@@ -5,6 +5,7 @@ import io.github.fupacat.ast.WhileStatement;
 
 public class ControlStructureBlockCheck extends TSqlCheck {
     public static final String RULE_KEY = "S121";
+    private static final String MESSAGE = "Control structures should use BEGIN...END blocks for their bodies.";
 
     @Override
     public String getRuleKey() {
@@ -14,11 +15,11 @@ public class ControlStructureBlockCheck extends TSqlCheck {
     @Override
     public void visit(IfStatement node) {
         if (node.ThenStatement != null && !(node.ThenStatement instanceof io.github.fupacat.ast.BeginEndBlockStatement)) {
-            reportIssue(node, "Control structures should use BEGIN...END blocks for their bodies.");
+            reportIssue(node, MESSAGE);
         }
         if (node.ElseStatement != null && !(node.ElseStatement instanceof io.github.fupacat.ast.BeginEndBlockStatement)
                 && !(node.ElseStatement instanceof IfStatement)) {
-            reportIssue(node, "Control structures should use BEGIN...END blocks for their bodies.");
+            reportIssue(node, MESSAGE);
         }
         super.visit(node);
     }
@@ -26,7 +27,7 @@ public class ControlStructureBlockCheck extends TSqlCheck {
     @Override
     public void visit(WhileStatement node) {
         if (node.Statement != null && !(node.Statement instanceof io.github.fupacat.ast.BeginEndBlockStatement)) {
-            reportIssue(node, "Control structures should use BEGIN...END blocks for their bodies.");
+            reportIssue(node, MESSAGE);
         }
         super.visit(node);
     }
