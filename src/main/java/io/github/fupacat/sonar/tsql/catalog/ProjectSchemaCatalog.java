@@ -32,13 +32,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public final class ProjectSchemaCatalog {
 
-    private static final Pattern CREATE_TABLE_PATTERN = Pattern.compile("(?is)create\\s+table\\s+(?:\\[?(?:[^\\s\\.\\[\\]]+)\\]?\\.)?\\[?([A-Za-z_][A-Za-z0-9_#$]*)\\]?\\s*\\((.*)\\)");
-    private static final Pattern CREATE_INDEX_PATTERN = Pattern.compile("(?is)create\\s+(?:unique\\s+)?index\\s+(?:\\[?[^\\s\\.\\[\\]]+\\]?\\.)?\\[?([A-Za-z_][A-Za-z0-9_#$]*)\\]?\\s+on\\s+(?:\\[?[^\\s\\.\\[\\]]+\\]?\\.)?\\[?([A-Za-z_][A-Za-z0-9_#$]*)\\]?\\s*\\((.*)\\)");
     private final Map<String, TableSchema> tables = new LinkedHashMap<>();
     private final Map<String, Set<String>> indexedColumnsByTable = new HashMap<>();
 
@@ -58,20 +54,12 @@ public final class ProjectSchemaCatalog {
             } catch (IOException ignored) {
                 continue;
             }
-            catalog.indexSql(content);
             ParseResult<TSqlScript> result = new TSqlParser().parse(content);
             if (result != null && result.fragment() != null) {
                 catalog.indexScript(result.fragment());
             }
         }
         return catalog;
-    }
-
-    public void indexSql(String sqlText) {
-        if (sqlText == null || sqlText.isBlank()) {
-            return;
-        }
-        indexSqlText(sqlText);
     }
 
     public void indexScript(TSqlFragment root) {
@@ -170,143 +158,24 @@ public final class ProjectSchemaCatalog {
         }
     }
 
-    private void indexSqlText(String sqlText) {
-        if (sqlText == null || sqlText.isBlank()) {
-            return;
+    private String schemaName(SchemaObjectName name) {
+        if (name == null) {
+            return "";
         }
-        Matcher createTableMatcher = CREATE_TABLE_PATTERN.matcher(sqlText);
-        while (createTableMatcher.find()) {
-            String tableName = createTableMatcher.group(1);
-            String columnsText = createTableMatcher.group(2);
-            if (tableName == null || tableName.isBlank() || columnsText == null || columnsText.isBlank()) {
-                continue;
-            }
-            TableSchema table = new TableSchema(normalizeTableName(tableName));
-            List<String> columnEntries = splitTopLevel(columnsText, ',');
-            for (String columnEntry : columnEntries) {
-                if (columnEntry == null || columnEntry.isBlank()) {
-                    continue;
-                }
-                Matcher columnMatcher = Pattern.compile("(?is)^\\s*(?:\\[?([A-Za-z_][A-Za-z0-9_#$]*)\\]?|([A-Za-z_][A-Za-z0-9_#$]*))\\s+(.+)$").matcher(columnEntry);
-                if (!columnMatcher.matches()) {
-                    continue;
-                }
-                String columnName = firstNonBlank(columnMatcher.group(1), columnMatcher.group(2));
-                String remainder = columnMatcher.group(3);
-                String sqlType = extractSqlTypeFromText(remainder);
-                Integer length = extractLengthFromText(remainder);
-                boolean nullable = isNullableText(remainder);
-                table.addColumn(new ColumnInfo(columnName, nullable, sqlType, length));
-            }
-            registerTable(table.tableName, table);
+        StringBuilder builder = new StringBuilder();
+        if (name.DatabaseIdentifier != null && name.DatabaseIdentifier.Value != null) {
+            builder.append(name.DatabaseIdentifier.Value).append('.');
         }
-
-        Matcher createIndexMatcher = CREATE_INDEX_PATTERN.matcher(sqlText);
-        while (createIndexMatcher.find()) {
-            String tableName = createIndexMatcher.group(2);
-            String columnsText = createIndexMatcher.group(3);
-            if (tableName == null || tableName.isBlank() || columnsText == null || columnsText.isBlank()) {
-                continue;
-            }
-            List<String> columnNames = new ArrayList<>();
-            for (String columnEntry : splitTopLevel(columnsText, ',')) {
-                String trimmed = columnEntry.trim();
-                if (trimmed.isEmpty()) {
-                    continue;
-                }
-                Matcher columnMatcher = Pattern.compile("(?is)^\\s*(?:\\[?([A-Za-z_][A-Za-z0-9_#$]*)\\]?|([A-Za-z_][A-Za-z0-9_#$]*))(?:\\s+(?:asc|desc))?\\s*$").matcher(trimmed);
-                if (columnMatcher.matches()) {
-                    columnNames.add(firstNonBlank(columnMatcher.group(1), columnMatcher.group(2)));
-                }
-            }
-            registerIndex(tableName, columnNames);
+        if (name.SchemaIdentifier != null && name.SchemaIdentifier.Value != null) {
+            builder.append(name.SchemaIdentifier.Value).append('.');
         }
+        if (name.BaseIdentifier != null && name.BaseIdentifier.Value != null) {
+            builder.append(name.BaseIdentifier.Value);
+        }
+        return builder.toString();
     }
 
-    private static String firstNonBlank(String... values) {
-        for (String value : values) {
-            if (value != null && !value.isBlank()) {
-                return value;
-            }
-        }
-        return "";
-    }
-
-    private static List<String> splitTopLevel(String input, char delimiter) {
-        List<String> chunks = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
-        int parenthesisDepth = 0;
-        for (int i = 0; i < input.length(); i++) {
-            char ch = input.charAt(i);
-            if (ch == '(') {
-                parenthesisDepth++;
-            } else if (ch == ')') {
-                parenthesisDepth = Math.max(0, parenthesisDepth - 1);
-            }
-            if (ch == delimiter && parenthesisDepth == 0) {
-                chunks.add(current.toString());
-                current.setLength(0);
-            } else {
-                current.append(ch);
-            }
-        }
-        if (!current.isEmpty()) {
-            chunks.add(current.toString());
-        }
-        return chunks;
-    }
-
-    private static String extractSqlTypeFromText(String text) {
-        if (text == null || text.isBlank()) {
-            return "unknown";
-        }
-        String remainder = text.trim();
-        String[] tokens = remainder.split("\\s+");
-        if (tokens.length < 2) {
-            return "unknown";
-        }
-        return tokens[0].replace("[", "").replace("]", "").toUpperCase(Locale.ROOT);
-    }
-
-    private static Integer extractLengthFromText(String text) {
-        if (text == null || text.isBlank()) {
-            return null;
-        }
-        Matcher matcher = Pattern.compile("(?is)(?:varchar|char|nvarchar|nchar|binary|varbinary|decimal|numeric)\\s*\\((\\d+)\\)").matcher(text);
-        if (matcher.find()) {
-            return Integer.parseInt(matcher.group(1));
-        }
-        Matcher decimalMatcher = Pattern.compile("(?is)(?:decimal|numeric)\\s*\\((\\d+),\\s*(\\d+)\\)").matcher(text);
-        if (decimalMatcher.find()) {
-            return Integer.parseInt(decimalMatcher.group(1));
-        }
-        return null;
-    }
-
-    private static boolean isNullableText(String text) {
-        if (text == null || text.isBlank()) {
-            return true;
-        }
-        String normalized = text.toUpperCase(Locale.ROOT);
-        if (normalized.contains(" NOT NULL")) {
-            return false;
-        }
-        if (normalized.contains(" NULL")) {
-            return true;
-        }
-        return true;
-    }
-
-    private void registerIndex(String tableName, List<String> columns) {
-        if (tableName == null || tableName.isBlank() || columns == null || columns.isEmpty()) {
-            return;
-        }
-        String normalized = normalizeTableName(tableName);
-        indexedColumnsByTable.computeIfAbsent(normalized, key -> new HashSet<>())
-                .addAll(columns.stream().map(this::normalizeColumnName).toList());
-    }
-
-    public String normalizeTableName(String tableName) {
+    private String normalizeTableName(String tableName) {
         if (tableName == null || tableName.isBlank()) {
             return "";
         }
@@ -318,7 +187,7 @@ public final class ProjectSchemaCatalog {
         return normalized.toLowerCase(Locale.ROOT);
     }
 
-    public String normalizeColumnName(String columnName) {
+    private String normalizeColumnName(String columnName) {
         if (columnName == null || columnName.isBlank()) {
             return "";
         }
@@ -341,6 +210,15 @@ public final class ProjectSchemaCatalog {
         }
         Identifier identifier = multiPartIdentifier.Identifiers.get(multiPartIdentifier.Identifiers.size() - 1);
         return identifier != null ? identifier.Value : "";
+    }
+
+    private void registerIndex(String tableName, List<String> columns) {
+        if (tableName == null || tableName.isBlank() || columns == null || columns.isEmpty()) {
+            return;
+        }
+        String normalized = normalizeTableName(tableName);
+        indexedColumnsByTable.computeIfAbsent(normalized, key -> new HashSet<>())
+                .addAll(columns.stream().map(this::normalizeColumnName).toList());
     }
 
     public static final class TableSchema {
