@@ -11,7 +11,7 @@ import io.github.fupacat.ast.PasswordCreateLoginSource;
 import io.github.fupacat.ast.PrincipalOption;
 import io.github.fupacat.ast.PrincipalOptionKind;
 
-import java.util.List;
+import java.util.Locale;
 
 /**
  * Rule: Credentials should not be hard-coded in SQL scripts.
@@ -70,14 +70,33 @@ public class HardCodedCredentialsCheck extends TSqlCheck {
     // TRACEABILITY_MAPPING: REQ-018
     @Override
     public void visit(OpenRowsetTableReference node) {
-        if ((node.UserId != null && isNonEmptyString(node.UserId))
-                || (node.Password != null && isNonEmptyString(node.Password))) {
+        if (hasEmbeddedCredentials(node)) {
             reportIssue(node, "Do not hard-code credentials in OPENROWSET connections.");
         }
         super.visit(node);
     }
 
+    private boolean hasEmbeddedCredentials(OpenRowsetTableReference node) {
+        if ((node.UserId != null && isNonEmptyString(node.UserId))
+                || (node.Password != null && isNonEmptyString(node.Password))) {
+            return true;
+        }
+
+        String providerString = safeLiteralValue(node.ProviderString);
+        if (providerString == null) {
+            return false;
+        }
+
+        String normalized = providerString.toLowerCase(Locale.ROOT);
+        return normalized.contains("user=") || normalized.contains("uid=")
+                || normalized.contains("******pwd=");
+    }
+
     private boolean isNonEmptyString(Literal literal) {
         return literal != null && literal.Value != null && !literal.Value.isBlank();
+    }
+
+    private String safeLiteralValue(Literal literal) {
+        return literal != null && literal.Value != null && !literal.Value.isBlank() ? literal.Value : null;
     }
 }
