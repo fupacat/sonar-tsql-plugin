@@ -1,23 +1,7 @@
 package io.github.fupacat.sonar.tsql.rules;
 
 import io.github.fupacat.sonar.tsql.TSqlLanguage;
-import io.github.fupacat.sonar.tsql.checks.AlterTableCheckEnforcementCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedTypesCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
-import io.github.fupacat.sonar.tsql.checks.CaseInputInvariantCheck;
-import io.github.fupacat.sonar.tsql.checks.CheckList;
-import io.github.fupacat.sonar.tsql.checks.ColumnReferenceDepthCheck;
-import io.github.fupacat.sonar.tsql.checks.DeleteAndUpdateWithoutWhereCheck;
-import io.github.fupacat.sonar.tsql.checks.ExistsSelectOneCheck;
-import io.github.fupacat.sonar.tsql.checks.ExplicitLengthForVariableTypesCheck;
-import io.github.fupacat.sonar.tsql.checks.InsertColumnsExplicitCheck;
-import io.github.fupacat.sonar.tsql.checks.NotInSubqueryCheck;
-import io.github.fupacat.sonar.tsql.checks.NullComparisonCheck;
-import io.github.fupacat.sonar.tsql.checks.OrderByColumnNamesCheck;
-import io.github.fupacat.sonar.tsql.checks.PrimaryKeyRequiredCheck;
-import io.github.fupacat.sonar.tsql.checks.TopWithoutOrderByCheck;
+import io.github.fupacat.sonar.tsql.checks.*;
 import org.sonar.api.rule.RuleStatus;
 import org.sonar.api.rule.Severity;
 import org.sonar.api.rules.RuleType;
@@ -34,6 +18,8 @@ public class TSqlRulesDefinition implements RulesDefinition {
     private static final String TAG_DATA_SAFETY = "data-safety";
     private static final String TAG_DATA_INTEGRITY = "data-integrity";
     private static final String TAG_SCHEMA = "schema";
+    private static final String TAG_MAINTAINABILITY = "maintainability";
+    private static final String TAG_FORMATTING = "formatting";
     private static final String NONCOMPLIANT_HEADER = "<h3>Noncompliant Code Example</h3>";
     private static final String COMPLIANT_HEADER = "<h3>Compliant Solution</h3>";
 
@@ -174,6 +160,110 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setStatus(RuleStatus.READY)
                 .setTags(TAG_SQL_SERVER, "determinism", TAG_DATA_SAFETY);
 
+        repository.createRule(S103Check.RULE_KEY)
+                .setName("Lines should not be too long")
+                .setHtmlDescription("<p>Long lines reduce readability and make reviews harder.</p>")
+                .setSeverity(Severity.MINOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "readability");
+
+        repository.createRule(S104Check.RULE_KEY)
+                .setName("Files should not have too many lines")
+                .setHtmlDescription("<p>Large files are harder to manage and review.</p>")
+                .setSeverity(Severity.MINOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_MAINTAINABILITY);
+
+        repository.createRule(S105Check.RULE_KEY)
+                .setName("Tabulation characters should not be used")
+                .setHtmlDescription("<p>Use spaces instead of tabs for consistent formatting.</p>")
+                .setSeverity(Severity.MINOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_FORMATTING);
+
+        repository.createRule(S122Check.RULE_KEY)
+                .setName("Multiple statements should not appear on a single line")
+                .setHtmlDescription("<p>Code is easier to read and review when each statement is on its own line.</p>")
+                .setSeverity(Severity.MINOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "readability");
+
+        repository.createRule(S125Check.RULE_KEY)
+                .setName("Sections of T-SQL code should not be commented out")
+                .setHtmlDescription("<p>Commented-out code is misleading and should be removed.</p>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_MAINTAINABILITY);
+
+        repository.createRule(S1134Check.RULE_KEY)
+                .setName("FIXME tags should be reviewed")
+                .setHtmlDescription("<p>FIXME markers indicate unresolved work that needs attention.</p>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "todo");
+
+        repository.createRule(S1135Check.RULE_KEY)
+                .setName("TODO tags should be reviewed")
+                .setHtmlDescription("<p>TODO markers indicate pending work and should be tracked.</p>")
+                .setSeverity(Severity.MINOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "todo");
+
+        repository.createRule(NoSonarCheck.RULE_KEY)
+                .setName("NOSONAR comments should be reviewed")
+                .setHtmlDescription("<p>Suppressions should be intentional and maintained.</p>")
+                .setSeverity(Severity.MINOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "suppressions");
+
+        repository.createRule(S1451Check.RULE_KEY)
+                .setName("Track file copyright and license headers")
+                .setHtmlDescription("<p>Source files should include ownership and license information.</p>")
+                .setSeverity(Severity.INFO)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "legal");
+
+        repository.createRule(S3972Check.RULE_KEY)
+                .setName("Conditional statements should be formatted consistently")
+                .setHtmlDescription("<p>Formatting conditions consistently reduces complexity and review friction.</p>")
+                .setSeverity(Severity.MINOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_FORMATTING);
+
+        repository.createRule(S3973Check.RULE_KEY)
+                .setName("Blocks should be indented consistently")
+                .setHtmlDescription("<p>Consistent indentation helps readers understand nested blocks quickly.</p>")
+                .setSeverity(Severity.MINOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_FORMATTING);
+
+        repository.createRule(S138Check.RULE_KEY)
+                .setName("Procedures should not be too long")
+                .setHtmlDescription("<p>Large procedures are harder to understand and maintain.</p>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_MAINTAINABILITY);
+
+        repository.createRule(S1151Check.RULE_KEY)
+                .setName("WHEN blocks should not be too long")
+                .setHtmlDescription("<p>Large WHEN blocks are difficult to understand and validate.</p>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_MAINTAINABILITY);
+
         // Rule 10: S1614
         repository.createRule(PrimaryKeyRequiredCheck.RULE_KEY)
                 .setName("Primary keys should be specified in CREATE TABLE")
@@ -228,7 +318,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "ordering", "maintainability");
+                .setTags(TAG_SQL_SERVER, "ordering", TAG_MAINTAINABILITY);
 
         // Rule 14: S4801
         repository.createRule(ExistsSelectOneCheck.RULE_KEY)
@@ -270,9 +360,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MINOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "maintainability");
-
-        // Rule 17: SyntaxError
+                .setTags(TAG_SQL_SERVER, TAG_MAINTAINABILITY);
         repository.createRule(CheckList.SYNTAX_ERROR_RULE_KEY)
                 .setName("T-SQL syntax error")
                 .setHtmlDescription(

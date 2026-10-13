@@ -1,23 +1,7 @@
 package io.github.fupacat.sonar.tsql.rules;
 
 import io.github.fupacat.sonar.tsql.TSqlLanguage;
-import io.github.fupacat.sonar.tsql.checks.AlterTableCheckEnforcementCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedTypesCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
-import io.github.fupacat.sonar.tsql.checks.CaseInputInvariantCheck;
-import io.github.fupacat.sonar.tsql.checks.CheckList;
-import io.github.fupacat.sonar.tsql.checks.ColumnReferenceDepthCheck;
-import io.github.fupacat.sonar.tsql.checks.DeleteAndUpdateWithoutWhereCheck;
-import io.github.fupacat.sonar.tsql.checks.ExistsSelectOneCheck;
-import io.github.fupacat.sonar.tsql.checks.ExplicitLengthForVariableTypesCheck;
-import io.github.fupacat.sonar.tsql.checks.InsertColumnsExplicitCheck;
-import io.github.fupacat.sonar.tsql.checks.NotInSubqueryCheck;
-import io.github.fupacat.sonar.tsql.checks.NullComparisonCheck;
-import io.github.fupacat.sonar.tsql.checks.OrderByColumnNamesCheck;
-import io.github.fupacat.sonar.tsql.checks.PrimaryKeyRequiredCheck;
-import io.github.fupacat.sonar.tsql.checks.TopWithoutOrderByCheck;
+import io.github.fupacat.sonar.tsql.checks.*;
 import org.junit.jupiter.api.Test;
 import org.sonar.api.rule.Severity;
 import org.sonar.api.rules.RuleType;
@@ -39,8 +23,8 @@ class TSqlRulesDefinitionTest {
         assertThat(repository.name()).isEqualTo(TSqlRulesDefinition.REPOSITORY_NAME);
         assertThat(repository.language()).isEqualTo(TSqlLanguage.KEY);
 
-        // Verify all 17 rules are registered
-        assertThat(repository.rules()).hasSize(17);
+        // Verify all 30 rules are registered
+        assertThat(repository.rules()).hasSize(30);
 
         RulesDefinition.Rule selectAllRule = repository.rule(AvoidSelectAllCheck.RULE_KEY);
         assertThat(selectAllRule).isNotNull();
@@ -122,6 +106,10 @@ class TSqlRulesDefinitionTest {
         assertThat(columnDepthRule).isNotNull();
         assertThat(columnDepthRule.severity()).isEqualTo(Severity.MINOR);
         assertThat(columnDepthRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule s103Rule = repository.rule(S103Check.RULE_KEY);
+        assertThat(s103Rule).isNotNull();
+        assertThat(s103Rule.severity()).isEqualTo(Severity.MINOR);
 
         RulesDefinition.Rule syntaxErrorRule = repository.rule(CheckList.SYNTAX_ERROR_RULE_KEY);
         assertThat(syntaxErrorRule).isNotNull();

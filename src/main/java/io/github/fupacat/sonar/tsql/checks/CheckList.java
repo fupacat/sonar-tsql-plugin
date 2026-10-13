@@ -25,7 +25,20 @@ public final class CheckList {
             OrderByColumnNamesCheck.class,
             ExistsSelectOneCheck.class,
             AlterTableCheckEnforcementCheck.class,
-            ColumnReferenceDepthCheck.class
+            ColumnReferenceDepthCheck.class,
+            S103Check.class,
+            S104Check.class,
+            S105Check.class,
+            S122Check.class,
+            S125Check.class,
+            S1134Check.class,
+            S1135Check.class,
+            NoSonarCheck.class,
+            S1451Check.class,
+            S3972Check.class,
+            S3973Check.class,
+            S138Check.class,
+            S1151Check.class
     );
 
     private CheckList() {
@@ -54,7 +67,20 @@ public final class CheckList {
                 new OrderByColumnNamesCheck(),
                 new ExistsSelectOneCheck(),
                 new AlterTableCheckEnforcementCheck(),
-                new ColumnReferenceDepthCheck()
+                new ColumnReferenceDepthCheck(),
+                new S103Check(),
+                new S104Check(),
+                new S105Check(),
+                new S122Check(),
+                new S125Check(),
+                new S1134Check(),
+                new S1135Check(),
+                new NoSonarCheck(),
+                new S1451Check(),
+                new S3972Check(),
+                new S3973Check(),
+                new S138Check(),
+                new S1151Check()
         );
     }
 }

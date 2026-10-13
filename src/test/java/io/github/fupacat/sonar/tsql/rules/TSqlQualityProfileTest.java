@@ -1,23 +1,7 @@
 package io.github.fupacat.sonar.tsql.rules;
 
 import io.github.fupacat.sonar.tsql.TSqlLanguage;
-import io.github.fupacat.sonar.tsql.checks.AlterTableCheckEnforcementCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedTypesCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
-import io.github.fupacat.sonar.tsql.checks.CaseInputInvariantCheck;
-import io.github.fupacat.sonar.tsql.checks.CheckList;
-import io.github.fupacat.sonar.tsql.checks.ColumnReferenceDepthCheck;
-import io.github.fupacat.sonar.tsql.checks.DeleteAndUpdateWithoutWhereCheck;
-import io.github.fupacat.sonar.tsql.checks.ExistsSelectOneCheck;
-import io.github.fupacat.sonar.tsql.checks.ExplicitLengthForVariableTypesCheck;
-import io.github.fupacat.sonar.tsql.checks.InsertColumnsExplicitCheck;
-import io.github.fupacat.sonar.tsql.checks.NotInSubqueryCheck;
-import io.github.fupacat.sonar.tsql.checks.NullComparisonCheck;
-import io.github.fupacat.sonar.tsql.checks.OrderByColumnNamesCheck;
-import io.github.fupacat.sonar.tsql.checks.PrimaryKeyRequiredCheck;
-import io.github.fupacat.sonar.tsql.checks.TopWithoutOrderByCheck;
+import io.github.fupacat.sonar.tsql.checks.*;
 import org.junit.jupiter.api.Test;
 import org.sonar.api.server.profile.BuiltInQualityProfilesDefinition;
 
@@ -50,6 +34,19 @@ class TSqlQualityProfileTest {
                         NullComparisonCheck.RULE_KEY,
                         TopWithoutOrderByCheck.RULE_KEY,
                         CaseInputInvariantCheck.RULE_KEY,
+                        S103Check.RULE_KEY,
+                        S104Check.RULE_KEY,
+                        S105Check.RULE_KEY,
+                        S122Check.RULE_KEY,
+                        S125Check.RULE_KEY,
+                        S1134Check.RULE_KEY,
+                        S1135Check.RULE_KEY,
+                        NoSonarCheck.RULE_KEY,
+                        S1451Check.RULE_KEY,
+                        S3972Check.RULE_KEY,
+                        S3973Check.RULE_KEY,
+                        S138Check.RULE_KEY,
+                        S1151Check.RULE_KEY,
                         PrimaryKeyRequiredCheck.RULE_KEY,
                         InsertColumnsExplicitCheck.RULE_KEY,
                         ExplicitLengthForVariableTypesCheck.RULE_KEY,
