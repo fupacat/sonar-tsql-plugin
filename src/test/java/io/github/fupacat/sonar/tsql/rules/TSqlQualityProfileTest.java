@@ -1,29 +1,7 @@
 package io.github.fupacat.sonar.tsql.rules;
 
 import io.github.fupacat.sonar.tsql.TSqlLanguage;
-<<<<<<< HEAD
-import io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedSystemTablesCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedTypesCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidLikeWithoutWildcardCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidNonStandardComparisonOperatorsCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
-import io.github.fupacat.sonar.tsql.checks.CaseInputInvariantCheck;
-import io.github.fupacat.sonar.tsql.checks.CaseSubqueryCheck;
-import io.github.fupacat.sonar.tsql.checks.CheckList;
-import io.github.fupacat.sonar.tsql.checks.DeleteAndUpdateWithoutWhereCheck;
-import io.github.fupacat.sonar.tsql.checks.FetchIntoCursorCountCheck;
-import io.github.fupacat.sonar.tsql.checks.NotInSubqueryCheck;
-import io.github.fupacat.sonar.tsql.checks.NullComparisonCheck;
-import io.github.fupacat.sonar.tsql.checks.SetAnsiNullsCheck;
-import io.github.fupacat.sonar.tsql.checks.SetAnsiWarningsAndArithabortCheck;
-import io.github.fupacat.sonar.tsql.checks.SetNoCountCheck;
-import io.github.fupacat.sonar.tsql.checks.TopWithoutOrderByCheck;
-import io.github.fupacat.sonar.tsql.checks.TriggerResultSetCheck;
-=======
 import io.github.fupacat.sonar.tsql.checks.*;
->>>>>>> master
 import org.junit.jupiter.api.Test;
 import org.sonar.api.server.profile.BuiltInQualityProfilesDefinition;
 
@@ -56,17 +34,6 @@ class TSqlQualityProfileTest {
                         NullComparisonCheck.RULE_KEY,
                         TopWithoutOrderByCheck.RULE_KEY,
                         CaseInputInvariantCheck.RULE_KEY,
-<<<<<<< HEAD
-                        SetNoCountCheck.RULE_KEY,
-                        SetAnsiWarningsAndArithabortCheck.RULE_KEY,
-                        SetAnsiNullsCheck.RULE_KEY,
-                        AvoidDeprecatedSystemTablesCheck.RULE_KEY,
-                        FetchIntoCursorCountCheck.RULE_KEY,
-                        CaseSubqueryCheck.RULE_KEY,
-                        TriggerResultSetCheck.RULE_KEY,
-                        AvoidLikeWithoutWildcardCheck.RULE_KEY,
-                        AvoidNonStandardComparisonOperatorsCheck.RULE_KEY,
-=======
                         DynamicSqlExecutionCheck.RULE_KEY,
                         WeakHashCheck.RULE_KEY,
                         HardCodedCredentialsCheck.RULE_KEY,
@@ -108,7 +75,6 @@ class TSqlQualityProfileTest {
                         S3973Check.RULE_KEY,
                         S138Check.RULE_KEY,
                         S1151Check.RULE_KEY,
->>>>>>> master
                         CheckList.SYNTAX_ERROR_RULE_KEY
                 );
     }

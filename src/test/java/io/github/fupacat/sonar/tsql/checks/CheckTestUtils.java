@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public final class CheckTestUtils {
 
@@ -26,44 +25,37 @@ public final class CheckTestUtils {
         }
         result.fragment().Value = sql;
 
-        CollectingContext context = new CollectingContext();
+        CollectingContext context = new CollectingContext(sql);
         check.scan(result.fragment(), context);
         return context.issues;
     }
 
     public static List<String> scanWithContents(TSqlCheck check, String sql) {
-        TSqlParser parser = new TSqlParser();
-        ParseResult<TSqlScript> result = parser.parse(sql);
-
-        CollectingContext context = new CollectingContext(sql);
-        if (result.fragment() != null) {
-            check.scan(result.fragment(), context);
-        } else {
-            check.scan(null, context);
-        }
-        return context.issues;
+        return scan(check, sql);
     }
 
     public static class CollectingContext implements TSqlCheckContext {
         public final List<String> issues = new ArrayList<>();
+        private final String sourceText;
         private final InputFile file;
 
-        public CollectingContext() {
-            this.file = mock(InputFile.class);
-        }
-
-        public CollectingContext(String contents) {
+        public CollectingContext(String sourceText) {
+            this.sourceText = sourceText;
             this.file = mock(InputFile.class);
             try {
-                when(file.contents()).thenReturn(contents);
+                org.mockito.Mockito.when(file.contents()).thenReturn(sourceText);
             } catch (Exception ignored) {
-                // Mockito can throw on some JDKs; ignored here for tests.
             }
         }
 
         @Override
         public InputFile getFile() {
             return file;
+        }
+
+        @Override
+        public String getSourceText() {
+            return sourceText;
         }
 
         @Override

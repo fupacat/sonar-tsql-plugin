@@ -19,17 +19,6 @@ public final class CheckList {
             NullComparisonCheck.class,
             TopWithoutOrderByCheck.class,
             CaseInputInvariantCheck.class,
-<<<<<<< HEAD
-            SetNoCountCheck.class,
-            SetAnsiWarningsAndArithabortCheck.class,
-            SetAnsiNullsCheck.class,
-            AvoidDeprecatedSystemTablesCheck.class,
-            FetchIntoCursorCountCheck.class,
-            CaseSubqueryCheck.class,
-            TriggerResultSetCheck.class,
-            AvoidLikeWithoutWildcardCheck.class,
-            AvoidNonStandardComparisonOperatorsCheck.class
-=======
             DynamicSqlExecutionCheck.class,
             WeakHashCheck.class,
             HardCodedCredentialsCheck.class,
@@ -71,7 +60,6 @@ public final class CheckList {
             S3973Check.class,
             S138Check.class,
             S1151Check.class
->>>>>>> master
     );
 
     private CheckList() {
@@ -94,17 +82,6 @@ public final class CheckList {
                 new NullComparisonCheck(),
                 new TopWithoutOrderByCheck(),
                 new CaseInputInvariantCheck(),
-<<<<<<< HEAD
-                new SetNoCountCheck(),
-                new SetAnsiWarningsAndArithabortCheck(),
-                new SetAnsiNullsCheck(),
-                new AvoidDeprecatedSystemTablesCheck(),
-                new FetchIntoCursorCountCheck(),
-                new CaseSubqueryCheck(),
-                new TriggerResultSetCheck(),
-                new AvoidLikeWithoutWildcardCheck(),
-                new AvoidNonStandardComparisonOperatorsCheck()
-=======
                 new DynamicSqlExecutionCheck(),
                 new WeakHashCheck(),
                 new HardCodedCredentialsCheck(),
@@ -146,7 +123,6 @@ public final class CheckList {
                 new S3973Check(),
                 new S138Check(),
                 new S1151Check()
->>>>>>> master
         );
     }
 }

@@ -1,29 +1,7 @@
 package io.github.fupacat.sonar.tsql.rules;
 
 import io.github.fupacat.sonar.tsql.TSqlLanguage;
-<<<<<<< HEAD
-import io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedTypesCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
-import io.github.fupacat.sonar.tsql.checks.CaseInputInvariantCheck;
-import io.github.fupacat.sonar.tsql.checks.CheckList;
-import io.github.fupacat.sonar.tsql.checks.DeleteAndUpdateWithoutWhereCheck;
-import io.github.fupacat.sonar.tsql.checks.NotInSubqueryCheck;
-import io.github.fupacat.sonar.tsql.checks.NullComparisonCheck;
-import io.github.fupacat.sonar.tsql.checks.TopWithoutOrderByCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedSystemTablesCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidLikeWithoutWildcardCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidNonStandardComparisonOperatorsCheck;
-import io.github.fupacat.sonar.tsql.checks.CaseSubqueryCheck;
-import io.github.fupacat.sonar.tsql.checks.FetchIntoCursorCountCheck;
-import io.github.fupacat.sonar.tsql.checks.SetAnsiNullsCheck;
-import io.github.fupacat.sonar.tsql.checks.SetAnsiWarningsAndArithabortCheck;
-import io.github.fupacat.sonar.tsql.checks.SetNoCountCheck;
-import io.github.fupacat.sonar.tsql.checks.TriggerResultSetCheck;
-=======
 import io.github.fupacat.sonar.tsql.checks.*;
->>>>>>> master
 import org.sonar.api.server.profile.BuiltInQualityProfilesDefinition;
 
 /**
@@ -49,17 +27,6 @@ public class TSqlQualityProfile implements BuiltInQualityProfilesDefinition {
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, NullComparisonCheck.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, TopWithoutOrderByCheck.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, CaseInputInvariantCheck.RULE_KEY);
-<<<<<<< HEAD
-        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, SetNoCountCheck.RULE_KEY);
-        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, SetAnsiWarningsAndArithabortCheck.RULE_KEY);
-        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, SetAnsiNullsCheck.RULE_KEY);
-        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, AvoidDeprecatedSystemTablesCheck.RULE_KEY);
-        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, FetchIntoCursorCountCheck.RULE_KEY);
-        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, CaseSubqueryCheck.RULE_KEY);
-        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, TriggerResultSetCheck.RULE_KEY);
-        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, AvoidLikeWithoutWildcardCheck.RULE_KEY);
-        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, AvoidNonStandardComparisonOperatorsCheck.RULE_KEY);
-=======
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, DynamicSqlExecutionCheck.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, WeakHashCheck.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, HardCodedCredentialsCheck.RULE_KEY);
@@ -101,7 +68,6 @@ public class TSqlQualityProfile implements BuiltInQualityProfilesDefinition {
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S3973Check.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S138Check.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S1151Check.RULE_KEY);
->>>>>>> master
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, CheckList.SYNTAX_ERROR_RULE_KEY);
 
         profile.done();
