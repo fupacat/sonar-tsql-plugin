@@ -21,6 +21,8 @@ public class TSqlRulesDefinition implements RulesDefinition {
     private static final String TAG_MAINTAINABILITY = "maintainability";
     private static final String TAG_FORMATTING = "formatting";
     private static final String TAG_SECURITY = "security";
+    private static final String TAG_LOGIC = "logic";
+    private static final String TAG_CONTROL_FLOW = "control-flow";
     private static final String NONCOMPLIANT_HEADER = "<h3>Noncompliant Code Example</h3>";
     private static final String COMPLIANT_HEADER = "<h3>Compliant Solution</h3>";
 
@@ -131,7 +133,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "null-handling", "logic");
+                .setTags(TAG_SQL_SERVER, "null-handling", TAG_LOGIC);
 
         // Rule 8: S4054
         repository.createRule(TopWithoutOrderByCheck.RULE_KEY)
@@ -608,7 +610,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "logic");
+                .setTags(TAG_SQL_SERVER, TAG_LOGIC);
 
         // Rule 16: S4109
         repository.createRule(TriggerResultSetCheck.RULE_KEY)
@@ -652,7 +654,119 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setStatus(RuleStatus.READY)
                 .setTags(TAG_SQL_SERVER, "readability");
 
-        // Rule 19: SyntaxError
+        // Rule: S1117
+        repository.createRule(UnusedLocalVariableCheck.RULE_KEY)
+                .setName("Unused local variables should be removed")
+                .setHtmlDescription(
+                        "<p>Local variables that are never used should be removed to keep the code easier to read and maintain.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>DECLARE @count INT; SET @count = 1;</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>DECLARE @count INT; SET @count = 1; SELECT @count;</pre>")
+                .setSeverity(Severity.MINOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_MAINTAINABILITY, "unused-code");
+
+        // Rule: S1172
+        repository.createRule(UnusedParameterCheck.RULE_KEY)
+                .setName("Unused parameters should be removed")
+                .setHtmlDescription(
+                        "<p>Unused procedure or function parameters should be removed because they add noise without affecting behavior.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>CREATE PROCEDURE dbo.GetOrders (@customerId INT, @unused INT) AS BEGIN SELECT * FROM Orders WHERE CustomerId = @customerId; END;</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>CREATE PROCEDURE dbo.GetOrders (@customerId INT) AS BEGIN SELECT * FROM Orders WHERE CustomerId = @customerId; END;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_MAINTAINABILITY, "unused-code");
+
+        // Rule: S1065
+        repository.createRule(UnusedLabelCheck.RULE_KEY)
+                .setName("Unused labels should be removed")
+                .setHtmlDescription(
+                        "<p>Labels that are never referenced by a GOTO statement should be removed.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>label: SELECT 1;</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>IF 1 = 1 GOTO label; label: SELECT 1;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_MAINTAINABILITY, TAG_CONTROL_FLOW);
+
+        // Rule: S1763
+        repository.createRule(UnreachableCodeCheck.RULE_KEY)
+                .setName("Statements should not be unreachable")
+                .setHtmlDescription(
+                        "<p>Statements following unconditional terminators such as <code>RETURN</code>, <code>BREAK</code>, <code>CONTINUE</code>, or <code>THROW</code> are unreachable and should be removed.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>IF 1 = 1 RETURN; SELECT 1;</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>IF 1 = 1 RETURN; ELSE SELECT 1;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_LOGIC, TAG_CONTROL_FLOW);
+
+        // Rule: S1751
+        repository.createRule(SingleIterationLoopCheck.RULE_KEY)
+                .setName("Loops with at most one iteration should be refactored")
+                .setHtmlDescription(
+                        "<p>While loops that are effectively single-iteration should be refactored to the simpler statement that expresses the intent.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>WHILE 1 = 1 BEGIN SELECT 1; BREAK; END;</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>SELECT 1;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_LOGIC, "loop");
+
+        // Rule: S1656
+        repository.createRule(SelfAssignmentCheck.RULE_KEY)
+                .setName("Variables should not be self-assigned")
+                .setHtmlDescription(
+                        "<p>A variable assigned to itself is a no-op and usually indicates a logic error or leftover code.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>SET @x = @x;</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>SET @x = 1;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_LOGIC, "assignment");
+
+        // Rule: S2737
+        repository.createRule(CatchClauseShouldDoMoreThanRethrowCheck.RULE_KEY)
+                .setName("CATCH blocks should do more than simply rethrow")
+                .setHtmlDescription(
+                        "<p>A catch block that only rethrows the same exception is redundant and hides important error-handling logic.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>BEGIN TRY SELECT 1/0; END TRY BEGIN CATCH THROW; END CATCH;</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>BEGIN TRY SELECT 1/0; END TRY BEGIN CATCH INSERT INTO Errors VALUES (ERROR_MESSAGE()); THROW; END CATCH;</pre>")
+                .setSeverity(Severity.MINOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "error-handling", "logging");
+
+        // Rule: S3626
+        repository.createRule(RedundantJumpCheck.RULE_KEY)
+                .setName("Redundant jump statements should be removed")
+                .setHtmlDescription(
+                        "<p>Returning immediately at the end of a procedure is redundant because the procedure already ends there.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>CREATE PROCEDURE p AS BEGIN SELECT 1; RETURN; END;</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>CREATE PROCEDURE p AS BEGIN SELECT 1; END;</pre>")
+                .setSeverity(Severity.MINOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_CONTROL_FLOW, TAG_MAINTAINABILITY);
+
+        // Rule: SyntaxError
         repository.createRule(CheckList.SYNTAX_ERROR_RULE_KEY)
                 .setName("T-SQL syntax error")
                 .setHtmlDescription(
