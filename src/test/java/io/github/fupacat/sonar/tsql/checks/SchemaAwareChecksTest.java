@@ -137,8 +137,11 @@ class SchemaAwareChecksTest {
                         "SELECT CAST(Code AS VARCHAR(10)) FROM Items;");
         assertThat(issues).hasSize(1);
 
-        // Null target / source
+        // Null target / non-column / non-narrowing casts
         assertThat(CheckTestUtils.scan(narrowingCastCheck, "SELECT 1;")).isEmpty();
+        assertThat(CheckTestUtils.scan(narrowingCastCheck, "SELECT CAST('hello' AS VARCHAR(10));")).isEmpty();
+        assertThat(CheckTestUtils.scan(narrowingCastCheck, "SELECT CAST(1 + 1 AS INT);")).isEmpty();
+        assertThat(CheckTestUtils.scan(narrowingCastCheck, "SELECT CAST(Code AS MyCustomType) FROM Items;")).isEmpty();
     }
 
     // TRACEABILITY_MAPPING: REQ-016

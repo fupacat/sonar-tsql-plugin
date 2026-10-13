@@ -59,7 +59,7 @@ public class NarrowingCastCheck extends TSqlCheck {
         }
         ProjectSchemaCatalog.TypeInfo sourceType = catalog.typeOf(columnReferenceExpression).orElse(null);
         ProjectSchemaCatalog.TypeInfo targetTypeInfo = toTypeInfo(targetType);
-        if (sourceType == null || targetTypeInfo == null || !targetTypeInfo.isNarrowerThan(sourceType)) {
+        if (sourceType == null || !targetTypeInfo.isNarrowerThan(sourceType)) {
             return;
         }
         reportIssue(node, "Data loss might occur when casting or assigning between columns or variables of narrower data types or lengths.");

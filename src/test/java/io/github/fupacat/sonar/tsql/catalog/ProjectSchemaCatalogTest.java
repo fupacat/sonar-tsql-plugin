@@ -265,6 +265,20 @@ class ProjectSchemaCatalogTest {
         createStmt.Definition.ColumnDefinitions = List.of(colDef);
         uqCatalog.indexScript(createStmt);
         assertThat(uqCatalog.hasTable("TestTable")).isTrue();
+
+        // Empty multi-part identifier resolution
+        var emptyRef = new ColumnReferenceExpression();
+        emptyRef.MultiPartIdentifier = new io.github.fupacat.ast.MultiPartIdentifier();
+        emptyRef.MultiPartIdentifier.Identifiers = List.of();
+        assertThat(uqCatalog.resolveColumn(emptyRef)).isEmpty();
+
+        // Standalone index edge cases (null OnName / null columns)
+        var createIdx = new io.github.fupacat.ast.CreateIndexStatement();
+        uqCatalog.indexScript(createIdx);
+        createIdx.OnName = new io.github.fupacat.ast.SchemaObjectName();
+        uqCatalog.indexScript(createIdx);
+        createIdx.Columns = List.of();
+        uqCatalog.indexScript(createIdx);
     }
 
     private static ProjectSchemaCatalog catalogFromSql(String sql) {
