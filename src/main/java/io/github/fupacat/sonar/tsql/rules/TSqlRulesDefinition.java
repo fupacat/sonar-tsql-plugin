@@ -32,6 +32,8 @@ public class TSqlRulesDefinition implements RulesDefinition {
     public static final String REPOSITORY_NAME = "SonarQube T-SQL Analyzer";
     private static final String TAG_SQL_SERVER = "sql-server";
     private static final String TAG_DATA_SAFETY = "data-safety";
+    private static final String TAG_DATA_INTEGRITY = "data-integrity";
+    private static final String TAG_SCHEMA = "schema";
     private static final String NONCOMPLIANT_HEADER = "<h3>Noncompliant Code Example</h3>";
     private static final String COMPLIANT_HEADER = "<h3>Compliant Solution</h3>";
 
@@ -85,7 +87,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "concurrency", "data-integrity");
+                .setTags(TAG_SQL_SERVER, "concurrency", TAG_DATA_INTEGRITY);
 
         // Rule 4: AvoidDeprecatedTypes
         repository.createRule(AvoidDeprecatedTypesCheck.RULE_KEY)
@@ -114,7 +116,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.BLOCKER)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, TAG_DATA_SAFETY, "data-integrity");
+                .setTags(TAG_SQL_SERVER, TAG_DATA_SAFETY, TAG_DATA_INTEGRITY);
 
         // Rule 6: S3641
         repository.createRule(NotInSubqueryCheck.RULE_KEY)
@@ -184,7 +186,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.BLOCKER)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "schema", "data-integrity");
+                .setTags(TAG_SQL_SERVER, TAG_SCHEMA, TAG_DATA_INTEGRITY);
 
         // Rule 11: S1745
         repository.createRule(InsertColumnsExplicitCheck.RULE_KEY)
@@ -198,7 +200,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.CRITICAL)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, TAG_DATA_SAFETY, "schema");
+                .setTags(TAG_SQL_SERVER, TAG_DATA_SAFETY, TAG_SCHEMA);
 
         // Rule 12: S4078
         repository.createRule(ExplicitLengthForVariableTypesCheck.RULE_KEY)
@@ -212,7 +214,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.CRITICAL)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "data-types", "schema");
+                .setTags(TAG_SQL_SERVER, "data-types", TAG_SCHEMA);
 
         // Rule 13: S1735
         repository.createRule(OrderByColumnNamesCheck.RULE_KEY)
@@ -254,7 +256,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "schema", "constraint");
+                .setTags(TAG_SQL_SERVER, TAG_SCHEMA, "constraint");
 
         // Rule 16: S4149
         repository.createRule(ColumnReferenceDepthCheck.RULE_KEY)

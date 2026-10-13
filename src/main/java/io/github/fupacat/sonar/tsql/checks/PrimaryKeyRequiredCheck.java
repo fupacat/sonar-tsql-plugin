@@ -31,26 +31,41 @@ public class PrimaryKeyRequiredCheck extends TSqlCheck {
             return false;
         }
 
-        if (definition.TableConstraints != null) {
-            for (ConstraintDefinition constraint : definition.TableConstraints) {
-                if (constraint instanceof UniqueConstraintDefinition uniqueConstraint && uniqueConstraint.IsPrimaryKey) {
+        return hasPrimaryKeyInTableConstraints(definition) || hasPrimaryKeyInColumnConstraints(definition);
+    }
+
+    private boolean hasPrimaryKeyInTableConstraints(TableDefinition definition) {
+        if (definition.TableConstraints == null) {
+            return false;
+        }
+
+        for (ConstraintDefinition constraint : definition.TableConstraints) {
+            if (isPrimaryKey(constraint)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasPrimaryKeyInColumnConstraints(TableDefinition definition) {
+        if (definition.ColumnDefinitions == null) {
+            return false;
+        }
+
+        for (ColumnDefinition column : definition.ColumnDefinitions) {
+            if (column.Constraints == null) {
+                continue;
+            }
+            for (ConstraintDefinition constraint : column.Constraints) {
+                if (isPrimaryKey(constraint)) {
                     return true;
                 }
             }
         }
-
-        if (definition.ColumnDefinitions != null) {
-            for (ColumnDefinition column : definition.ColumnDefinitions) {
-                if (column.Constraints != null) {
-                    for (ConstraintDefinition constraint : column.Constraints) {
-                        if (constraint instanceof UniqueConstraintDefinition uniqueConstraint && uniqueConstraint.IsPrimaryKey) {
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-
         return false;
+    }
+
+    private boolean isPrimaryKey(ConstraintDefinition constraint) {
+        return constraint instanceof UniqueConstraintDefinition uniqueConstraint && uniqueConstraint.IsPrimaryKey;
     }
 }
