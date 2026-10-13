@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 public class SetAnsiNullsCheck extends TSqlCheck {
 
     public static final String RULE_KEY = "S4154";
-    private static final Pattern OFF_PATTERN = Pattern.compile("(?is)\\bset\\s+(?:ansi_nulls|ansi_padding|concat_null_yields_null)\\s+off\\b");
+    private static final Pattern SET_ANSI_NULLS_OFF = Pattern.compile("(?is)\\bset\\s+(?:ansi_nulls|ansi_padding|concat_null_yields_null)\\s+off\\b");
 
     // TRACEABILITY_MAPPING: REQ-048
     @Override
@@ -23,7 +23,8 @@ public class SetAnsiNullsCheck extends TSqlCheck {
     public void scan(TSqlFragment root, TSqlCheckContext context) {
         super.scan(root, context);
         String sql = getSourceText();
-        if (sql != null && OFF_PATTERN.matcher(sql).find()) {
+        boolean hasDisabledOption = sql != null && SET_ANSI_NULLS_OFF.matcher(sql).find();
+        if (hasDisabledOption) {
             reportIssue(root, "ANSI_NULLS, ANSI_PADDING, and CONCAT_NULL_YIELDS_NULL should not be toggled off.");
         }
     }

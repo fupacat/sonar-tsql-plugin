@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public final class CheckTestUtils {
 
@@ -43,8 +44,9 @@ public final class CheckTestUtils {
             this.sourceText = sourceText;
             this.file = mock(InputFile.class);
             try {
-                org.mockito.Mockito.when(file.contents()).thenReturn(sourceText);
+                when(file.contents()).thenReturn(sourceText);
             } catch (Exception ignored) {
+                // Mockito mock setup exception ignored for unit tests
             }
         }
 
