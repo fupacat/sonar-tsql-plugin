@@ -766,6 +766,132 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setStatus(RuleStatus.READY)
                 .setTags(TAG_SQL_SERVER, TAG_CONTROL_FLOW, TAG_MAINTAINABILITY);
 
+        // Rule 10: S1764
+        repository.createRule(DuplicateBinaryOperandCheck.RULE_KEY)
+                .setName("Identical expressions should not be used on both sides of a binary operator")
+                .setHtmlDescription(
+                        "<p>Using the same expression on both sides of a binary operator is usually a logic bug and almost always indicates a mistake.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>WHERE a = a OR x OR x;</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>WHERE a = b OR x OR y;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_LOGIC, "bug");
+
+        // Rule 11: S1862
+        repository.createRule(DuplicateIfConditionCheck.RULE_KEY)
+                .setName("Related IF/ELSE IF and CASE conditions should not be duplicated")
+                .setHtmlDescription(
+                        "<p>Duplicate conditions prevent the code from reaching later branches and usually hide logic errors.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>IF @flag = 1 ... ELSE IF @flag = 1 ...; CASE WHEN a = 1 THEN ... WHEN a = 1 THEN ... END;</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>IF @flag = 1 ... ELSE IF @flag = 2 ...; CASE WHEN a = 1 THEN ... WHEN a = 2 THEN ... END;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_LOGIC, "conditionals");
+
+        // Rule 12: S1871
+        repository.createRule(IdenticalBranchCheck.RULE_KEY_S1871)
+                .setName("Conditional branches should not have identical implementations")
+                .setHtmlDescription(
+                        "<p>Branches with identical logic are dead code and should be merged or split to make the intent clear.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>IF A BEGIN SELECT 1; END ELSE BEGIN SELECT 1; END;</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>IF A BEGIN SELECT 1; END ELSE BEGIN SELECT 2; END;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "duplication", TAG_MAINTAINABILITY);
+
+        // Rule 13: S2761
+        repository.createRule(RepeatedUnaryOperatorCheck.RULE_KEY)
+                .setName("Repeated unary operators should not be used")
+                .setHtmlDescription(
+                        "<p>Applying the same prefix operator multiple times is confusing and often a mistake.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>SELECT NOT NOT Flag, ~~~Value;</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>SELECT NOT Flag, ~Value;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_LOGIC, "operators");
+
+        // Rule 14: S3633
+        repository.createRule(WhereClauseRedundancyCheck.RULE_KEY_S3633)
+                .setName("WHERE clauses should not contain redundant or contradictory conditions")
+                .setHtmlDescription(
+                        "<p>Redundant conditions in a WHERE clause both increase complexity and hide semantic errors.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>WHERE A = A AND A = A;</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>WHERE A = 1 AND B = 2;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_LOGIC, "query");
+
+        // Rule 15: S121
+        repository.createRule(ControlStructureBlockCheck.RULE_KEY)
+                .setName("Control structures should use BEGIN...END blocks")
+                .setHtmlDescription(
+                        "<p>Single statements in control structures are harder to read and more error-prone if later logic is added.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>IF @flag = 1 SELECT 1; WHILE @flag = 1 SELECT 1;</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>IF @flag = 1 BEGIN SELECT 1; END; WHILE @flag = 1 BEGIN SELECT 1; END;</pre>")
+                .setSeverity(Severity.CRITICAL)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_MAINTAINABILITY, TAG_CONTROL_FLOW);
+
+        // Rule 16: S131
+        repository.createRule(CaseElseMissingCheck.RULE_KEY_S131)
+                .setName("CASE expressions and IF/ELSE IF chains should end with ELSE")
+                .setHtmlDescription(
+                        "<p>Missing ELSE implies a fall-through path that can hide bugs and lead to unexpected behavior.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>CASE WHEN x = 1 THEN 'A' END; IF x = 1 SELECT 'A'; ELSE IF x = 2 SELECT 'B'; END;</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>CASE WHEN x = 1 THEN 'A' ELSE 'default' END; IF x = 1 SELECT 'A'; ELSE IF x = 2 SELECT 'B'; ELSE SELECT 'default';</pre>")
+                .setSeverity(Severity.CRITICAL)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_LOGIC, TAG_CONTROL_FLOW);
+
+        // Rule 17: S907
+        repository.createRule(GotoStatementCheck.RULE_KEY)
+                .setName("GOTO statements should not be used")
+                .setHtmlDescription(
+                        "<p>GOTO creates complex, difficult-to-follow control flow and makes code maintenance error-prone.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>GOTO NextStep;</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>IF @ok = 1 BEGIN RETURN; END;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_CONTROL_FLOW, "complexity");
+
+        // Rule 18: S1066
+        repository.createRule(NestedIfMergeCheck.RULE_KEY)
+                .setName("Mergeable nested IF statements should be combined")
+                .setHtmlDescription(
+                        "<p>Nested IF statements that can be merged create unnecessary complexity.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>IF a = 1 BEGIN IF b = 2 BEGIN SELECT 1; END; END;</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>IF a = 1 AND b = 2 BEGIN SELECT 1; END;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.CODE_SMELL)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "complexity", TAG_MAINTAINABILITY);
+
         // Rule: SyntaxError
         repository.createRule(CheckList.SYNTAX_ERROR_RULE_KEY)
                 .setName("T-SQL syntax error")

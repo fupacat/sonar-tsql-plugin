@@ -63,6 +63,15 @@ public class TSqlQualityProfile implements BuiltInQualityProfilesDefinition {
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, SelfAssignmentCheck.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, CatchClauseShouldDoMoreThanRethrowCheck.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, RedundantJumpCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, DuplicateBinaryOperandCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, DuplicateIfConditionCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, IdenticalBranchCheck.RULE_KEY_S1871);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, RepeatedUnaryOperatorCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, WhereClauseRedundancyCheck.RULE_KEY_S3633);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, ControlStructureBlockCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, CaseElseMissingCheck.RULE_KEY_S131);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, GotoStatementCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, NestedIfMergeCheck.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S103Check.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S104Check.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S105Check.RULE_KEY);
