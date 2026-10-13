@@ -1,8 +1,10 @@
 package io.github.fupacat.sonar.tsql.checks;
 
+import io.github.fupacat.ast.AssignmentSetClause;
 import io.github.fupacat.ast.CreateProcedureStatement;
 import io.github.fupacat.ast.ParameterModifier;
 import io.github.fupacat.ast.ProcedureParameter;
+import io.github.fupacat.ast.SelectSetVariable;
 import io.github.fupacat.ast.SetVariableStatement;
 import io.github.fupacat.ast.TSqlConcreteFragmentVisitor;
 
@@ -70,18 +72,34 @@ public class StoredProcedureOutputParameterCheck extends TSqlCheck {
         TSqlConcreteFragmentVisitor collector = new TSqlConcreteFragmentVisitor() {
             @Override
             public void visit(SetVariableStatement setVariableStatement) {
-                if (setVariableStatement != null && setVariableStatement.Variable != null
-                        && setVariableStatement.Variable.Name != null) {
-                    String name = setVariableStatement.Variable.Name.trim();
-                    if (name.startsWith("@")) {
-                        name = name.substring(1);
-                    }
-                    assignedParameters.add(name.toLowerCase(Locale.ROOT));
-                }
+                addAssignedParameterName(setVariableStatement != null ? setVariableStatement.Variable : null, assignedParameters);
                 super.visit(setVariableStatement);
+            }
+
+            @Override
+            public void visit(SelectSetVariable selectSetVariable) {
+                addAssignedParameterName(selectSetVariable != null ? selectSetVariable.Variable : null, assignedParameters);
+                super.visit(selectSetVariable);
+            }
+
+            @Override
+            public void visit(AssignmentSetClause assignmentSetClause) {
+                addAssignedParameterName(assignmentSetClause != null ? assignmentSetClause.Variable : null, assignedParameters);
+                super.visit(assignmentSetClause);
             }
         };
         statementList.accept(collector);
         return assignedParameters;
+    }
+
+    private void addAssignedParameterName(io.github.fupacat.ast.VariableReference variableReference, Set<String> assignedParameters) {
+        if (variableReference == null || variableReference.Name == null) {
+            return;
+        }
+        String name = variableReference.Name.trim();
+        if (name.startsWith("@")) {
+            name = name.substring(1);
+        }
+        assignedParameters.add(name.toLowerCase(Locale.ROOT));
     }
 }

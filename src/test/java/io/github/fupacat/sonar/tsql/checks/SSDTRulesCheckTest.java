@@ -50,8 +50,21 @@ class SSDTRulesCheckTest {
                 "CREATE PROCEDURE dbo.GetValue @Result INT OUTPUT AS SET @Result = 1;"))
                 .isEmpty();
         assertThat(CheckTestUtils.scan(storedProcedureOutputParameterCheck,
+                "CREATE PROCEDURE dbo.GetValue @Result INT OUTPUT AS SELECT @Result = 10;"))
+                .isEmpty();
+        assertThat(CheckTestUtils.scan(storedProcedureOutputParameterCheck,
+                "CREATE PROCEDURE dbo.GetValue @Result INT OUTPUT AS UPDATE dbo.Orders SET @Result = 1;"))
+                .isEmpty();
+        assertThat(CheckTestUtils.scan(storedProcedureOutputParameterCheck,
                 "CREATE PROCEDURE dbo.GetValue @Result INT OUTPUT AS SELECT 1;"))
                 .hasSize(1);
+    }
+
+    @Test
+    void testSargableWhereCheckIgnoresNonWhereComparisons() {
+        assertThat(CheckTestUtils.scan(sargableWhereCheck,
+                "SELECT CASE WHEN ABS(OrderTotal) > 0 THEN 1 END AS Flag FROM Orders;"))
+                .isEmpty();
     }
     @Test
     void testDeterministicFunctionInWhereCheck() {
