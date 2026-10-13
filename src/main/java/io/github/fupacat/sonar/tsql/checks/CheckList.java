@@ -18,7 +18,14 @@ public final class CheckList {
             NotInSubqueryCheck.class,
             NullComparisonCheck.class,
             TopWithoutOrderByCheck.class,
-            CaseInputInvariantCheck.class
+            CaseInputInvariantCheck.class,
+            PrimaryKeyRequiredCheck.class,
+            InsertColumnsExplicitCheck.class,
+            ExplicitLengthForVariableTypesCheck.class,
+            OrderByColumnNamesCheck.class,
+            ExistsSelectOneCheck.class,
+            AlterTableCheckEnforcementCheck.class,
+            ColumnReferenceDepthCheck.class
     );
 
     private CheckList() {
@@ -40,7 +47,14 @@ public final class CheckList {
                 new NotInSubqueryCheck(),
                 new NullComparisonCheck(),
                 new TopWithoutOrderByCheck(),
-                new CaseInputInvariantCheck()
+                new CaseInputInvariantCheck(),
+                new PrimaryKeyRequiredCheck(),
+                new InsertColumnsExplicitCheck(),
+                new ExplicitLengthForVariableTypesCheck(),
+                new OrderByColumnNamesCheck(),
+                new ExistsSelectOneCheck(),
+                new AlterTableCheckEnforcementCheck(),
+                new ColumnReferenceDepthCheck()
         );
     }
 }
