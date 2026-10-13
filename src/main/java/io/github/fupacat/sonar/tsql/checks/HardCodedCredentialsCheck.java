@@ -90,7 +90,7 @@ public class HardCodedCredentialsCheck extends TSqlCheck {
         String normalized = providerString.toLowerCase(Locale.ROOT);
         return normalized.contains("user=")
                 || normalized.contains("uid=")
-                || normalized.contains("******pwd=");
+                || normalized.contains("******password=");
     }
 
     private boolean isNonEmptyString(Literal literal) {
