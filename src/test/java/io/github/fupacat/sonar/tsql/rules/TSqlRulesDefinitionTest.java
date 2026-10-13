@@ -8,9 +8,12 @@ import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
 import io.github.fupacat.sonar.tsql.checks.CaseInputInvariantCheck;
 import io.github.fupacat.sonar.tsql.checks.CheckList;
 import io.github.fupacat.sonar.tsql.checks.DeleteAndUpdateWithoutWhereCheck;
+import io.github.fupacat.sonar.tsql.checks.DynamicSqlExecutionCheck;
+import io.github.fupacat.sonar.tsql.checks.HardCodedCredentialsCheck;
 import io.github.fupacat.sonar.tsql.checks.NotInSubqueryCheck;
 import io.github.fupacat.sonar.tsql.checks.NullComparisonCheck;
 import io.github.fupacat.sonar.tsql.checks.TopWithoutOrderByCheck;
+import io.github.fupacat.sonar.tsql.checks.WeakHashCheck;
 import org.junit.jupiter.api.Test;
 import org.sonar.api.rule.Severity;
 import org.sonar.api.rules.RuleType;
@@ -32,8 +35,8 @@ class TSqlRulesDefinitionTest {
         assertThat(repository.name()).isEqualTo(TSqlRulesDefinition.REPOSITORY_NAME);
         assertThat(repository.language()).isEqualTo(TSqlLanguage.KEY);
 
-        // Verify all 10 rules are registered
-        assertThat(repository.rules()).hasSize(10);
+        // Verify all built-in rules are registered
+        assertThat(repository.rules()).hasSize(13);
 
         RulesDefinition.Rule selectAllRule = repository.rule(AvoidSelectAllCheck.RULE_KEY);
         assertThat(selectAllRule).isNotNull();
@@ -80,6 +83,21 @@ class TSqlRulesDefinitionTest {
         assertThat(caseInvariantRule).isNotNull();
         assertThat(caseInvariantRule.severity()).isEqualTo(Severity.CRITICAL);
         assertThat(caseInvariantRule.type()).isEqualTo(RuleType.BUG);
+
+        RulesDefinition.Rule dynamicSqlRule = repository.rule(DynamicSqlExecutionCheck.RULE_KEY);
+        assertThat(dynamicSqlRule).isNotNull();
+        assertThat(dynamicSqlRule.severity()).isEqualTo(Severity.CRITICAL);
+        assertThat(dynamicSqlRule.type()).isEqualTo(RuleType.VULNERABILITY);
+
+        RulesDefinition.Rule weakHashRule = repository.rule(WeakHashCheck.RULE_KEY);
+        assertThat(weakHashRule).isNotNull();
+        assertThat(weakHashRule.severity()).isEqualTo(Severity.CRITICAL);
+        assertThat(weakHashRule.type()).isEqualTo(RuleType.VULNERABILITY);
+
+        RulesDefinition.Rule hardCodedCredentialsRule = repository.rule(HardCodedCredentialsCheck.RULE_KEY);
+        assertThat(hardCodedCredentialsRule).isNotNull();
+        assertThat(hardCodedCredentialsRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(hardCodedCredentialsRule.type()).isEqualTo(RuleType.VULNERABILITY);
 
         RulesDefinition.Rule syntaxErrorRule = repository.rule(CheckList.SYNTAX_ERROR_RULE_KEY);
         assertThat(syntaxErrorRule).isNotNull();

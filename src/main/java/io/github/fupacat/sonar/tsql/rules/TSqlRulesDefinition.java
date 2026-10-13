@@ -8,9 +8,12 @@ import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
 import io.github.fupacat.sonar.tsql.checks.CaseInputInvariantCheck;
 import io.github.fupacat.sonar.tsql.checks.CheckList;
 import io.github.fupacat.sonar.tsql.checks.DeleteAndUpdateWithoutWhereCheck;
+import io.github.fupacat.sonar.tsql.checks.DynamicSqlExecutionCheck;
+import io.github.fupacat.sonar.tsql.checks.HardCodedCredentialsCheck;
 import io.github.fupacat.sonar.tsql.checks.NotInSubqueryCheck;
 import io.github.fupacat.sonar.tsql.checks.NullComparisonCheck;
 import io.github.fupacat.sonar.tsql.checks.TopWithoutOrderByCheck;
+import io.github.fupacat.sonar.tsql.checks.WeakHashCheck;
 import org.sonar.api.rule.RuleStatus;
 import org.sonar.api.rule.Severity;
 import org.sonar.api.rules.RuleType;
@@ -165,7 +168,49 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setStatus(RuleStatus.READY)
                 .setTags(TAG_SQL_SERVER, "determinism", TAG_DATA_SAFETY);
 
-        // Rule 10: SyntaxError
+        // Rule 10: S1523
+        repository.createRule(DynamicSqlExecutionCheck.RULE_KEY)
+                .setName("Dynamic SQL should not concatenate unvalidated input")
+                .setHtmlDescription(
+                        "<p>Executing dynamically built SQL with concatenated variables or parameters allows injection attacks because untrusted input can alter the SQL text.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>DECLARE @sql NVARCHAR(MAX) = 'SELECT * FROM Users WHERE Name = ''' + @name + ''''; EXEC (@sql);</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>DECLARE @sql NVARCHAR(MAX) = N'SELECT * FROM Users WHERE Name = @name'; EXEC sys.sp_executesql @sql, N'@name NVARCHAR(50)', @name = @input;</pre>")
+                .setSeverity(Severity.CRITICAL)
+                .setType(RuleType.VULNERABILITY)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "security", "injection");
+
+        // Rule 11: S2070 / S4790
+        repository.createRule(WeakHashCheck.RULE_KEY)
+                .setName("Weak hashing algorithms should not be used")
+                .setHtmlDescription(
+                        "<p>Weak hash algorithms such as MD2, MD4, MD5, SHA, and SHA1 are vulnerable to collision and preimage attacks. Use SHA2_256 or SHA2_512 instead.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>SELECT HASHBYTES('SHA1', @secret);</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>SELECT HASHBYTES('SHA2_512', @secret);</pre>")
+                .setSeverity(Severity.CRITICAL)
+                .setType(RuleType.VULNERABILITY)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "security", "cryptography");
+
+        // Rule 12: S2068
+        repository.createRule(HardCodedCredentialsCheck.RULE_KEY)
+                .setName("Credentials should not be hard-coded in SQL code")
+                .setHtmlDescription(
+                        "<p>Hard-coded credentials inside SQL scripts can be exposed in source control, logs, or application traces. Use secure secret stores, environment variables, or generated credentials instead.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>CREATE LOGIN app WITH PASSWORD = 'P@ssw0rd!'; ALTER LOGIN app WITH PASSWORD = 'Password123';</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>CREATE LOGIN app WITH PASSWORD = CONVERT(varchar(32), NEWID());</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.VULNERABILITY)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "security", "authentication");
+
+        // Rule 13: SyntaxError
         repository.createRule(CheckList.SYNTAX_ERROR_RULE_KEY)
                 .setName("T-SQL syntax error")
                 .setHtmlDescription(
