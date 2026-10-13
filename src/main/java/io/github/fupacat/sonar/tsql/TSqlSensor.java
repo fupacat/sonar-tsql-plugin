@@ -112,7 +112,7 @@ public class TSqlSensor implements Sensor {
         if (rootFragment == null || activeChecks.isEmpty()) {
             return;
         }
-        TSqlCheckContext checkContext = new SensorCheckContext(inputFile, context, rootFragment);
+        TSqlCheckContext checkContext = new SensorCheckContext(inputFile, context, rootFragment, content);
         for (TSqlCheck check : activeChecks) {
             try {
                 check.scan(rootFragment, checkContext);
@@ -139,16 +139,23 @@ public class TSqlSensor implements Sensor {
         private final InputFile inputFile;
         private final SensorContext sensorContext;
         private final TSqlFragment rootFragment;
+        private final String sourceText;
 
-        public SensorCheckContext(InputFile inputFile, SensorContext sensorContext, TSqlFragment rootFragment) {
+        public SensorCheckContext(InputFile inputFile, SensorContext sensorContext, TSqlFragment rootFragment, String sourceText) {
             this.inputFile = inputFile;
             this.sensorContext = sensorContext;
             this.rootFragment = rootFragment;
+            this.sourceText = sourceText;
         }
 
         @Override
         public InputFile getFile() {
             return inputFile;
+        }
+
+        @Override
+        public String getSourceText() {
+            return sourceText;
         }
 
         @Override

@@ -24,17 +24,27 @@ public final class CheckTestUtils {
             throw new IllegalArgumentException("Failed to parse SQL: " + sql + ", errors: " + result.errors());
         }
 
-        CollectingContext context = new CollectingContext();
+        CollectingContext context = new CollectingContext(sql);
         check.scan(result.fragment(), context);
         return context.issues;
     }
 
     public static class CollectingContext implements TSqlCheckContext {
         public final List<String> issues = new ArrayList<>();
+        private final String sourceText;
+
+        public CollectingContext(String sourceText) {
+            this.sourceText = sourceText;
+        }
 
         @Override
         public InputFile getFile() {
             return mock(InputFile.class);
+        }
+
+        @Override
+        public String getSourceText() {
+            return sourceText;
         }
 
         @Override

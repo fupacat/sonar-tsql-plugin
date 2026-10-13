@@ -15,6 +15,13 @@ public interface TSqlCheckContext {
     InputFile getFile();
 
     /**
+     * @return the original SQL source text for the file, if available.
+     */
+    default String getSourceText() {
+        return null;
+    }
+
+    /**
      * Reports an issue on a specific AST fragment.
      *
      * @param check the check reporting the issue
