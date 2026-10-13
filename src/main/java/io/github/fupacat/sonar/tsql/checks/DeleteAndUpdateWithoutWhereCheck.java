@@ -1,6 +1,8 @@
 package io.github.fupacat.sonar.tsql.checks;
 
 import io.github.fupacat.ast.DeleteSpecification;
+import io.github.fupacat.ast.TSqlConcreteFragmentVisitor;
+import io.github.fupacat.ast.TSqlScript;
 import io.github.fupacat.ast.UpdateSpecification;
 
 /**
@@ -19,19 +21,24 @@ public class DeleteAndUpdateWithoutWhereCheck extends TSqlCheck {
 
     // TRACEABILITY_MAPPING: REQ-011
     @Override
-    public void visit(DeleteSpecification node) {
-        if (node.WhereClause == null) {
-            reportIssue(node, "DELETE statements should contain a WHERE clause to avoid deleting all rows.");
-        }
-        super.visit(node);
-    }
+    public void visit(TSqlScript node) {
+        node.acceptChildren(new TSqlConcreteFragmentVisitor() {
+            @Override
+            public void visit(DeleteSpecification deleteNode) {
+                if (deleteNode.WhereClause == null) {
+                    reportIssue(deleteNode, "DELETE statements should contain a WHERE clause to avoid deleting all rows.");
+                }
+                super.visit(deleteNode);
+            }
 
-    // TRACEABILITY_MAPPING: REQ-011
-    @Override
-    public void visit(UpdateSpecification node) {
-        if (node.WhereClause == null) {
-            reportIssue(node, "UPDATE statements should contain a WHERE clause to avoid updating all rows.");
-        }
-        super.visit(node);
+            @Override
+            public void visit(UpdateSpecification updateNode) {
+                if (updateNode.WhereClause == null) {
+                    reportIssue(updateNode, "UPDATE statements should contain a WHERE clause to avoid updating all rows.");
+                }
+                super.visit(updateNode);
+            }
+        });
     }
 }
+

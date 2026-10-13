@@ -141,3 +141,74 @@
   "expected_output": "void"
 }
 ```
+
+[REQ-011] DeleteAndUpdateWithoutWhereCheck SHALL flag DELETE and UPDATE statements that omit a WHERE clause.
+
+```json
+{
+  "requirement": "REQ-011",
+  "kind": "categorical",
+  "precondition": "DELETE or UPDATE statement without WHERE clause parsed",
+  "action": "invoke DeleteAndUpdateWithoutWhereCheck scan",
+  "expected": "issue reported for missing WHERE clause",
+  "method": "junit",
+  "expected_output": "void"
+}
+```
+
+[REQ-012] NotInSubqueryCheck SHALL flag NOT IN predicates that use a subquery.
+
+```json
+{
+  "requirement": "REQ-012",
+  "kind": "categorical",
+  "precondition": "NOT IN predicate with subquery parsed",
+  "action": "invoke NotInSubqueryCheck scan",
+  "expected": "issue reported for NOT IN subquery",
+  "method": "junit",
+  "expected_output": "void"
+}
+```
+
+[REQ-013] NullComparisonCheck SHALL flag equality and inequality comparisons directly against NULL literals.
+
+```json
+{
+  "requirement": "REQ-013",
+  "kind": "categorical",
+  "precondition": "equality or inequality comparison with NULL literal parsed",
+  "action": "invoke NullComparisonCheck scan",
+  "expected": "issue reported for direct NULL comparison",
+  "method": "junit",
+  "expected_output": "void"
+}
+```
+
+[REQ-014] TopWithoutOrderByCheck SHALL flag SELECT TOP query specifications that omit an ORDER BY clause.
+
+```json
+{
+  "requirement": "REQ-014",
+  "kind": "categorical",
+  "precondition": "SELECT TOP query without ORDER BY parsed",
+  "action": "invoke TopWithoutOrderByCheck scan",
+  "expected": "issue reported for TOP without ORDER BY",
+  "method": "junit",
+  "expected_output": "void"
+}
+```
+
+[REQ-015] CaseInputInvariantCheck SHALL flag simple CASE expressions whose input expression invokes non-deterministic functions RAND or NEWID.
+
+```json
+{
+  "requirement": "REQ-015",
+  "kind": "categorical",
+  "precondition": "simple CASE expression with non-deterministic input function parsed",
+  "action": "invoke CaseInputInvariantCheck scan",
+  "expected": "issue reported for non-invariant CASE input expression",
+  "method": "junit",
+  "expected_output": "void"
+}
+```
+
