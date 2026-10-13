@@ -21,10 +21,10 @@ public class ExistsSelectOneCheck extends TSqlCheck {
 
     @Override
     public void visit(ExistsPredicate node) {
-        if (node.Subquery != null && node.Subquery.QueryExpression instanceof QuerySpecification specification) {
-            if (hasColumnList(specification)) {
-                reportIssue(node, "EXISTS subqueries should use SELECT 1 or SELECT * instead of selecting columns.");
-            }
+        if (node.Subquery != null
+                && node.Subquery.QueryExpression instanceof QuerySpecification specification
+                && hasColumnList(specification)) {
+            reportIssue(node, "EXISTS subqueries should use SELECT 1 or SELECT * instead of selecting columns.");
         }
         super.visit(node);
     }
