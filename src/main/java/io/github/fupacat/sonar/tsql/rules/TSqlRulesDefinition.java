@@ -38,6 +38,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
     private static final String COMPLIANT_HEADER = "<h3>Compliant Solution</h3>";
     private static final String TAG_LOGIC = "logic";
     private static final String TAG_CONTROL_FLOW = "control-flow";
+    private static final String TAG_MAINTAINABILITY = "maintainability";
 
     // TRACEABILITY_MAPPING: REQ-003
     @Override
@@ -216,7 +217,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "duplication", "maintainability");
+                .setTags(TAG_SQL_SERVER, "duplication", TAG_MAINTAINABILITY);
 
         // Rule 13: S2761
         repository.createRule(RepeatedUnaryOperatorCheck.RULE_KEY)
@@ -258,7 +259,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.CRITICAL)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "maintainability", TAG_CONTROL_FLOW);
+                .setTags(TAG_SQL_SERVER, TAG_MAINTAINABILITY, TAG_CONTROL_FLOW);
 
         // Rule 16: S131
         repository.createRule(CaseElseMissingCheck.RULE_KEY_S131)
@@ -300,7 +301,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "complexity", "maintainability");
+                .setTags(TAG_SQL_SERVER, "complexity", TAG_MAINTAINABILITY);
 
         // Rule 19: SyntaxError
         repository.createRule(CheckList.SYNTAX_ERROR_RULE_KEY)

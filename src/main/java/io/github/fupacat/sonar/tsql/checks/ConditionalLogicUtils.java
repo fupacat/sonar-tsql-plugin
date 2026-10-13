@@ -3,6 +3,7 @@ package io.github.fupacat.sonar.tsql.checks;
 import io.github.fupacat.ast.*;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,6 +15,24 @@ final class ConditionalLogicUtils {
         if (node == null) {
             return "null";
         }
+        String basicSignature = basicSignature(node);
+        if (basicSignature != null) {
+            return basicSignature;
+        }
+        String expressionSignature = expressionNodeSignature(node);
+        if (expressionSignature != null) {
+            return expressionSignature;
+        }
+        if (node instanceof FunctionCall functionCall) {
+            return functionSignature(functionCall);
+        }
+        if (node instanceof TSqlFragment fragment) {
+            return reflectFragmentSignature(fragment);
+        }
+        return node.getClass().getSimpleName() + ':' + String.valueOf(node);
+    }
+
+    private static String basicSignature(Object node) {
         if (node instanceof Identifier identifier && identifier.Value != null) {
             return "id:" + identifier.Value;
         }
@@ -32,6 +51,10 @@ final class ConditionalLogicUtils {
         if (node instanceof NullLiteral) {
             return "null";
         }
+        return null;
+    }
+
+    private static String expressionNodeSignature(Object node) {
         if (node instanceof BooleanComparisonExpression comparison) {
             return "cmp:" + comparison.ComparisonType + ":" + expressionSignature(comparison.FirstExpression)
                     + ":" + expressionSignature(comparison.SecondExpression);
@@ -53,13 +76,7 @@ final class ConditionalLogicUtils {
         if (node instanceof ParenthesisExpression parenthesis) {
             return "paren:" + expressionSignature(parenthesis.Expression);
         }
-        if (node instanceof FunctionCall functionCall) {
-            return functionSignature(functionCall);
-        }
-        if (node instanceof TSqlFragment fragment) {
-            return reflectFragmentSignature(fragment);
-        }
-        return node.getClass().getSimpleName() + ':' + String.valueOf(node);
+        return null;
     }
 
     private static String joinIdentifierParts(MultiPartIdentifier multiPart) {
@@ -94,28 +111,37 @@ final class ConditionalLogicUtils {
     private static String reflectFragmentSignature(TSqlFragment fragment) {
         StringBuilder builder = new StringBuilder();
         builder.append(fragment.getClass().getSimpleName());
-        for (Field field : fragment.getClass().getDeclaredFields()) {
+        for (Field field : fragment.getClass().getFields()) {
+            if (Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
             Object value = getFieldValue(fragment, field);
             if (value == null) {
                 continue;
             }
-            if (value instanceof Iterable<?> iterable) {
-                List<String> items = new ArrayList<>();
-                for (Object item : iterable) {
-                    if (item != null) {
-                        items.add(expressionSignature(item));
-                    }
-                }
-                if (!items.isEmpty()) {
-                    builder.append(':').append(field.getName()).append('[').append(String.join(",", items)).append(']');
-                }
-            } else if (value instanceof Number || value instanceof Boolean || value instanceof String || value instanceof Enum<?>) {
-                builder.append(':').append(field.getName()).append('=').append(value);
-            } else {
-                builder.append(':').append(field.getName()).append('=').append(expressionSignature(value));
-            }
+            appendFieldSignature(builder, field.getName(), value);
         }
         return builder.toString();
+    }
+
+    private static void appendFieldSignature(StringBuilder builder, String fieldName, Object value) {
+        if (value instanceof Iterable<?> iterable) {
+            List<String> items = new ArrayList<>();
+            for (Object item : iterable) {
+                if (item != null) {
+                    items.add(expressionSignature(item));
+                }
+            }
+            if (!items.isEmpty()) {
+                builder.append(':').append(fieldName).append('[').append(String.join(",", items)).append(']');
+            }
+            return;
+        }
+        if (value instanceof Number || value instanceof Boolean || value instanceof String || value instanceof Enum<?>) {
+            builder.append(':').append(fieldName).append('=').append(value);
+            return;
+        }
+        builder.append(':').append(fieldName).append('=').append(expressionSignature(value));
     }
 
     private static Object getFieldValue(TSqlFragment fragment, Field field) {
@@ -128,53 +154,5 @@ final class ConditionalLogicUtils {
 
     static boolean structurallySame(Object left, Object right) {
         return expressionSignature(left).equals(expressionSignature(right));
-    }
-
-    static int countNestedIfDepth(TSqlStatement statement) {
-        if (statement == null) {
-            return 0;
-        }
-        if (statement instanceof IfStatement ifStatement) {
-            int depth = 1;
-            if (ifStatement.ElseStatement instanceof IfStatement nested) {
-                depth += countNestedIfDepth(nested);
-            }
-            return depth;
-        }
-        return 0;
-    }
-
-    static int countExpressionComplexity(TSqlFragment node) {
-        if (node == null) {
-            return 0;
-        }
-        int count = countComplexityNode(node);
-        for (Field field : node.getClass().getDeclaredFields()) {
-            Object value = getFieldValue(node, field);
-            if (value instanceof TSqlFragment child) {
-                count += countExpressionComplexity(child);
-            } else if (value instanceof Iterable<?> iterable) {
-                count += countComplexityIterable(iterable);
-            }
-        }
-        return count;
-    }
-
-    private static int countComplexityNode(TSqlFragment node) {
-        if (node instanceof BooleanBinaryExpression || node instanceof BinaryExpression || node instanceof BooleanNotExpression
-                || node instanceof UnaryExpression || node instanceof BooleanComparisonExpression) {
-            return 1;
-        }
-        return 0;
-    }
-
-    private static int countComplexityIterable(Iterable<?> iterable) {
-        int count = 0;
-        for (Object item : iterable) {
-            if (item instanceof TSqlFragment child) {
-                count += countExpressionComplexity(child);
-            }
-        }
-        return count;
     }
 }
