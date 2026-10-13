@@ -62,20 +62,19 @@ public class SingleIterationLoopCheck extends TSqlCheck {
     }
 
     private static Integer parseInteger(io.github.fupacat.ast.ScalarExpression expression) {
-        if (expression instanceof IntegerLiteral literal && literal.Value != null) {
-            try {
-                return Integer.parseInt(literal.Value);
-            } catch (NumberFormatException e) {
-                return null;
-            }
+        String literalValue = null;
+        if (expression instanceof IntegerLiteral il) {
+            literalValue = il.Value;
+        } else if (expression instanceof NumericLiteral nl) {
+            literalValue = nl.Value;
         }
-        if (expression instanceof NumericLiteral literal && literal.Value != null) {
-            try {
-                return Integer.parseInt(literal.Value);
-            } catch (NumberFormatException e) {
-                return null;
-            }
+        if (literalValue == null) {
+            return null;
         }
-        return null;
+        try {
+            return Integer.parseInt(literalValue);
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
     }
 }

@@ -2,7 +2,6 @@ package io.github.fupacat.sonar.tsql.checks;
 
 import io.github.fupacat.ast.BeginEndBlockStatement;
 import io.github.fupacat.ast.BooleanComparisonExpression;
-import io.github.fupacat.ast.BooleanComparisonType;
 import io.github.fupacat.ast.BooleanExpression;
 import io.github.fupacat.ast.BreakStatement;
 import io.github.fupacat.ast.ContinueStatement;

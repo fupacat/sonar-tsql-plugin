@@ -21,6 +21,8 @@ public class TSqlRulesDefinition implements RulesDefinition {
     private static final String TAG_MAINTAINABILITY = "maintainability";
     private static final String TAG_FORMATTING = "formatting";
     private static final String TAG_SECURITY = "security";
+    private static final String TAG_LOGIC = "logic";
+    private static final String TAG_CONTROL_FLOW = "control-flow";
     private static final String NONCOMPLIANT_HEADER = "<h3>Noncompliant Code Example</h3>";
     private static final String COMPLIANT_HEADER = "<h3>Compliant Solution</h3>";
 
@@ -131,7 +133,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "null-handling", "logic");
+                .setTags(TAG_SQL_SERVER, "null-handling", TAG_LOGIC);
 
         // Rule 8: S4054
         repository.createRule(TopWithoutOrderByCheck.RULE_KEY)
@@ -608,7 +610,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "logic");
+                .setTags(TAG_SQL_SERVER, TAG_LOGIC);
 
         // Rule 16: S4109
         repository.createRule(TriggerResultSetCheck.RULE_KEY)
@@ -664,7 +666,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MINOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "maintainability", "unused-code");
+                .setTags(TAG_SQL_SERVER, TAG_MAINTAINABILITY, "unused-code");
 
         // Rule: S1172
         repository.createRule(UnusedParameterCheck.RULE_KEY)
@@ -678,7 +680,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "maintainability", "unused-code");
+                .setTags(TAG_SQL_SERVER, TAG_MAINTAINABILITY, "unused-code");
 
         // Rule: S1065
         repository.createRule(UnusedLabelCheck.RULE_KEY)
@@ -692,7 +694,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "maintainability", "control-flow");
+                .setTags(TAG_SQL_SERVER, TAG_MAINTAINABILITY, TAG_CONTROL_FLOW);
 
         // Rule: S1763
         repository.createRule(UnreachableCodeCheck.RULE_KEY)
@@ -706,7 +708,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "logic", "control-flow");
+                .setTags(TAG_SQL_SERVER, TAG_LOGIC, TAG_CONTROL_FLOW);
 
         // Rule: S1751
         repository.createRule(SingleIterationLoopCheck.RULE_KEY)
@@ -720,7 +722,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "logic", "loop");
+                .setTags(TAG_SQL_SERVER, TAG_LOGIC, "loop");
 
         // Rule: S1656
         repository.createRule(SelfAssignmentCheck.RULE_KEY)
@@ -734,7 +736,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "logic", "assignment");
+                .setTags(TAG_SQL_SERVER, TAG_LOGIC, "assignment");
 
         // Rule: S2737
         repository.createRule(CatchClauseShouldDoMoreThanRethrowCheck.RULE_KEY)
@@ -762,7 +764,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MINOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "control-flow", "maintainability");
+                .setTags(TAG_SQL_SERVER, TAG_CONTROL_FLOW, TAG_MAINTAINABILITY);
 
         // Rule: SyntaxError
         repository.createRule(CheckList.SYNTAX_ERROR_RULE_KEY)
