@@ -18,7 +18,7 @@ import static org.mockito.Mockito.when;
 
 class ProjectSchemaCatalogTest {
 
-    // TRACEABILITY_MAPPING: REQ-009
+    // TRACEABILITY_MAPPING: REQ-016
     @Test
     void testFromInputFilesBuildsProjectWideCatalog() throws IOException {
         InputFile ddlTable = mock(InputFile.class);
@@ -39,7 +39,7 @@ class ProjectSchemaCatalogTest {
         assertThat(catalog.getTable("Users").orElseThrow().getColumn("LoginName").orElseThrow().isNullable()).isTrue();
     }
 
-    // TRACEABILITY_MAPPING: REQ-009
+    // TRACEABILITY_MAPPING: REQ-016
     @Test
     void testFromInputFilesMergesColumnsAcrossDefinitions() throws IOException {
         InputFile file1 = mock(InputFile.class);
@@ -54,7 +54,7 @@ class ProjectSchemaCatalogTest {
         assertThat(catalog.getTable("Users").orElseThrow().getColumns()).containsKeys("id", "displayname");
     }
 
-    // TRACEABILITY_MAPPING: REQ-009
+    // TRACEABILITY_MAPPING: REQ-016
     @Test
     void testFromInputFilesSkipsUnreadableOrNullFiles() throws IOException {
         InputFile unreadable = mock(InputFile.class);
@@ -69,7 +69,7 @@ class ProjectSchemaCatalogTest {
         assertThat(catalog.hasTable("Missing")).isFalse();
     }
 
-    // TRACEABILITY_MAPPING: REQ-009
+    // TRACEABILITY_MAPPING: REQ-017
     @Test
     void testResolveColumnAndIndexedLookups() {
         ProjectSchemaCatalog catalog = catalogFromSql(
@@ -89,7 +89,7 @@ class ProjectSchemaCatalogTest {
         assertThat(catalog.typeOf(customerIdRef).orElseThrow().getTypeName()).isEqualTo("int");
     }
 
-    // TRACEABILITY_MAPPING: REQ-009
+    // TRACEABILITY_MAPPING: REQ-016
     @Test
     void testUnknownColumnLookupsReturnEmpty() {
         ProjectSchemaCatalog catalog = catalogFromSql("CREATE TABLE Orders (OrderId INT NOT NULL);");
@@ -102,7 +102,7 @@ class ProjectSchemaCatalogTest {
         assertThat(catalog.isNullable(unknownRef)).isFalse();
     }
 
-    // TRACEABILITY_MAPPING: REQ-009
+    // TRACEABILITY_MAPPING: REQ-016
     @Test
     void testEmptyCatalogHandlesNullOrBlankInputs() {
         ProjectSchemaCatalog catalog = ProjectSchemaCatalog.empty();
@@ -118,7 +118,7 @@ class ProjectSchemaCatalogTest {
         assertThat(catalog.isNullable(null)).isFalse();
     }
 
-    // TRACEABILITY_MAPPING: REQ-009
+    // TRACEABILITY_MAPPING: REQ-016
     @Test
     void testUnqualifiedColumnLookupFallsBackAcrossTables() {
         ProjectSchemaCatalog catalog = catalogFromSql(
@@ -131,7 +131,7 @@ class ProjectSchemaCatalogTest {
         assertThat(catalog.isIndexed(customerIdRef)).isTrue();
     }
 
-    // TRACEABILITY_MAPPING: REQ-009
+    // TRACEABILITY_MAPPING: REQ-016
     @Test
     void testPrimaryKeyAndUniqueConstraintsCreateIndexedColumns() {
         ProjectSchemaCatalog catalog = catalogFromSql(
@@ -147,7 +147,7 @@ class ProjectSchemaCatalogTest {
         assertThat(catalog.isIndexed(customerIdRef)).isTrue();
     }
 
-    // TRACEABILITY_MAPPING: REQ-009
+    // TRACEABILITY_MAPPING: REQ-018
     @Test
     void testTypeInfoComparisonWithinAndAcrossFamilies() {
         ProjectSchemaCatalog.TypeInfo intType = new ProjectSchemaCatalog.TypeInfo("INT", null);
@@ -203,7 +203,7 @@ class ProjectSchemaCatalogTest {
         assertThat(uniqueidentifier.getLength()).isNull();
     }
 
-    // TRACEABILITY_MAPPING: REQ-009
+    // TRACEABILITY_MAPPING: REQ-018
     @Test
     void testTypeExtractionSupportsParameterizedTypes() {
         ProjectSchemaCatalog catalog = catalogFromSql(
@@ -222,7 +222,7 @@ class ProjectSchemaCatalogTest {
         assertThat(description.isNullable()).isTrue();
     }
 
-    // TRACEABILITY_MAPPING: REQ-009
+    // TRACEABILITY_MAPPING: REQ-016
     @Test
     void testTableSchemaAndCatalogEdgeCases() {
         ProjectSchemaCatalog.TableSchema tableSchema = new ProjectSchemaCatalog.TableSchema("dbo.TestTable");
