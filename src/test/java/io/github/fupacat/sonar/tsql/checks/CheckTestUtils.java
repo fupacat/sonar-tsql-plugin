@@ -24,6 +24,7 @@ public final class CheckTestUtils {
         if (result.fragment() == null) {
             throw new IllegalArgumentException("Failed to parse SQL: " + sql + ", errors: " + result.errors());
         }
+        result.fragment().Value = sql;
 
         CollectingContext context = new CollectingContext();
         check.scan(result.fragment(), context);

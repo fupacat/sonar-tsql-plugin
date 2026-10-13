@@ -38,3 +38,33 @@ jobs:
           name: sonar-tsql-plugin
           path: target/sonar-tsql-plugin-*.jar
           if-no-files-found: error
+
+  update-prs:
+    name: Update Open PR Branches on Main Push
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Update Open Non-Draft PR Branches
+        env:
+          GH_TOKEN: ${{ secrets.COPILOT_DISPATCH_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          PR_NUMBERS=$(gh pr list --state open --json number,isDraft --jq '.[] | select(.isDraft == false) | .number')
+          if [ -z "$PR_NUMBERS" ]; then
+            echo "No open non-draft PRs to update."
+            exit 0
+          fi
+          for PR_NUM in $PR_NUMBERS; do
+            echo "Updating branch for PR #${PR_NUM}..."
+            gh api \
+              --method PUT \
+              -H "Accept: application/vnd.github+json" \
+              "/repos/${GH_REPO}/pulls/${PR_NUM}/update-branch" \
+              || echo "Could not auto-update PR #${PR_NUM} (may have merge conflicts)."
+          done
+
