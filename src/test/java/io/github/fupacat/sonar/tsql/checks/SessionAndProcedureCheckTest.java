@@ -12,6 +12,9 @@ class SessionAndProcedureCheckTest {
     private final SetAnsiWarningsAndArithabortCheck warningsCheck = new SetAnsiWarningsAndArithabortCheck();
     private final SetAnsiNullsCheck ansiNullsCheck = new SetAnsiNullsCheck();
     private final AvoidDeprecatedSystemTablesCheck deprecatedTablesCheck = new AvoidDeprecatedSystemTablesCheck();
+    private final FetchIntoCursorCountCheck fetchIntoCursorCountCheck = new FetchIntoCursorCountCheck();
+    private final CaseSubqueryCheck caseSubqueryCheck = new CaseSubqueryCheck();
+    private final TriggerResultSetCheck triggerResultSetCheck = new TriggerResultSetCheck();
     private final AvoidLikeWithoutWildcardCheck likeWithoutWildcardCheck = new AvoidLikeWithoutWildcardCheck();
     private final AvoidNonStandardComparisonOperatorsCheck nonStandardComparisonCheck = new AvoidNonStandardComparisonOperatorsCheck();
 
@@ -40,6 +43,27 @@ class SessionAndProcedureCheckTest {
     void testDeprecatedSystemTablesRule() {
         List<String> issues = CheckTestUtils.scan(deprecatedTablesCheck,
                 "SELECT * FROM sysobjects;");
+        assertThat(issues).hasSize(1);
+    }
+
+    @Test
+    void testFetchIntoCursorCountRule() {
+        List<String> issues = CheckTestUtils.scan(fetchIntoCursorCountCheck,
+                "DECLARE c CURSOR FOR SELECT a, b FROM dbo.T; FETCH NEXT FROM c INTO @a;");
+        assertThat(issues).hasSize(1);
+    }
+
+    @Test
+    void testCaseSubqueryRule() {
+        List<String> issues = CheckTestUtils.scan(caseSubqueryCheck,
+                "SELECT COALESCE((SELECT MAX(Id) FROM Orders), 0);");
+        assertThat(issues).hasSize(1);
+    }
+
+    @Test
+    void testTriggerResultSetRule() {
+        List<String> issues = CheckTestUtils.scan(triggerResultSetCheck,
+                "CREATE TRIGGER t ON dbo.Test AFTER UPDATE AS SELECT 1;");
         assertThat(issues).hasSize(1);
     }
 
