@@ -52,10 +52,8 @@ public class TSqlSensor implements Sensor {
         List<TSqlCheck> activeChecks = getActiveChecks(context);
         LOG.info("Analyzing T-SQL files with {} active rules", activeChecks.size());
 
-        TSqlParser parser = new TSqlParser();
-
         for (InputFile inputFile : inputFiles) {
-            analyzeFile(inputFile, context, parser, activeChecks);
+            analyzeFile(inputFile, context, activeChecks);
         }
     }
 
@@ -72,7 +70,7 @@ public class TSqlSensor implements Sensor {
     }
 
     // TRACEABILITY_MAPPING: REQ-005
-    private void analyzeFile(InputFile inputFile, SensorContext context, TSqlParser parser, List<TSqlCheck> activeChecks) {
+    private void analyzeFile(InputFile inputFile, SensorContext context, List<TSqlCheck> activeChecks) {
         LOG.debug("Analyzing T-SQL file: {}", inputFile.uri());
         String content;
         try {
@@ -84,34 +82,42 @@ public class TSqlSensor implements Sensor {
 
         ParseResult<TSqlScript> result;
         try {
-            result = parser.parse(content);
+            result = TSqlParser.parse(content);
         } catch (Exception e) {
             LOG.warn("Unexpected parser exception on file: " + inputFile.uri(), e);
             reportSyntaxError(inputFile, context, 1, "Failed to parse T-SQL script: " + e.getMessage());
             return;
         }
 
-        // Report syntax errors if any occurred
-        if (result.hasErrors() && result.errors() != null) {
-            for (ParseError error : result.errors()) {
-                int line = Math.max(1, Math.min(error.line, inputFile.lines()));
-                String msg = (error.message != null && !error.message.isBlank())
-                        ? error.message
-                        : "T-SQL syntax error";
-                reportSyntaxError(inputFile, context, line, msg);
-            }
-        }
+        reportParseErrors(inputFile, context, result);
+        executeChecks(inputFile, context, result.fragment(), activeChecks);
+    }
 
-        // Run AST visitor checks
-        TSqlFragment rootFragment = result.fragment();
-        if (rootFragment != null && !activeChecks.isEmpty()) {
-            TSqlCheckContext checkContext = new SensorCheckContext(inputFile, context, rootFragment);
-            for (TSqlCheck check : activeChecks) {
-                try {
-                    check.scan(rootFragment, checkContext);
-                } catch (Exception e) {
-                    LOG.error("Error running check " + check.getRuleKey() + " on file " + inputFile.uri(), e);
-                }
+    // TRACEABILITY_MAPPING: REQ-005
+    private void reportParseErrors(InputFile inputFile, SensorContext context, ParseResult<TSqlScript> result) {
+        if (!result.hasErrors() || result.errors() == null) {
+            return;
+        }
+        for (ParseError error : result.errors()) {
+            int line = Math.max(1, Math.min(error.line, inputFile.lines()));
+            String msg = (error.message != null && !error.message.isBlank())
+                    ? error.message
+                    : "T-SQL syntax error";
+            reportSyntaxError(inputFile, context, line, msg);
+        }
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private void executeChecks(InputFile inputFile, SensorContext context, TSqlFragment rootFragment, List<TSqlCheck> activeChecks) {
+        if (rootFragment == null || activeChecks.isEmpty()) {
+            return;
+        }
+        TSqlCheckContext checkContext = new SensorCheckContext(inputFile, context, rootFragment);
+        for (TSqlCheck check : activeChecks) {
+            try {
+                check.scan(rootFragment, checkContext);
+            } catch (Exception e) {
+                LOG.error("Error running check " + check.getRuleKey() + " on file " + inputFile.uri(), e);
             }
         }
     }
@@ -129,7 +135,7 @@ public class TSqlSensor implements Sensor {
         }
     }
 
-    private static class SensorCheckContext implements TSqlCheckContext {
+    static class SensorCheckContext implements TSqlCheckContext {
         private final InputFile inputFile;
         private final SensorContext sensorContext;
         private final TSqlFragment rootFragment;
@@ -175,19 +181,19 @@ public class TSqlSensor implements Sensor {
             issue.at(location).save();
         }
 
-        private List getTokenStream(TSqlFragment fragment) {
+        private List<?> getTokenStream(TSqlFragment fragment) {
             if (fragment != null && fragment.ScriptTokenStream != null && !fragment.ScriptTokenStream.isEmpty()) {
                 return fragment.ScriptTokenStream;
             }
             if (rootFragment != null && rootFragment.ScriptTokenStream != null && !rootFragment.ScriptTokenStream.isEmpty()) {
                 return rootFragment.ScriptTokenStream;
             }
-            return null;
+            return List.of();
         }
 
         private int getStartLine(TSqlFragment fragment) {
-            List tokenStream = getTokenStream(fragment);
-            if (fragment != null && tokenStream != null
+            List<?> tokenStream = getTokenStream(fragment);
+            if (fragment != null && !tokenStream.isEmpty()
                     && fragment.firstTokenIndex >= 0 && fragment.firstTokenIndex < tokenStream.size()) {
                 Object tokenObj = tokenStream.get(fragment.firstTokenIndex);
                 if (tokenObj instanceof TSqlParserToken token) {
@@ -198,15 +204,15 @@ public class TSqlSensor implements Sensor {
         }
 
         private TextRange computeRange(TSqlFragment fragment, InputFile file) {
-            List tokenStream = getTokenStream(fragment);
-            if (fragment == null || tokenStream == null) {
+            List<?> tokenStream = getTokenStream(fragment);
+            if (fragment == null || tokenStream.isEmpty()) {
                 return null;
             }
             int firstIdx = fragment.firstTokenIndex;
-            int lastIdx = fragment.lastTokenIndex;
             if (firstIdx < 0 || firstIdx >= tokenStream.size()) {
                 return null;
             }
+            int lastIdx = fragment.lastTokenIndex;
             if (lastIdx < firstIdx || lastIdx >= tokenStream.size()) {
                 lastIdx = firstIdx;
             }
@@ -215,20 +221,25 @@ public class TSqlSensor implements Sensor {
             Object endObj = tokenStream.get(lastIdx);
 
             if (startObj instanceof TSqlParserToken startToken && endObj instanceof TSqlParserToken endToken) {
-                int startLine = startToken.getLine();
-                int startCol = Math.max(0, startToken.getColumn() - 1);
-                int endLine = endToken.getLine();
-                int endCol = Math.max(startCol, endToken.getColumn() - 1 + (endToken.getText() != null ? endToken.getText().length() : 0));
-
-                if (startLine >= 1 && endLine >= startLine && startLine <= file.lines() && endLine <= file.lines()) {
-                    try {
-                        return file.newRange(startLine, startCol, endLine, endCol);
-                    } catch (Exception ignored) {
-                        // If exact column bounds are out of range for whatever reason, fall back
-                    }
-                }
+                return createRangeFromTokens(startToken, endToken, file);
             }
             return null;
+        }
+
+        private TextRange createRangeFromTokens(TSqlParserToken startToken, TSqlParserToken endToken, InputFile file) {
+            int startLine = startToken.getLine();
+            int endLine = endToken.getLine();
+            if (startLine < 1 || endLine < startLine || startLine > file.lines() || endLine > file.lines()) {
+                return null;
+            }
+            int startCol = Math.max(0, startToken.getColumn() - 1);
+            int endTextLen = endToken.getText() != null ? endToken.getText().length() : 0;
+            int endCol = Math.max(startCol, endToken.getColumn() - 1 + endTextLen);
+            try {
+                return file.newRange(startLine, startCol, endLine, endCol);
+            } catch (Exception ignored) {
+                return null;
+            }
         }
     }
 }

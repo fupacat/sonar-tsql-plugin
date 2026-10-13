@@ -1,6 +1,8 @@
 package io.github.fupacat.sonar.tsql.checks;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.List;
 
@@ -11,30 +13,16 @@ class AvoidDeprecatedTypesCheckTest {
     private final AvoidDeprecatedTypesCheck check = new AvoidDeprecatedTypesCheck();
 
     // TRACEABILITY_MAPPING: REQ-010
-    @Test
-    void testFlagsTextType() {
-        String sql = "CREATE TABLE Articles (Id INT, Content TEXT);";
+    @ParameterizedTest
+    @CsvSource({
+            "'CREATE TABLE Articles (Id INT, Content TEXT);', TEXT, VARCHAR(MAX)",
+            "'CREATE TABLE Articles (Id INT, Content NTEXT);', NTEXT, NVARCHAR(MAX)",
+            "'CREATE TABLE Documents (Id INT, Scan IMAGE);', IMAGE, VARBINARY(MAX)"
+    })
+    void testFlagsDeprecatedTypes(String sql, String deprecatedType, String replacementType) {
         List<String> issues = CheckTestUtils.scan(check, sql);
         assertThat(issues).hasSize(1);
-        assertThat(issues.get(0)).contains("TEXT").contains("VARCHAR(MAX)");
-    }
-
-    // TRACEABILITY_MAPPING: REQ-010
-    @Test
-    void testFlagsNTextType() {
-        String sql = "CREATE TABLE Articles (Id INT, Content NTEXT);";
-        List<String> issues = CheckTestUtils.scan(check, sql);
-        assertThat(issues).hasSize(1);
-        assertThat(issues.get(0)).contains("NTEXT").contains("NVARCHAR(MAX)");
-    }
-
-    // TRACEABILITY_MAPPING: REQ-010
-    @Test
-    void testFlagsImageType() {
-        String sql = "CREATE TABLE Documents (Id INT, Scan IMAGE);";
-        List<String> issues = CheckTestUtils.scan(check, sql);
-        assertThat(issues).hasSize(1);
-        assertThat(issues.get(0)).contains("IMAGE").contains("VARBINARY(MAX)");
+        assertThat(issues.get(0)).contains(deprecatedType).contains(replacementType);
     }
 
     // TRACEABILITY_MAPPING: REQ-010

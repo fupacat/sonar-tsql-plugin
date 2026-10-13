@@ -4,17 +4,17 @@ import org.sonar.api.config.Configuration;
 import org.sonar.api.resources.AbstractLanguage;
 
 import java.util.Arrays;
-import java.util.Optional;
 
 /**
  * Definition of the Transact-SQL (T-SQL) language for SonarQube.
  */
+@SuppressWarnings("java:S2160")
 public class TSqlLanguage extends AbstractLanguage {
 
     public static final String KEY = "tsql";
     public static final String NAME = "T-SQL";
     public static final String FILE_SUFFIXES_KEY = "sonar.tsql.file.suffixes";
-    public static final String[] DEFAULT_FILE_SUFFIXES = {".sql", ".tsql"};
+    protected static final String[] DEFAULT_FILE_SUFFIXES = {".sql", ".tsql"};
 
     private final Configuration configuration;
 
@@ -35,6 +35,6 @@ public class TSqlLanguage extends AbstractLanguage {
                         .toArray(String[]::new);
             }
         }
-        return DEFAULT_FILE_SUFFIXES;
+        return DEFAULT_FILE_SUFFIXES.clone();
     }
 }
