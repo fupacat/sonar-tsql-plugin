@@ -7,8 +7,6 @@ import io.github.fupacat.ast.ExecutableProcedureReference;
 import io.github.fupacat.ast.ExecutableStringList;
 import io.github.fupacat.ast.ExecuteParameter;
 import io.github.fupacat.ast.ExecuteStatement;
-import io.github.fupacat.ast.FunctionCall;
-import io.github.fupacat.ast.ParenthesisExpression;
 import io.github.fupacat.ast.ProcedureReference;
 import io.github.fupacat.ast.ScalarExpression;
 import io.github.fupacat.ast.SchemaObjectName;
@@ -60,43 +58,15 @@ public class DynamicSqlExecutionCheck extends TSqlCheck {
     }
 
     private boolean containsDangerousScalarExpression(ScalarExpression expression) {
-        if (expression == null) {
-            return false;
-        }
         if (expression instanceof VariableReference) {
             return true;
-        }
-        if (expression instanceof ParenthesisExpression parenthesisExpression) {
-            return containsDangerousScalarExpression(parenthesisExpression.Expression);
         }
         if (expression instanceof BinaryExpression binaryExpression
                 && binaryExpression.BinaryExpressionType == BinaryExpressionType.Concat) {
             return containsDangerousScalarExpression(binaryExpression.FirstExpression)
                     || containsDangerousScalarExpression(binaryExpression.SecondExpression);
         }
-        if (expression instanceof ValueExpression valueExpression) {
-            return containsDangerousValueExpression(valueExpression);
-        }
-        if (expression instanceof FunctionCall functionCall
-                && functionCall.FunctionName != null
-                && "CONCAT".equalsIgnoreCase(functionCall.FunctionName.Value)) {
-            if (functionCall.Parameters == null) {
-                return false;
-            }
-            for (ScalarExpression parameter : functionCall.Parameters) {
-                if (containsDangerousScalarExpression(parameter)) {
-                    return true;
-                }
-            }
-        }
         return false;
-    }
-
-    private boolean containsDangerousValueExpression(ValueExpression expression) {
-        if (expression == null) {
-            return false;
-        }
-        return expression instanceof VariableReference;
     }
 
     private boolean containsDangerousProcedureParameter(List<ExecuteParameter> parameters) {
