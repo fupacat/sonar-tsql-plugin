@@ -15,6 +15,21 @@ public interface TSqlCheckContext {
     InputFile getFile();
 
     /**
+     * @return the full source text for the current file, if available
+     */
+    default String getSourceText() {
+        InputFile file = getFile();
+        if (file == null) {
+            return "";
+        }
+        try {
+            return file.contents();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /**
      * Reports an issue on a specific AST fragment.
      *
      * @param check the check reporting the issue

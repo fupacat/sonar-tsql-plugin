@@ -1,24 +1,7 @@
 package io.github.fupacat.sonar.tsql.rules;
 
 import io.github.fupacat.sonar.tsql.TSqlLanguage;
-import io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedTypesCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
-import io.github.fupacat.sonar.tsql.checks.CaseInputInvariantCheck;
-import io.github.fupacat.sonar.tsql.checks.CatchClauseShouldDoMoreThanRethrowCheck;
-import io.github.fupacat.sonar.tsql.checks.CheckList;
-import io.github.fupacat.sonar.tsql.checks.DeleteAndUpdateWithoutWhereCheck;
-import io.github.fupacat.sonar.tsql.checks.NotInSubqueryCheck;
-import io.github.fupacat.sonar.tsql.checks.NullComparisonCheck;
-import io.github.fupacat.sonar.tsql.checks.RedundantJumpCheck;
-import io.github.fupacat.sonar.tsql.checks.SelfAssignmentCheck;
-import io.github.fupacat.sonar.tsql.checks.SingleIterationLoopCheck;
-import io.github.fupacat.sonar.tsql.checks.TopWithoutOrderByCheck;
-import io.github.fupacat.sonar.tsql.checks.UnreachableCodeCheck;
-import io.github.fupacat.sonar.tsql.checks.UnusedLabelCheck;
-import io.github.fupacat.sonar.tsql.checks.UnusedLocalVariableCheck;
-import io.github.fupacat.sonar.tsql.checks.UnusedParameterCheck;
+import io.github.fupacat.sonar.tsql.checks.*;
 import org.junit.jupiter.api.Test;
 import org.sonar.api.rule.Severity;
 import org.sonar.api.rules.RuleType;
@@ -40,8 +23,8 @@ class TSqlRulesDefinitionTest {
         assertThat(repository.name()).isEqualTo(TSqlRulesDefinition.REPOSITORY_NAME);
         assertThat(repository.language()).isEqualTo(TSqlLanguage.KEY);
 
-        // Verify all 18 rules are registered
-        assertThat(repository.rules()).hasSize(18);
+        // Verify all 59 rules are registered
+        assertThat(repository.rules()).hasSize(59);
 
         RulesDefinition.Rule selectAllRule = repository.rule(AvoidSelectAllCheck.RULE_KEY);
         assertThat(selectAllRule).isNotNull();
@@ -89,45 +72,104 @@ class TSqlRulesDefinitionTest {
         assertThat(caseInvariantRule.severity()).isEqualTo(Severity.CRITICAL);
         assertThat(caseInvariantRule.type()).isEqualTo(RuleType.BUG);
 
-        RulesDefinition.Rule unusedLocalVariableRule = repository.rule(UnusedLocalVariableCheck.RULE_KEY);
-        assertThat(unusedLocalVariableRule).isNotNull();
-        assertThat(unusedLocalVariableRule.severity()).isEqualTo(Severity.MINOR);
-        assertThat(unusedLocalVariableRule.type()).isEqualTo(RuleType.CODE_SMELL);
+        RulesDefinition.Rule sargableRule = repository.rule(SargableWhereCheck.RULE_KEY);
+        assertThat(sargableRule).isNotNull();
+        assertThat(sargableRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(sargableRule.type()).isEqualTo(RuleType.CODE_SMELL);
 
-        RulesDefinition.Rule unusedParameterRule = repository.rule(UnusedParameterCheck.RULE_KEY);
-        assertThat(unusedParameterRule).isNotNull();
-        assertThat(unusedParameterRule.severity()).isEqualTo(Severity.MAJOR);
-        assertThat(unusedParameterRule.type()).isEqualTo(RuleType.CODE_SMELL);
+        RulesDefinition.Rule scopeIdentityRule = repository.rule(UseScopeIdentityCheck.RULE_KEY);
+        assertThat(scopeIdentityRule).isNotNull();
+        assertThat(scopeIdentityRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(scopeIdentityRule.type()).isEqualTo(RuleType.BUG);
 
-        RulesDefinition.Rule unusedLabelRule = repository.rule(UnusedLabelCheck.RULE_KEY);
-        assertThat(unusedLabelRule).isNotNull();
-        assertThat(unusedLabelRule.severity()).isEqualTo(Severity.MAJOR);
-        assertThat(unusedLabelRule.type()).isEqualTo(RuleType.CODE_SMELL);
+        RulesDefinition.Rule variableLengthTypeRule = repository.rule(AvoidVariableLengthDataTypeCheck.RULE_KEY);
+        assertThat(variableLengthTypeRule).isNotNull();
+        assertThat(variableLengthTypeRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(variableLengthTypeRule.type()).isEqualTo(RuleType.CODE_SMELL);
 
-        RulesDefinition.Rule unreachableCodeRule = repository.rule(UnreachableCodeCheck.RULE_KEY);
-        assertThat(unreachableCodeRule).isNotNull();
-        assertThat(unreachableCodeRule.severity()).isEqualTo(Severity.MAJOR);
-        assertThat(unreachableCodeRule.type()).isEqualTo(RuleType.BUG);
+        RulesDefinition.Rule deprecatedJoinRule = repository.rule(AvoidDeprecatedJoinSyntaxCheck.RULE_KEY);
+        assertThat(deprecatedJoinRule).isNotNull();
+        assertThat(deprecatedJoinRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(deprecatedJoinRule.type()).isEqualTo(RuleType.CODE_SMELL);
 
-        RulesDefinition.Rule singleIterationLoopRule = repository.rule(SingleIterationLoopCheck.RULE_KEY);
-        assertThat(singleIterationLoopRule).isNotNull();
-        assertThat(singleIterationLoopRule.severity()).isEqualTo(Severity.MAJOR);
-        assertThat(singleIterationLoopRule.type()).isEqualTo(RuleType.BUG);
+        RulesDefinition.Rule specialCharactersRule = repository.rule(AvoidSpecialCharactersInObjectNamesCheck.RULE_KEY);
+        assertThat(specialCharactersRule).isNotNull();
+        assertThat(specialCharactersRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(specialCharactersRule.type()).isEqualTo(RuleType.CODE_SMELL);
 
-        RulesDefinition.Rule selfAssignmentRule = repository.rule(SelfAssignmentCheck.RULE_KEY);
-        assertThat(selfAssignmentRule).isNotNull();
-        assertThat(selfAssignmentRule.severity()).isEqualTo(Severity.MAJOR);
-        assertThat(selfAssignmentRule.type()).isEqualTo(RuleType.BUG);
+        RulesDefinition.Rule reservedWordsRule = repository.rule(AvoidReservedWordsInObjectNamesCheck.RULE_KEY);
+        assertThat(reservedWordsRule).isNotNull();
+        assertThat(reservedWordsRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(reservedWordsRule.type()).isEqualTo(RuleType.CODE_SMELL);
 
-        RulesDefinition.Rule catchRethrowRule = repository.rule(CatchClauseShouldDoMoreThanRethrowCheck.RULE_KEY);
-        assertThat(catchRethrowRule).isNotNull();
-        assertThat(catchRethrowRule.severity()).isEqualTo(Severity.MINOR);
-        assertThat(catchRethrowRule.type()).isEqualTo(RuleType.CODE_SMELL);
+        RulesDefinition.Rule outputParamRule = repository.rule(StoredProcedureOutputParameterCheck.RULE_KEY);
+        assertThat(outputParamRule).isNotNull();
+        assertThat(outputParamRule.severity()).isEqualTo(Severity.CRITICAL);
+        assertThat(outputParamRule.type()).isEqualTo(RuleType.BUG);
 
-        RulesDefinition.Rule redundantJumpRule = repository.rule(RedundantJumpCheck.RULE_KEY);
-        assertThat(redundantJumpRule).isNotNull();
-        assertThat(redundantJumpRule.severity()).isEqualTo(Severity.MINOR);
-        assertThat(redundantJumpRule.type()).isEqualTo(RuleType.CODE_SMELL);
+        RulesDefinition.Rule deterministicFunctionRule = repository.rule(DeterministicFunctionInWhereCheck.RULE_KEY);
+        assertThat(deterministicFunctionRule).isNotNull();
+        assertThat(deterministicFunctionRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(deterministicFunctionRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule spPrefixRule = repository.rule(AvoidSpPrefixProcedureNameCheck.RULE_KEY);
+        assertThat(spPrefixRule).isNotNull();
+        assertThat(spPrefixRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(spPrefixRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule dynamicSqlRule = repository.rule(DynamicSqlExecutionCheck.RULE_KEY);
+        assertThat(dynamicSqlRule).isNotNull();
+        assertThat(dynamicSqlRule.severity()).isEqualTo(Severity.CRITICAL);
+        assertThat(dynamicSqlRule.type()).isEqualTo(RuleType.VULNERABILITY);
+
+        RulesDefinition.Rule weakHashRule = repository.rule(WeakHashCheck.RULE_KEY);
+        assertThat(weakHashRule).isNotNull();
+        assertThat(weakHashRule.severity()).isEqualTo(Severity.CRITICAL);
+        assertThat(weakHashRule.type()).isEqualTo(RuleType.VULNERABILITY);
+
+        RulesDefinition.Rule hardCodedCredentialsRule = repository.rule(HardCodedCredentialsCheck.RULE_KEY);
+        assertThat(hardCodedCredentialsRule).isNotNull();
+        assertThat(hardCodedCredentialsRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(hardCodedCredentialsRule.type()).isEqualTo(RuleType.VULNERABILITY);
+
+        RulesDefinition.Rule primaryKeyRule = repository.rule(PrimaryKeyRequiredCheck.RULE_KEY);
+        assertThat(primaryKeyRule).isNotNull();
+        assertThat(primaryKeyRule.severity()).isEqualTo(Severity.BLOCKER);
+        assertThat(primaryKeyRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule insertColumnsRule = repository.rule(InsertColumnsExplicitCheck.RULE_KEY);
+        assertThat(insertColumnsRule).isNotNull();
+        assertThat(insertColumnsRule.severity()).isEqualTo(Severity.CRITICAL);
+        assertThat(insertColumnsRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule lengthRule = repository.rule(ExplicitLengthForVariableTypesCheck.RULE_KEY);
+        assertThat(lengthRule).isNotNull();
+        assertThat(lengthRule.severity()).isEqualTo(Severity.CRITICAL);
+        assertThat(lengthRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule orderByRule = repository.rule(OrderByColumnNamesCheck.RULE_KEY);
+        assertThat(orderByRule).isNotNull();
+        assertThat(orderByRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(orderByRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule existsRule = repository.rule(ExistsSelectOneCheck.RULE_KEY);
+        assertThat(existsRule).isNotNull();
+        assertThat(existsRule.severity()).isEqualTo(Severity.CRITICAL);
+        assertThat(existsRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule alterTableRule = repository.rule(AlterTableCheckEnforcementCheck.RULE_KEY);
+        assertThat(alterTableRule).isNotNull();
+        assertThat(alterTableRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(alterTableRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule columnDepthRule = repository.rule(ColumnReferenceDepthCheck.RULE_KEY);
+        assertThat(columnDepthRule).isNotNull();
+        assertThat(columnDepthRule.severity()).isEqualTo(Severity.MINOR);
+        assertThat(columnDepthRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule s103Rule = repository.rule(S103Check.RULE_KEY);
+        assertThat(s103Rule).isNotNull();
+        assertThat(s103Rule.severity()).isEqualTo(Severity.MINOR);
 
         RulesDefinition.Rule syntaxErrorRule = repository.rule(CheckList.SYNTAX_ERROR_RULE_KEY);
         assertThat(syntaxErrorRule).isNotNull();
