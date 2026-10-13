@@ -90,7 +90,7 @@ public class TSqlSensor implements Sensor {
         }
 
         reportParseErrors(inputFile, context, result);
-        executeChecks(inputFile, context, result.fragment(), activeChecks);
+        executeChecks(inputFile, context, result.fragment(), content, activeChecks);
     }
 
     // TRACEABILITY_MAPPING: REQ-005
@@ -108,11 +108,11 @@ public class TSqlSensor implements Sensor {
     }
 
     // TRACEABILITY_MAPPING: REQ-005
-    private void executeChecks(InputFile inputFile, SensorContext context, TSqlFragment rootFragment, List<TSqlCheck> activeChecks) {
+    private void executeChecks(InputFile inputFile, SensorContext context, TSqlFragment rootFragment, String sourceText, List<TSqlCheck> activeChecks) {
         if (rootFragment == null || activeChecks.isEmpty()) {
             return;
         }
-        TSqlCheckContext checkContext = new SensorCheckContext(inputFile, context, rootFragment, content);
+        TSqlCheckContext checkContext = new SensorCheckContext(inputFile, context, rootFragment, sourceText);
         for (TSqlCheck check : activeChecks) {
             try {
                 check.scan(rootFragment, checkContext);
@@ -140,6 +140,10 @@ public class TSqlSensor implements Sensor {
         private final SensorContext sensorContext;
         private final TSqlFragment rootFragment;
         private final String sourceText;
+
+        public SensorCheckContext(InputFile inputFile, SensorContext sensorContext, TSqlFragment rootFragment) {
+            this(inputFile, sensorContext, rootFragment, null);
+        }
 
         public SensorCheckContext(InputFile inputFile, SensorContext sensorContext, TSqlFragment rootFragment, String sourceText) {
             this.inputFile = inputFile;

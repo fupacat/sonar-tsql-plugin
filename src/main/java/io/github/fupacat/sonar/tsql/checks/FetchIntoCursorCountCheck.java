@@ -15,7 +15,7 @@ public class FetchIntoCursorCountCheck extends TSqlCheck {
 
     public static final String RULE_KEY = "S4103";
     private static final Pattern CURSOR_SELECT_PATTERN = Pattern.compile("(?is)declare\\s+\\w+\\s+cursor\\s+for\\s+select\\s+(.+?)(?:from|where|order\\s+by|group\\s+by|having|for)\\b");
-    private static final Pattern FETCH_PATTERN = Pattern.compile("(?is)fetch\\s+(?:next|prior|first|last|absolute|relative|\S+)\\s+from\\s+(\w+)\\s+into\\s+(.+?)(?:;|$)");
+    private static final Pattern FETCH_PATTERN = Pattern.compile("(?is)fetch\\s+(?:next|prior|first|last|absolute|relative|\\S+)\\s+from\\s+(\\w+)\\s+into\\s+(.+?)(?:;|$)");
 
     @Override
     public String getRuleKey() {

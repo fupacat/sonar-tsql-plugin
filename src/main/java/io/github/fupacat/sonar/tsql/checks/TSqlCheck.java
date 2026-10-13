@@ -30,14 +30,8 @@ public abstract class TSqlCheck extends TSqlConcreteFragmentVisitor {
         this.context = context;
         this.root = root;
         this.sourceText = context != null ? context.getSourceText() : null;
-        try {
-            if (root != null) {
-                root.accept(this);
-            }
-        } finally {
-            this.context = null;
-            this.root = null;
-            this.sourceText = null;
+        if (root != null) {
+            root.accept(this);
         }
     }
 

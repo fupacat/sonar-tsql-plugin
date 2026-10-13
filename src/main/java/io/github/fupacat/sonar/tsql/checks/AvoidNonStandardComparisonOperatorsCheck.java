@@ -2,6 +2,7 @@ package io.github.fupacat.sonar.tsql.checks;
 
 import io.github.fupacat.ast.TSqlFragment;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -21,7 +22,11 @@ public class AvoidNonStandardComparisonOperatorsCheck extends TSqlCheck {
     public void scan(TSqlFragment root, TSqlCheckContext context) {
         super.scan(root, context);
         String sql = getSourceText();
-        if (sql != null && NON_STANDARD_COMPARISON.matcher(sql).find()) {
+        if (sql == null) {
+            return;
+        }
+        Matcher matcher = NON_STANDARD_COMPARISON.matcher(sql);
+        while (matcher.find()) {
             reportIssue(root, "Replace non-standard comparison operators with ISO standard <> , >=, and <=.");
         }
     }

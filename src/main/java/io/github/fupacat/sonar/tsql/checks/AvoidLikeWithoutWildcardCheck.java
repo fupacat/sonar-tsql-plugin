@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 public class AvoidLikeWithoutWildcardCheck extends TSqlCheck {
 
     public static final String RULE_KEY = "S3643";
-    private static final Pattern LIKE_WITHOUT_WILDCARD = Pattern.compile("(?is)\\b\w+\\s+like\\s+'[^'%_]*'");
+    private static final Pattern LIKE_WITHOUT_WILDCARD = Pattern.compile("(?is)\\b\\w+\\s+like\\s+'[^'%_]*'");
 
     @Override
     public String getRuleKey() {
