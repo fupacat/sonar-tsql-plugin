@@ -82,19 +82,14 @@ public class DynamicSqlExecutionCheck extends TSqlCheck {
     }
 
     private boolean isSpExecuteSql(ExecutableProcedureReference procedureReference) {
-        if (procedureReference == null || procedureReference.ProcedureReference == null
-                || procedureReference.ProcedureReference.ProcedureReference == null) {
+        try {
+            SchemaObjectName name = procedureReference.ProcedureReference.ProcedureReference.Name;
+            String base = name.BaseIdentifier != null ? name.BaseIdentifier.Value : "";
+            String schema = name.SchemaIdentifier != null ? name.SchemaIdentifier.Value : "";
+            return "sp_executesql".equalsIgnoreCase(base)
+                    || "sp_executesql".equalsIgnoreCase(schema + "." + base);
+        } catch (NullPointerException e) {
             return false;
         }
-        ProcedureReference procedure = procedureReference.ProcedureReference.ProcedureReference;
-        if (procedure.Name == null) {
-            return false;
-        }
-        SchemaObjectName name = procedure.Name;
-        String baseIdentifier = name.BaseIdentifier != null ? name.BaseIdentifier.Value : null;
-        String schemaIdentifier = name.SchemaIdentifier != null ? name.SchemaIdentifier.Value : null;
-        String normalizedName = (schemaIdentifier == null ? "" : schemaIdentifier + ".") + (baseIdentifier == null ? "" : baseIdentifier);
-        return "sp_executesql".equalsIgnoreCase(normalizedName)
-                || "sp_executesql".equalsIgnoreCase(baseIdentifier);
     }
 }
