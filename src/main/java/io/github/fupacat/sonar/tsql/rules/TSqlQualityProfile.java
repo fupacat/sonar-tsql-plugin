@@ -1,16 +1,7 @@
 package io.github.fupacat.sonar.tsql.rules;
 
 import io.github.fupacat.sonar.tsql.TSqlLanguage;
-import io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedTypesCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheck;
-import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
-import io.github.fupacat.sonar.tsql.checks.CaseInputInvariantCheck;
-import io.github.fupacat.sonar.tsql.checks.CheckList;
-import io.github.fupacat.sonar.tsql.checks.DeleteAndUpdateWithoutWhereCheck;
-import io.github.fupacat.sonar.tsql.checks.NotInSubqueryCheck;
-import io.github.fupacat.sonar.tsql.checks.NullComparisonCheck;
-import io.github.fupacat.sonar.tsql.checks.TopWithoutOrderByCheck;
+import io.github.fupacat.sonar.tsql.checks.*;
 import org.sonar.api.server.profile.BuiltInQualityProfilesDefinition;
 
 /**
@@ -36,6 +27,19 @@ public class TSqlQualityProfile implements BuiltInQualityProfilesDefinition {
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, NullComparisonCheck.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, TopWithoutOrderByCheck.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, CaseInputInvariantCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S103Check.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S104Check.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S105Check.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S122Check.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S125Check.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S1134Check.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S1135Check.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, NoSonarCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S1451Check.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S3972Check.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S3973Check.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S138Check.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S1151Check.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, CheckList.SYNTAX_ERROR_RULE_KEY);
 
         profile.done();
