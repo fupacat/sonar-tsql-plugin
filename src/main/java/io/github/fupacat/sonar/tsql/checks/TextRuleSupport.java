@@ -131,6 +131,10 @@ final class TextRuleSupport {
         }).isEmpty();
     }
 
+    static void reportKeywordIssues(TSqlCheck check, String source, String keyword, String message) {
+        reportIssues(check, source, line -> containsAnyIgnoreCase(line, keyword), message);
+    }
+
     static void reportIssues(TSqlCheck check, String source, java.util.function.Predicate<String> predicate, String message) {
         for (int lineNumber : matchingLines(source, predicate)) {
             check.reportIssueAtLine(lineNumber + 1, message);
