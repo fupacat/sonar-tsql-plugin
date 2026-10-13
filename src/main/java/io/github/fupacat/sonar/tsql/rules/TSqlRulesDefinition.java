@@ -413,7 +413,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, TAG_PERFORMANCE, TAG_INDEXING);
+                .setTags(TAG_SQL_SERVER, "performance", "indexing");
 
         // Rule 11: S4108
         repository.createRule(UseScopeIdentityCheck.RULE_KEY)
@@ -427,7 +427,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, TAG_IDENTITY, TAG_SCOPE);
+                .setTags(TAG_SQL_SERVER, "identity", "scope");
 
         // Rule 12: SR0009
         repository.createRule(AvoidVariableLengthDataTypeCheck.RULE_KEY)
@@ -455,7 +455,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, TAG_COMPATIBILITY);
+                .setTags(TAG_SQL_SERVER, "compatibility");
 
         // Rule 14: SR0011
         repository.createRule(AvoidSpecialCharactersInObjectNamesCheck.RULE_KEY)
@@ -469,7 +469,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, TAG_NAMING);
+                .setTags(TAG_SQL_SERVER, "naming");
 
         // Rule 15: S4413
         repository.createRule(AvoidReservedWordsInObjectNamesCheck.RULE_KEY)
@@ -483,7 +483,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, TAG_NAMING);
+                .setTags(TAG_SQL_SERVER, "naming");
 
         // Rule 16: S4196
         repository.createRule(StoredProcedureOutputParameterCheck.RULE_KEY)
@@ -497,7 +497,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.CRITICAL)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, TAG_PROCEDURE, TAG_DATA_SAFETY);
+                .setTags(TAG_SQL_SERVER, "procedure", TAG_DATA_SAFETY);
 
         // Rule 17: SR0015
         repository.createRule(DeterministicFunctionInWhereCheck.RULE_KEY)
@@ -511,7 +511,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, TAG_PERFORMANCE, TAG_INDEXING);
+                .setTags(TAG_SQL_SERVER, "performance", "indexing");
 
         // Rule 18: SR0016
         repository.createRule(AvoidSpPrefixProcedureNameCheck.RULE_KEY)
@@ -525,7 +525,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, TAG_NAMING);
+                .setTags(TAG_SQL_SERVER, "naming");
 
         repository.createRule(CheckList.SYNTAX_ERROR_RULE_KEY)
                 .setName("T-SQL syntax error")

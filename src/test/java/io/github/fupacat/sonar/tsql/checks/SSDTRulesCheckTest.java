@@ -81,7 +81,27 @@ class SSDTRulesCheckTest {
                 "CREATE PROCEDURE dbo.sp_GetOrders AS SELECT 1;"))
                 .hasSize(1);
         assertThat(CheckTestUtils.scan(avoidSpPrefixProcedureNameCheck,
+                "CREATE PROCEDURE sp_GetOrders AS SELECT 1;"))
+                .hasSize(1);
+        assertThat(CheckTestUtils.scan(avoidSpPrefixProcedureNameCheck,
                 "CREATE PROCEDURE dbo.GetOrders AS SELECT 1;"))
                 .isEmpty();
+    }
+
+    @Test
+    void testSargableWhereCheckAdditionalBranches() {
+        assertThat(CheckTestUtils.scan(sargableWhereCheck,
+                "SELECT * FROM Orders WHERE OrderTotal + 10 > 100 AND (Qty * 2) < 50;"))
+                .hasSize(1);
+        assertThat(CheckTestUtils.scan(sargableWhereCheck,
+                "SELECT * FROM Orders WHERE (OrderTotal > 100) OR (Qty < 50);"))
+                .isEmpty();
+    }
+
+    @Test
+    void testDeterministicFunctionInWhereAdditionalBranches() {
+        assertThat(CheckTestUtils.scan(deterministicFunctionInWhereCheck,
+                "SELECT * FROM Orders WHERE ABS(Total) > 500 AND ROUND(Tax, 2) < 10;"))
+                .hasSize(1);
     }
 }

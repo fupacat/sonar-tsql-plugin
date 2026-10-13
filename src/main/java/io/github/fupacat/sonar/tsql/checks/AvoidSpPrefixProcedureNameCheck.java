@@ -25,7 +25,10 @@ public class AvoidSpPrefixProcedureNameCheck extends TSqlCheck {
             return;
         }
         SchemaObjectName name = node.ProcedureReference.Name;
-        Identifier baseIdentifier = name.BaseIdentifier != null ? name.BaseIdentifier : (name.Identifiers != null && !name.Identifiers.isEmpty() ? name.Identifiers.get(name.Identifiers.size() - 1) : null);
+        Identifier baseIdentifier = name.BaseIdentifier;
+        if (baseIdentifier == null && name.Identifiers != null && !name.Identifiers.isEmpty()) {
+            baseIdentifier = name.Identifiers.get(name.Identifiers.size() - 1);
+        }
         if (baseIdentifier != null && baseIdentifier.Value != null) {
             String value = baseIdentifier.Value.trim();
             if (value.regionMatches(true, 0, "sp_", 0, 3)) {
