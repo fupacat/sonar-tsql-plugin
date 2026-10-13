@@ -20,18 +20,10 @@ public class AvoidSpPrefixProcedureNameCheck extends TSqlCheck {
     // TRACEABILITY_MAPPING: REQ-024
     @Override
     public void visit(CreateProcedureStatement node) {
-        if (node == null || node.ProcedureReference == null || node.ProcedureReference.Name == null) {
-            super.visit(node);
-            return;
-        }
-        SchemaObjectName name = node.ProcedureReference.Name;
-        Identifier baseIdentifier = name.BaseIdentifier;
-        if (baseIdentifier == null && name.Identifiers != null && !name.Identifiers.isEmpty()) {
-            baseIdentifier = name.Identifiers.get(name.Identifiers.size() - 1);
-        }
-        if (baseIdentifier != null && baseIdentifier.Value != null) {
-            String value = baseIdentifier.Value.trim();
-            if (value.regionMatches(true, 0, "sp_", 0, 3)) {
+        if (node.ProcedureReference != null && node.ProcedureReference.Name != null) {
+            Identifier baseIdentifier = node.ProcedureReference.Name.BaseIdentifier;
+            if (baseIdentifier != null && baseIdentifier.Value != null
+                    && baseIdentifier.Value.trim().regionMatches(true, 0, "sp_", 0, 3)) {
                 reportIssue(node, "Avoid the 'sp_' prefix for user-defined stored procedures; use a distinct, application-specific prefix instead.");
             }
         }

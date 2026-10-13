@@ -31,9 +31,6 @@ public class DeterministicFunctionInWhereCheck extends TSqlCheck {
     }
 
     private boolean containsFunctionCallOnColumn(BooleanExpression expression) {
-        if (expression == null) {
-            return false;
-        }
         if (expression instanceof BooleanBinaryExpression booleanBinaryExpression) {
             return containsFunctionCallOnColumn(booleanBinaryExpression.FirstExpression)
                     || containsFunctionCallOnColumn(booleanBinaryExpression.SecondExpression);
@@ -46,14 +43,8 @@ public class DeterministicFunctionInWhereCheck extends TSqlCheck {
     }
 
     private boolean containsFunctionCallOnScalar(ScalarExpression expression) {
-        if (expression == null) {
-            return false;
-        }
-        if (expression instanceof ColumnReferenceExpression) {
-            return false;
-        }
-        if (expression instanceof FunctionCall functionCall) {
-            return functionCall.Parameters != null && functionCall.Parameters.stream().anyMatch(parameter ->
+        if (expression instanceof FunctionCall functionCall && functionCall.Parameters != null) {
+            return functionCall.Parameters.stream().anyMatch(parameter ->
                     parameter instanceof ColumnReferenceExpression || containsFunctionCallOnScalar(parameter));
         }
         return false;
