@@ -5,7 +5,12 @@ import io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedTypesCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
+import io.github.fupacat.sonar.tsql.checks.CaseInputInvariantCheck;
 import io.github.fupacat.sonar.tsql.checks.CheckList;
+import io.github.fupacat.sonar.tsql.checks.DeleteAndUpdateWithoutWhereCheck;
+import io.github.fupacat.sonar.tsql.checks.NotInSubqueryCheck;
+import io.github.fupacat.sonar.tsql.checks.NullComparisonCheck;
+import io.github.fupacat.sonar.tsql.checks.TopWithoutOrderByCheck;
 import org.junit.jupiter.api.Test;
 import org.sonar.api.rule.Severity;
 import org.sonar.api.rules.RuleType;
@@ -27,8 +32,8 @@ class TSqlRulesDefinitionTest {
         assertThat(repository.name()).isEqualTo(TSqlRulesDefinition.REPOSITORY_NAME);
         assertThat(repository.language()).isEqualTo(TSqlLanguage.KEY);
 
-        // Verify all 5 rules are registered
-        assertThat(repository.rules()).hasSize(5);
+        // Verify all 10 rules are registered
+        assertThat(repository.rules()).hasSize(10);
 
         RulesDefinition.Rule selectAllRule = repository.rule(AvoidSelectAllCheck.RULE_KEY);
         assertThat(selectAllRule).isNotNull();
@@ -50,6 +55,31 @@ class TSqlRulesDefinitionTest {
         assertThat(deprecatedTypesRule).isNotNull();
         assertThat(deprecatedTypesRule.severity()).isEqualTo(Severity.MAJOR);
         assertThat(deprecatedTypesRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule deleteUpdateRule = repository.rule(DeleteAndUpdateWithoutWhereCheck.RULE_KEY);
+        assertThat(deleteUpdateRule).isNotNull();
+        assertThat(deleteUpdateRule.severity()).isEqualTo(Severity.BLOCKER);
+        assertThat(deleteUpdateRule.type()).isEqualTo(RuleType.BUG);
+
+        RulesDefinition.Rule notInRule = repository.rule(NotInSubqueryCheck.RULE_KEY);
+        assertThat(notInRule).isNotNull();
+        assertThat(notInRule.severity()).isEqualTo(Severity.CRITICAL);
+        assertThat(notInRule.type()).isEqualTo(RuleType.BUG);
+
+        RulesDefinition.Rule nullComparisonRule = repository.rule(NullComparisonCheck.RULE_KEY);
+        assertThat(nullComparisonRule).isNotNull();
+        assertThat(nullComparisonRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(nullComparisonRule.type()).isEqualTo(RuleType.BUG);
+
+        RulesDefinition.Rule topWithoutOrderByRule = repository.rule(TopWithoutOrderByCheck.RULE_KEY);
+        assertThat(topWithoutOrderByRule).isNotNull();
+        assertThat(topWithoutOrderByRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(topWithoutOrderByRule.type()).isEqualTo(RuleType.BUG);
+
+        RulesDefinition.Rule caseInvariantRule = repository.rule(CaseInputInvariantCheck.RULE_KEY);
+        assertThat(caseInvariantRule).isNotNull();
+        assertThat(caseInvariantRule.severity()).isEqualTo(Severity.CRITICAL);
+        assertThat(caseInvariantRule.type()).isEqualTo(RuleType.BUG);
 
         RulesDefinition.Rule syntaxErrorRule = repository.rule(CheckList.SYNTAX_ERROR_RULE_KEY);
         assertThat(syntaxErrorRule).isNotNull();

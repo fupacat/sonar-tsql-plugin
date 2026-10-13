@@ -13,7 +13,12 @@ public final class CheckList {
             AvoidSelectAllCheck.class,
             AvoidLeadingWildcardInLikeCheck.class,
             AvoidNoLockHintCheck.class,
-            AvoidDeprecatedTypesCheck.class
+            AvoidDeprecatedTypesCheck.class,
+            DeleteAndUpdateWithoutWhereCheck.class,
+            NotInSubqueryCheck.class,
+            NullComparisonCheck.class,
+            TopWithoutOrderByCheck.class,
+            CaseInputInvariantCheck.class
     );
 
     private CheckList() {
@@ -30,7 +35,12 @@ public final class CheckList {
                 new AvoidSelectAllCheck(),
                 new AvoidLeadingWildcardInLikeCheck(),
                 new AvoidNoLockHintCheck(),
-                new AvoidDeprecatedTypesCheck()
+                new AvoidDeprecatedTypesCheck(),
+                new DeleteAndUpdateWithoutWhereCheck(),
+                new NotInSubqueryCheck(),
+                new NullComparisonCheck(),
+                new TopWithoutOrderByCheck(),
+                new CaseInputInvariantCheck()
         );
     }
 }

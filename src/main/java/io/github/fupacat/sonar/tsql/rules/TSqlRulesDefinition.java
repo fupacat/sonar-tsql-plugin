@@ -5,7 +5,12 @@ import io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedTypesCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
+import io.github.fupacat.sonar.tsql.checks.CaseInputInvariantCheck;
 import io.github.fupacat.sonar.tsql.checks.CheckList;
+import io.github.fupacat.sonar.tsql.checks.DeleteAndUpdateWithoutWhereCheck;
+import io.github.fupacat.sonar.tsql.checks.NotInSubqueryCheck;
+import io.github.fupacat.sonar.tsql.checks.NullComparisonCheck;
+import io.github.fupacat.sonar.tsql.checks.TopWithoutOrderByCheck;
 import org.sonar.api.rule.RuleStatus;
 import org.sonar.api.rule.Severity;
 import org.sonar.api.rules.RuleType;
@@ -87,7 +92,77 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setStatus(RuleStatus.READY)
                 .setTags(TAG_SQL_SERVER, "obsolete", "maintenance");
 
-        // Rule 5: SyntaxError
+        // Rule 5: S1590
+        repository.createRule(DeleteAndUpdateWithoutWhereCheck.RULE_KEY)
+                .setName("DELETE and UPDATE statements should contain WHERE clauses")
+                .setHtmlDescription(
+                        "<p>DELETE and UPDATE operations without a WHERE clause affect every row in the target table.</p>"
+                        + "<h3>Noncompliant Code Example</h3>"
+                        + "<pre>DELETE FROM Orders; UPDATE Orders SET Status = 'Closed';</pre>"
+                        + "<h3>Compliant Solution</h3>"
+                        + "<pre>DELETE FROM Orders WHERE OrderId = 42; UPDATE Orders SET Status = 'Closed' WHERE OrderId = 42;</pre>")
+                .setSeverity(Severity.BLOCKER)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "data-safety", "data-integrity");
+
+        // Rule 6: S3641
+        repository.createRule(NotInSubqueryCheck.RULE_KEY)
+                .setName("Subqueries should not be used in NOT IN conditions")
+                .setHtmlDescription(
+                        "<p>Using <code>NOT IN</code> with a subquery can yield unexpected results when NULL values are present.</p>"
+                        + "<h3>Noncompliant Code Example</h3>"
+                        + "<pre>SELECT * FROM Customers WHERE CustomerId NOT IN (SELECT CustomerId FROM Orders);</pre>"
+                        + "<h3>Compliant Solution</h3>"
+                        + "<pre>SELECT * FROM Customers WHERE CustomerId NOT IN (SELECT CustomerId FROM Orders WHERE CustomerId IS NOT NULL);</pre>")
+                .setSeverity(Severity.CRITICAL)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "null-handling", "data-safety");
+
+        // Rule 7: S2527
+        repository.createRule(NullComparisonCheck.RULE_KEY)
+                .setName("NULL should not be compared directly with = or <>")
+                .setHtmlDescription(
+                        "<p>NULL is not a value, so comparisons like <code>NULL = 1</code> or <code>NULL <> 1</code> are not valid SQL logic.</p>"
+                        + "<h3>Noncompliant Code Example</h3>"
+                        + "<pre>WHERE Value = NULL OR Value <> NULL;</pre>"
+                        + "<h3>Compliant Solution</h3>"
+                        + "<pre>WHERE Value IS NULL OR Value IS NOT NULL;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "null-handling", "logic");
+
+        // Rule 8: S4054
+        repository.createRule(TopWithoutOrderByCheck.RULE_KEY)
+                .setName("TOP without ORDER BY returns non-deterministic rows")
+                .setHtmlDescription(
+                        "<p>A query using <code>TOP</code> without an <code>ORDER BY</code> can return arbitrary rows on each execution.</p>"
+                        + "<h3>Noncompliant Code Example</h3>"
+                        + "<pre>SELECT TOP 10 * FROM Orders;</pre>"
+                        + "<h3>Compliant Solution</h3>"
+                        + "<pre>SELECT TOP 10 * FROM Orders ORDER BY CreatedAt DESC;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "determinism", "ordering");
+
+        // Rule 9: S4094
+        repository.createRule(CaseInputInvariantCheck.RULE_KEY)
+                .setName("CASE input expressions should be invariant")
+                .setHtmlDescription(
+                        "<p>The input expression of a simple CASE should not be non-deterministic because it can change branch selection.</p>"
+                        + "<h3>Noncompliant Code Example</h3>"
+                        + "<pre>CASE RAND() WHEN 1 THEN 'A' ELSE 'B' END;</pre>"
+                        + "<h3>Compliant Solution</h3>"
+                        + "<pre>CASE Status WHEN 'A' THEN 'X' ELSE 'Y' END;</pre>")
+                .setSeverity(Severity.CRITICAL)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "determinism", "data-safety");
+
+        // Rule 10: SyntaxError
         repository.createRule(CheckList.SYNTAX_ERROR_RULE_KEY)
                 .setName("T-SQL syntax error")
                 .setHtmlDescription(
