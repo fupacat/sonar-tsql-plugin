@@ -14,11 +14,13 @@ public class SetNoCountCheck extends TSqlCheck {
     private static final Pattern NOCOUNT_ON_PATTERN = Pattern.compile("(?is)set\\s+nocount\\s+on\\b");
     private static final Pattern NOCOUNT_OFF_PATTERN = Pattern.compile("(?is)set\\s+nocount\\s+off\\b");
 
+    // TRACEABILITY_MAPPING: REQ-046
     @Override
     public String getRuleKey() {
         return RULE_KEY;
     }
 
+    // TRACEABILITY_MAPPING: REQ-046
     @Override
     public void scan(TSqlFragment root, TSqlCheckContext context) {
         super.scan(root, context);

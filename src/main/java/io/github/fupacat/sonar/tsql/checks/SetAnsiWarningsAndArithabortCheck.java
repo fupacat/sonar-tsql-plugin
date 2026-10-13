@@ -12,11 +12,13 @@ public class SetAnsiWarningsAndArithabortCheck extends TSqlCheck {
     public static final String RULE_KEY = "S6498";
     private static final Pattern OFF_PATTERN = Pattern.compile("(?is)\\bset\\s+(?:ansi_warnings|arithabort)\\s+off\\b");
 
+    // TRACEABILITY_MAPPING: REQ-047
     @Override
     public String getRuleKey() {
         return RULE_KEY;
     }
 
+    // TRACEABILITY_MAPPING: REQ-047
     @Override
     public void scan(TSqlFragment root, TSqlCheckContext context) {
         super.scan(root, context);

@@ -14,11 +14,13 @@ public class AvoidDeprecatedSystemTablesCheck extends TSqlCheck {
             "(?is)\\b(?:sysobjects|syscolumns|sysindexes|sysconstraints|sysdepends|systypes|sysusers|sysmembers|syscomments)\\b"
     );
 
+    // TRACEABILITY_MAPPING: REQ-049
     @Override
     public String getRuleKey() {
         return RULE_KEY;
     }
 
+    // TRACEABILITY_MAPPING: REQ-049
     @Override
     public void scan(TSqlFragment root, TSqlCheckContext context) {
         super.scan(root, context);

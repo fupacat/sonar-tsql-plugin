@@ -10,13 +10,15 @@ import java.util.regex.Pattern;
 public class AvoidLikeWithoutWildcardCheck extends TSqlCheck {
 
     public static final String RULE_KEY = "S3643";
-    private static final Pattern LIKE_WITHOUT_WILDCARD = Pattern.compile("(?is)\\b\\w+\\s+like\\s+'[^'%_]*'");
+    private static final Pattern LIKE_WITHOUT_WILDCARD = Pattern.compile("(?is)\\b\\w+\\s+like\\s+'[^'%_\\[]*'");
 
+    // TRACEABILITY_MAPPING: REQ-053
     @Override
     public String getRuleKey() {
         return RULE_KEY;
     }
 
+    // TRACEABILITY_MAPPING: REQ-053
     @Override
     public void scan(TSqlFragment root, TSqlCheckContext context) {
         super.scan(root, context);

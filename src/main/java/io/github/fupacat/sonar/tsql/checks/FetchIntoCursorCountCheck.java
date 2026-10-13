@@ -1,9 +1,6 @@
 package io.github.fupacat.sonar.tsql.checks;
 
-import io.github.fupacat.ast.DeclareCursorStatement;
 import io.github.fupacat.ast.FetchCursorStatement;
-import io.github.fupacat.ast.QuerySpecification;
-import io.github.fupacat.ast.TSqlFragment;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -14,19 +11,15 @@ import java.util.regex.Pattern;
 public class FetchIntoCursorCountCheck extends TSqlCheck {
 
     public static final String RULE_KEY = "S4103";
-    private static final Pattern CURSOR_SELECT_PATTERN = Pattern.compile("(?is)declare\\s+\\w+\\s+cursor\\s+for\\s+select\\s+(.+?)(?:from|where|order\\s+by|group\\s+by|having|for)\\b");
-    private static final Pattern FETCH_PATTERN = Pattern.compile("(?is)fetch\\s+(?:next|prior|first|last|absolute|relative|\\S+)\\s+from\\s+(\\w+)\\s+into\\s+(.+?)(?:;|$)");
+    private static final Pattern FETCH_PATTERN = Pattern.compile("(?is)\\bfetch\\s+[a-z0-9_]+\\s+from\\s+(\\w+)\\s+into\\s+([^;]+)");
 
+    // TRACEABILITY_MAPPING: REQ-050
     @Override
     public String getRuleKey() {
         return RULE_KEY;
     }
 
-    @Override
-    public void visit(DeclareCursorStatement node) {
-        super.visit(node);
-    }
-
+    // TRACEABILITY_MAPPING: REQ-050
     @Override
     public void visit(FetchCursorStatement node) {
         String sql = getSourceText();
@@ -46,7 +39,7 @@ public class FetchIntoCursorCountCheck extends TSqlCheck {
     }
 
     private int countDeclaredCursorColumns(String sql, String cursorName) {
-        String pattern = "(?is)declare\\s+" + Pattern.quote(cursorName) + "\\s+cursor\\s+for\\s+select\\s+(.+?)(?:from|;|$)";
+        String pattern = "(?is)\\bdeclare\\s+" + Pattern.quote(cursorName) + "\\s+cursor\\s+for\\s+select\\s+([^;]+?)(?:\\bfrom\\b|;|$)";
         Matcher matcher = Pattern.compile(pattern).matcher(sql);
         if (!matcher.find()) {
             return 0;

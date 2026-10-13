@@ -13,11 +13,13 @@ public class TriggerResultSetCheck extends TSqlCheck {
     private static final Pattern TRIGGER_PATTERN = Pattern.compile("(?is)create\\s+trigger\\b");
     private static final Pattern RESULT_SET_PATTERN = Pattern.compile("(?is)\\b(?:select|print|fetch)\\b");
 
+    // TRACEABILITY_MAPPING: REQ-052
     @Override
     public String getRuleKey() {
         return RULE_KEY;
     }
 
+    // TRACEABILITY_MAPPING: REQ-052
     @Override
     public void scan(TSqlFragment root, TSqlCheckContext context) {
         super.scan(root, context);

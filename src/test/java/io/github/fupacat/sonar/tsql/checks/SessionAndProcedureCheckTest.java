@@ -18,6 +18,7 @@ class SessionAndProcedureCheckTest {
     private final AvoidLikeWithoutWildcardCheck likeWithoutWildcardCheck = new AvoidLikeWithoutWildcardCheck();
     private final AvoidNonStandardComparisonOperatorsCheck nonStandardComparisonCheck = new AvoidNonStandardComparisonOperatorsCheck();
 
+    // TRACEABILITY_MAPPING: REQ-046
     @Test
     void testSetNoCountRule() {
         List<String> issues = CheckTestUtils.scan(setNoCountCheck,
@@ -25,6 +26,7 @@ class SessionAndProcedureCheckTest {
         assertThat(issues).hasSize(1);
     }
 
+    // TRACEABILITY_MAPPING: REQ-046
     @Test
     void testSetNoCountIsCompliantWhenEnabled() {
         List<String> issues = CheckTestUtils.scan(setNoCountCheck,
@@ -32,6 +34,7 @@ class SessionAndProcedureCheckTest {
         assertThat(issues).isEmpty();
     }
 
+    // TRACEABILITY_MAPPING: REQ-047
     @Test
     void testSetWarningsRule() {
         List<String> issues = CheckTestUtils.scan(warningsCheck,
@@ -39,6 +42,7 @@ class SessionAndProcedureCheckTest {
         assertThat(issues).hasSize(1);
     }
 
+    // TRACEABILITY_MAPPING: REQ-047
     @Test
     void testSetWarningsAreCompliantWhenEnabled() {
         List<String> issues = CheckTestUtils.scan(warningsCheck,
@@ -46,6 +50,7 @@ class SessionAndProcedureCheckTest {
         assertThat(issues).isEmpty();
     }
 
+    // TRACEABILITY_MAPPING: REQ-048
     @Test
     void testSetAnsiNullsRule() {
         List<String> issues = CheckTestUtils.scan(ansiNullsCheck,
@@ -53,6 +58,7 @@ class SessionAndProcedureCheckTest {
         assertThat(issues).hasSize(1);
     }
 
+    // TRACEABILITY_MAPPING: REQ-048
     @Test
     void testSetAnsiNullsAreCompliantWhenEnabled() {
         List<String> issues = CheckTestUtils.scan(ansiNullsCheck,
@@ -60,6 +66,7 @@ class SessionAndProcedureCheckTest {
         assertThat(issues).isEmpty();
     }
 
+    // TRACEABILITY_MAPPING: REQ-049
     @Test
     void testDeprecatedSystemTablesRule() {
         List<String> issues = CheckTestUtils.scan(deprecatedTablesCheck,
@@ -67,6 +74,7 @@ class SessionAndProcedureCheckTest {
         assertThat(issues).hasSize(1);
     }
 
+    // TRACEABILITY_MAPPING: REQ-049
     @Test
     void testDeprecatedSystemTablesAreCompliantWhenUsingSysCatalogViews() {
         List<String> issues = CheckTestUtils.scan(deprecatedTablesCheck,
@@ -74,6 +82,7 @@ class SessionAndProcedureCheckTest {
         assertThat(issues).isEmpty();
     }
 
+    // TRACEABILITY_MAPPING: REQ-050
     @Test
     void testFetchIntoCursorCountRule() {
         List<String> issues = CheckTestUtils.scan(fetchIntoCursorCountCheck,
@@ -81,6 +90,7 @@ class SessionAndProcedureCheckTest {
         assertThat(issues).hasSize(1);
     }
 
+    // TRACEABILITY_MAPPING: REQ-050
     @Test
     void testFetchIntoCursorCountIsCompliantWhenCountsMatch() {
         List<String> issues = CheckTestUtils.scan(fetchIntoCursorCountCheck,
@@ -88,6 +98,7 @@ class SessionAndProcedureCheckTest {
         assertThat(issues).isEmpty();
     }
 
+    // TRACEABILITY_MAPPING: REQ-051
     @Test
     void testCaseSubqueryRule() {
         List<String> issues = CheckTestUtils.scan(caseSubqueryCheck,
@@ -95,6 +106,15 @@ class SessionAndProcedureCheckTest {
         assertThat(issues).hasSize(1);
     }
 
+    // TRACEABILITY_MAPPING: REQ-051
+    @Test
+    void testCaseSubqueryInWhenBranch() {
+        List<String> issues = CheckTestUtils.scan(caseSubqueryCheck,
+                "SELECT CASE WHEN (SELECT COUNT(*) FROM Orders) > 0 THEN 1 ELSE 0 END;");
+        assertThat(issues).hasSize(1);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-051
     @Test
     void testCaseSubqueryIsCompliantWhenUsingSimpleValues() {
         List<String> issues = CheckTestUtils.scan(caseSubqueryCheck,
@@ -102,6 +122,7 @@ class SessionAndProcedureCheckTest {
         assertThat(issues).isEmpty();
     }
 
+    // TRACEABILITY_MAPPING: REQ-052
     @Test
     void testTriggerResultSetRule() {
         List<String> issues = CheckTestUtils.scan(triggerResultSetCheck,
@@ -109,6 +130,7 @@ class SessionAndProcedureCheckTest {
         assertThat(issues).hasSize(1);
     }
 
+    // TRACEABILITY_MAPPING: REQ-052
     @Test
     void testTriggerResultSetIsCompliantWithoutResultEmission() {
         List<String> issues = CheckTestUtils.scan(triggerResultSetCheck,
@@ -116,6 +138,7 @@ class SessionAndProcedureCheckTest {
         assertThat(issues).isEmpty();
     }
 
+    // TRACEABILITY_MAPPING: REQ-053
     @Test
     void testLikeWithoutWildcardRule() {
         List<String> issues = CheckTestUtils.scan(likeWithoutWildcardCheck,
@@ -123,6 +146,7 @@ class SessionAndProcedureCheckTest {
         assertThat(issues).hasSize(1);
     }
 
+    // TRACEABILITY_MAPPING: REQ-053
     @Test
     void testLikeWithoutWildcardIsCompliantWhenUsingWildcards() {
         List<String> issues = CheckTestUtils.scan(likeWithoutWildcardCheck,
@@ -130,6 +154,15 @@ class SessionAndProcedureCheckTest {
         assertThat(issues).isEmpty();
     }
 
+    // TRACEABILITY_MAPPING: REQ-053
+    @Test
+    void testLikeWithBracketWildcardIsCompliant() {
+        List<String> issues = CheckTestUtils.scan(likeWithoutWildcardCheck,
+                "SELECT Id FROM Customers WHERE CompanyName LIKE '[A-C]%';");
+        assertThat(issues).isEmpty();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-054
     @Test
     void testNonStandardComparisonRule() {
         List<String> issues = CheckTestUtils.scan(nonStandardComparisonCheck,
@@ -137,6 +170,7 @@ class SessionAndProcedureCheckTest {
         assertThat(issues).hasSize(3);
     }
 
+    // TRACEABILITY_MAPPING: REQ-054
     @Test
     void testNonStandardComparisonIsCompliantWhenUsingIsoOperators() {
         List<String> issues = CheckTestUtils.scan(nonStandardComparisonCheck,

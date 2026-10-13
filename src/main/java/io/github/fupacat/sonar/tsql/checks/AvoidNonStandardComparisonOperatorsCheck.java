@@ -13,11 +13,13 @@ public class AvoidNonStandardComparisonOperatorsCheck extends TSqlCheck {
     public static final String RULE_KEY = "S1742";
     private static final Pattern NON_STANDARD_COMPARISON = Pattern.compile("(?i)(?:!=|!<|!>)");
 
+    // TRACEABILITY_MAPPING: REQ-054
     @Override
     public String getRuleKey() {
         return RULE_KEY;
     }
 
+    // TRACEABILITY_MAPPING: REQ-054
     @Override
     public void scan(TSqlFragment root, TSqlCheckContext context) {
         super.scan(root, context);

@@ -11,14 +11,16 @@ public class CaseSubqueryCheck extends TSqlCheck {
 
     public static final String RULE_KEY = "S4104";
     private static final Pattern SUBQUERY_INPUT_PATTERN = Pattern.compile(
-            "(?is)\\b(?:coalesce|iif)\\s*\\(\\s*\\(\\s*select\\b|\\bcase\\s*\\(\\s*\\(\\s*select\\b"
+            "(?is)(?:\\b(?:coalesce|iif)\\s*\\([^;)]*?\\(\\s*select\\b|\\bcase\\s+(?:when\\s+)?\\(\\s*select\\b)"
     );
 
+    // TRACEABILITY_MAPPING: REQ-051
     @Override
     public String getRuleKey() {
         return RULE_KEY;
     }
 
+    // TRACEABILITY_MAPPING: REQ-051
     @Override
     public void scan(TSqlFragment root, TSqlCheckContext context) {
         super.scan(root, context);
