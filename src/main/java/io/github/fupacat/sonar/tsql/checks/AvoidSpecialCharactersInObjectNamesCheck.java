@@ -28,21 +28,53 @@ public class AvoidSpecialCharactersInObjectNamesCheck extends TSqlCheck {
     }
 
     private boolean hasSpecialCharacters(SchemaObjectName node) {
-        if (node == null || node.Identifiers == null) {
+        if (node == null) {
             return false;
         }
-        for (Identifier identifier : node.Identifiers) {
+
+        for (Identifier identifier : extractIdentifiers(node)) {
             if (identifier == null || identifier.Value == null) {
                 continue;
             }
-            String value = identifier.Value.trim();
-            if (!value.isEmpty() && !value.matches("[A-Za-z0-9_#$]+")) {
+            String value = normalizeIdentifier(identifier.Value);
+            if (value.isEmpty()) {
+                continue;
+            }
+            if (!value.matches("[A-Za-z0-9_#]+")) {
                 return true;
             }
-            if (!value.isEmpty() && Character.isDigit(value.charAt(0)) && !value.startsWith("#")) {
+            if (Character.isDigit(value.charAt(0)) && !value.startsWith("#")) {
                 return true;
             }
         }
         return false;
+    }
+
+    private java.util.List<Identifier> extractIdentifiers(SchemaObjectName node) {
+        java.util.List<Identifier> identifiers = new java.util.ArrayList<>();
+        if (node.Identifiers != null) {
+            identifiers.addAll(node.Identifiers);
+        }
+        if (node.BaseIdentifier != null) {
+            identifiers.add(node.BaseIdentifier);
+        }
+        if (node.SchemaIdentifier != null) {
+            identifiers.add(node.SchemaIdentifier);
+        }
+        if (node.DatabaseIdentifier != null) {
+            identifiers.add(node.DatabaseIdentifier);
+        }
+        if (node.ServerIdentifier != null) {
+            identifiers.add(node.ServerIdentifier);
+        }
+        return identifiers;
+    }
+
+    private String normalizeIdentifier(String value) {
+        String trimmed = value.trim();
+        if (trimmed.startsWith("[") && trimmed.endsWith("]") && trimmed.length() >= 2) {
+            trimmed = trimmed.substring(1, trimmed.length() - 1);
+        }
+        return trimmed;
     }
 }

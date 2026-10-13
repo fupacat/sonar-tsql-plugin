@@ -53,15 +53,43 @@ public class AvoidReservedWordsInObjectNamesCheck extends TSqlCheck {
         if (node == null) {
             return false;
         }
-        for (Identifier identifier : node.Identifiers) {
+        for (Identifier identifier : extractIdentifiers(node)) {
             if (identifier == null || identifier.Value == null) {
                 continue;
             }
-            String value = identifier.Value.trim();
+            String value = normalizeIdentifier(identifier.Value);
             if (!value.isEmpty() && RESERVED_WORDS.contains(value.toUpperCase(Locale.ROOT))) {
                 return true;
             }
         }
         return false;
+    }
+
+    private java.util.List<Identifier> extractIdentifiers(SchemaObjectName node) {
+        java.util.List<Identifier> identifiers = new java.util.ArrayList<>();
+        if (node.Identifiers != null) {
+            identifiers.addAll(node.Identifiers);
+        }
+        if (node.BaseIdentifier != null) {
+            identifiers.add(node.BaseIdentifier);
+        }
+        if (node.SchemaIdentifier != null) {
+            identifiers.add(node.SchemaIdentifier);
+        }
+        if (node.DatabaseIdentifier != null) {
+            identifiers.add(node.DatabaseIdentifier);
+        }
+        if (node.ServerIdentifier != null) {
+            identifiers.add(node.ServerIdentifier);
+        }
+        return identifiers;
+    }
+
+    private String normalizeIdentifier(String value) {
+        String trimmed = value.trim();
+        if (trimmed.startsWith("[") && trimmed.endsWith("]") && trimmed.length() >= 2) {
+            trimmed = trimmed.substring(1, trimmed.length() - 1);
+        }
+        return trimmed;
     }
 }

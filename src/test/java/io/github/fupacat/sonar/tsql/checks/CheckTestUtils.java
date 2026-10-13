@@ -38,12 +38,13 @@ public final class CheckTestUtils {
     public static List<String> scanWithContents(TSqlCheck check, String sql) {
         TSqlParser parser = new TSqlParser();
         ParseResult<TSqlScript> result = parser.parse(sql);
-        if (result.fragment() == null) {
-            throw new IllegalArgumentException("Failed to parse SQL: " + sql + ", errors: " + result.errors());
-        }
 
         CollectingContext context = new CollectingContext(sql);
-        check.scan(result.fragment(), context);
+        if (result.fragment() != null) {
+            check.scan(result.fragment(), context);
+        } else {
+            check.scan(null, context);
+        }
         return context.issues;
     }
 

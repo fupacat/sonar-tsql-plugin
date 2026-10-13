@@ -24,8 +24,12 @@ public class AvoidDeprecatedJoinSyntaxCheck extends TSqlCheck {
 
         try {
             String content = context.getFile().contents();
-            if (content != null && (content.contains("*=") || content.contains("=*"))) {
-                reportIssueAtLine(1, "Avoid using deprecated join syntax ('*=' or '=*'); use explicit JOIN conditions instead.");
+            if (content == null) {
+                return;
+            }
+
+            if (content.contains("*=") || content.contains("=*")) {
+                context.reportIssueAtLine(this, 1, "Avoid using deprecated join syntax ('*=' or '=*'); use explicit JOIN conditions instead.");
             }
         } catch (Exception ignored) {
             // The check is intentionally conservative when file contents are unavailable.
