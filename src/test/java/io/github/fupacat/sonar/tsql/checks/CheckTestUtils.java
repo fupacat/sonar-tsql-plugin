@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public final class CheckTestUtils {
 
@@ -31,10 +32,24 @@ public final class CheckTestUtils {
 
     public static class CollectingContext implements TSqlCheckContext {
         public final List<String> issues = new ArrayList<>();
+        private final InputFile file;
+
+        public CollectingContext() {
+            this.file = mock(InputFile.class);
+        }
+
+        public CollectingContext(String contents) {
+            this.file = mock(InputFile.class);
+            try {
+                when(file.contents()).thenReturn(contents);
+            } catch (Exception ignored) {
+                // Mockito can throw on some JDKs; ignored here for tests.
+            }
+        }
 
         @Override
         public InputFile getFile() {
-            return mock(InputFile.class);
+            return file;
         }
 
         @Override

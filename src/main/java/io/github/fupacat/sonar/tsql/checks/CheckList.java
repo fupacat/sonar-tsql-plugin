@@ -18,7 +18,16 @@ public final class CheckList {
             NotInSubqueryCheck.class,
             NullComparisonCheck.class,
             TopWithoutOrderByCheck.class,
-            CaseInputInvariantCheck.class
+            CaseInputInvariantCheck.class,
+            SargableWhereCheck.class,
+            UseScopeIdentityCheck.class,
+            AvoidVariableLengthDataTypeCheck.class,
+            AvoidDeprecatedJoinSyntaxCheck.class,
+            AvoidSpecialCharactersInObjectNamesCheck.class,
+            AvoidReservedWordsInObjectNamesCheck.class,
+            StoredProcedureOutputParameterCheck.class,
+            DeterministicFunctionInWhereCheck.class,
+            AvoidSpPrefixProcedureNameCheck.class
     );
 
     private CheckList() {
@@ -40,7 +49,16 @@ public final class CheckList {
                 new NotInSubqueryCheck(),
                 new NullComparisonCheck(),
                 new TopWithoutOrderByCheck(),
-                new CaseInputInvariantCheck()
+                new CaseInputInvariantCheck(),
+                new SargableWhereCheck(),
+                new UseScopeIdentityCheck(),
+                new AvoidVariableLengthDataTypeCheck(),
+                new AvoidDeprecatedJoinSyntaxCheck(),
+                new AvoidSpecialCharactersInObjectNamesCheck(),
+                new AvoidReservedWordsInObjectNamesCheck(),
+                new StoredProcedureOutputParameterCheck(),
+                new DeterministicFunctionInWhereCheck(),
+                new AvoidSpPrefixProcedureNameCheck()
         );
     }
 }
