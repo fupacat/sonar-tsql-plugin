@@ -910,7 +910,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
         repository.createRule(NullableColumnIsNullCheck.RULE_KEY)
                 .setName("Use ISNULL on nullable columns in expressions")
                 .setHtmlDescription(
-                        "<p>Expressions that rely on nullable columns without a defaulting function can cause NULL propagation and logic errors.</p>"
+                        "<p>Using <code>COALESCE</code> on a nullable column is less clear than <code>ISNULL</code> and can hide nullable-column intent in expressions.</p>"
                         + NONCOMPLIANT_HEADER
                         + "<pre>SELECT COALESCE(LastLogin, '1970-01-01') FROM Users;</pre>"
                         + COMPLIANT_HEADER

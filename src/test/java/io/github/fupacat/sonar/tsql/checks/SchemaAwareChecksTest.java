@@ -125,7 +125,7 @@ class SchemaAwareChecksTest {
         assertThat(issues).isEmpty();
     }
 
-    // TRACEABILITY_MAPPING: REQ-009
+    // TRACEABILITY_MAPPING: REQ-016
     @Test
     void testProjectSchemaCatalogTracksTableMetadata() {
         ParseResult<TSqlScript> result = new TSqlParser().parse(

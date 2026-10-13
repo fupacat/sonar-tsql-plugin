@@ -131,6 +131,23 @@ class ProjectSchemaCatalogTest {
         assertThat(catalog.isIndexed(customerIdRef)).isTrue();
     }
 
+    // TRACEABILITY_MAPPING: REQ-009
+    @Test
+    void testPrimaryKeyAndUniqueConstraintsCreateIndexedColumns() {
+        ProjectSchemaCatalog catalog = catalogFromSql(
+                "CREATE TABLE Orders (OrderId INT NOT NULL, CustomerId INT NOT NULL, CONSTRAINT PK_Orders PRIMARY KEY (OrderId), CONSTRAINT UQ_Orders_CustomerId UNIQUE(CustomerId));"
+        );
+
+        ColumnReferenceExpression orderIdRef = columnReferenceFrom("SELECT OrderId FROM Orders WHERE OrderId IN (1, 2)", "OrderId");
+        ColumnReferenceExpression customerIdRef = columnReferenceFrom("SELECT CustomerId FROM Orders WHERE CustomerId IN (1, 2)", "CustomerId");
+
+        assertThat(orderIdRef).isNotNull();
+        assertThat(customerIdRef).isNotNull();
+        assertThat(catalog.isIndexed(orderIdRef)).isTrue();
+        assertThat(catalog.isIndexed(customerIdRef)).isTrue();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-009
     @Test
     void testTypeInfoComparisonWithinAndAcrossFamilies() {
         ProjectSchemaCatalog.TypeInfo intType = new ProjectSchemaCatalog.TypeInfo("INT", null);

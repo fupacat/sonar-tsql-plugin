@@ -19,6 +19,7 @@ import io.github.fupacat.ast.SqlDataTypeReference;
 import io.github.fupacat.ast.TSqlConcreteFragmentVisitor;
 import io.github.fupacat.ast.TSqlFragment;
 import io.github.fupacat.ast.TSqlScript;
+import io.github.fupacat.ast.UniqueConstraintDefinition;
 import org.sonar.api.batch.fs.InputFile;
 
 import java.io.IOException;
@@ -415,6 +416,8 @@ public final class ProjectSchemaCatalog {
                 return;
             }
             indexColumns(table, node.Definition.ColumnDefinitions);
+            registerConstraintIndexes(table.tableName, node.Definition.TableConstraints);
+            registerInlineColumnIndexes(table.tableName, node.Definition.ColumnDefinitions);
             if (node.Definition.Indexes != null) {
                 for (IndexDefinition indexDefinition : node.Definition.Indexes) {
                     registerIndex(table.tableName, extractIndexColumns(indexDefinition == null ? null : indexDefinition.Columns));
@@ -437,6 +440,49 @@ public final class ProjectSchemaCatalog {
                 String sqlType = extractSqlType(columnDefinition.DataType);
                 Integer length = extractLength(columnDefinition.DataType);
                 table.addColumn(new ColumnInfo(columnName, nullable, sqlType, length));
+                if (columnDefinition.Index != null) {
+                    registerIndex(table.tableName, extractIndexColumns(columnDefinition.Index.Columns));
+                }
+            }
+        }
+
+        private void registerConstraintIndexes(String tableName, List<ConstraintDefinition> constraints) {
+            if (tableName == null || tableName.isBlank() || constraints == null) {
+                return;
+            }
+            for (ConstraintDefinition constraint : constraints) {
+                if (constraint instanceof UniqueConstraintDefinition uniqueConstraint) {
+                    registerIndex(tableName, extractIndexColumns(uniqueConstraint.Columns));
+                }
+            }
+        }
+
+        private void registerInlineColumnIndexes(String tableName, List<ColumnDefinition> columnDefinitions) {
+            if (tableName == null || tableName.isBlank() || columnDefinitions == null) {
+                return;
+            }
+            for (ColumnDefinition columnDefinition : columnDefinitions) {
+                if (columnDefinition == null || columnDefinition.Constraints == null) {
+                    continue;
+                }
+                for (ConstraintDefinition constraint : columnDefinition.Constraints) {
+                    if (!(constraint instanceof UniqueConstraintDefinition uniqueConstraint)) {
+                        continue;
+                    }
+                    List<String> columnNames = new ArrayList<>();
+                    if (uniqueConstraint.Columns != null && !uniqueConstraint.Columns.isEmpty()) {
+                        columnNames.addAll(extractIndexColumns(uniqueConstraint.Columns));
+                    }
+                    if (columnNames.isEmpty()) {
+                        String columnName = columnDefinition.ColumnIdentifier != null ? columnDefinition.ColumnIdentifier.Value : null;
+                        if (columnName != null && !columnName.isBlank()) {
+                            columnNames.add(columnName);
+                        }
+                    }
+                    if (!columnNames.isEmpty()) {
+                        registerIndex(tableName, columnNames);
+                    }
+                }
             }
         }
 
