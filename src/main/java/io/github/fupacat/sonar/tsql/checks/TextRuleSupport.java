@@ -11,6 +11,9 @@ import java.util.regex.Pattern;
 
 final class TextRuleSupport {
 
+    private static final String[] COMMENT_KEYWORDS = {"select", "insert", "update", "delete", "create", "alter", "drop", "exec",
+            "if", "else", "begin", "end", "declare", "with", "case", "when", "then"};
+
     private TextRuleSupport() {
     }
 
@@ -38,6 +41,17 @@ final class TextRuleSupport {
             return List.of();
         }
         return new ArrayList<>(Arrays.asList(text.split("\\R", -1)));
+    }
+
+    static List<Integer> matchingLines(String text, java.util.function.Predicate<String> predicate) {
+        List<Integer> lineNumbers = new ArrayList<>();
+        List<String> lines = lines(text);
+        for (int i = 0; i < lines.size(); i++) {
+            if (predicate.test(lines.get(i))) {
+                lineNumbers.add(i);
+            }
+        }
+        return lineNumbers;
     }
 
     static boolean containsAnyIgnoreCase(String text, String... values) {
@@ -99,9 +113,7 @@ final class TextRuleSupport {
                 .replaceFirst("^\\*+", "")
                 .replaceFirst("\\*/$", "")
                 .trim();
-        return hasKeyword(withoutCommentPrefix,
-                "select", "insert", "update", "delete", "create", "alter", "drop", "exec",
-                "if", "else", "begin", "end", "declare", "with", "case", "when", "then");
+        return hasKeyword(withoutCommentPrefix, COMMENT_KEYWORDS);
     }
 
     static int leadingSpaces(String line) {

@@ -16,6 +16,8 @@ public class TSqlRulesDefinition implements RulesDefinition {
     public static final String REPOSITORY_NAME = "SonarQube T-SQL Analyzer";
     private static final String TAG_SQL_SERVER = "sql-server";
     private static final String TAG_DATA_SAFETY = "data-safety";
+    private static final String TAG_MAINTAINABILITY = "maintainability";
+    private static final String TAG_FORMATTING = "formatting";
     private static final String NONCOMPLIANT_HEADER = "<h3>Noncompliant Code Example</h3>";
     private static final String COMPLIANT_HEADER = "<h3>Compliant Solution</h3>";
 
@@ -170,7 +172,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MINOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "maintainability");
+                .setTags(TAG_SQL_SERVER, TAG_MAINTAINABILITY);
 
         repository.createRule(S105Check.RULE_KEY)
                 .setName("Tabulation characters should not be used")
@@ -178,7 +180,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MINOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "formatting");
+                .setTags(TAG_SQL_SERVER, TAG_FORMATTING);
 
         repository.createRule(S122Check.RULE_KEY)
                 .setName("Multiple statements should not appear on a single line")
@@ -194,7 +196,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "maintainability");
+                .setTags(TAG_SQL_SERVER, TAG_MAINTAINABILITY);
 
         repository.createRule(S1134Check.RULE_KEY)
                 .setName("FIXME tags should be reviewed")

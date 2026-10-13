@@ -17,50 +17,59 @@ public class S138Check extends TSqlCheck {
     @Override
     public void visit(TSqlScript node) {
         List<String> lines = TextRuleSupport.lines(getSourceText());
-        int blockStart = -1;
-        for (int i = 0; i < lines.size(); i++) {
-            String trimmed = lines.get(i).trim();
-            if (trimmed.toLowerCase(Locale.ROOT).startsWith("create procedure")
-                    || trimmed.toLowerCase(Locale.ROOT).startsWith("alter procedure")
-                    || trimmed.toLowerCase(Locale.ROOT).startsWith("create function")
-                    || trimmed.toLowerCase(Locale.ROOT).startsWith("alter function")) {
-                blockStart = i;
-                break;
-            }
-        }
-
-        if (blockStart >= 0) {
-            int length = 0;
-            for (int i = blockStart; i < lines.size(); i++) {
-                String trimmed = lines.get(i).trim();
-                if (trimmed.isEmpty()) {
-                    length++;
-                    continue;
-                }
-                if (trimmed.equalsIgnoreCase("end") || trimmed.equalsIgnoreCase("begin") || trimmed.toLowerCase(Locale.ROOT).contains("as")) {
-                    length++;
-                    continue;
-                }
-                if (trimmed.startsWith("--") || trimmed.startsWith("/*")) {
-                    length++;
-                    continue;
-                }
-                if (trimmed.endsWith(";")) {
-                    length++;
-                    continue;
-                }
-                if (trimmed.toLowerCase(Locale.ROOT).startsWith("create procedure")
-                        || trimmed.toLowerCase(Locale.ROOT).startsWith("alter procedure")) {
-                    length++;
-                    continue;
-                }
-                length++;
-                if (length > 20) {
-                    reportIssueAtLine(blockStart + 1, "Procedures should not be too long.");
-                    break;
-                }
-            }
+        int blockStart = findProcedureStart(lines);
+        if (blockStart >= 0 && isProcedureTooLong(lines, blockStart)) {
+            reportIssueAtLine(blockStart + 1, "Procedures should not be too long.");
         }
         super.visit(node);
+    }
+
+    private int findProcedureStart(List<String> lines) {
+        for (int i = 0; i < lines.size(); i++) {
+            String trimmed = lines.get(i).trim();
+            if (isProcedureDeclaration(trimmed)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private boolean isProcedureDeclaration(String trimmed) {
+        String lowered = trimmed.toLowerCase(Locale.ROOT);
+        return lowered.startsWith("create procedure")
+                || lowered.startsWith("alter procedure")
+                || lowered.startsWith("create function")
+                || lowered.startsWith("alter function");
+    }
+
+    private boolean isProcedureTooLong(List<String> lines, int blockStart) {
+        int length = 0;
+        for (int i = blockStart; i < lines.size(); i++) {
+            String trimmed = lines.get(i).trim();
+            if (isIgnoredProcedureLine(trimmed)) {
+                length++;
+                continue;
+            }
+            length++;
+            if (length > 20) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isIgnoredProcedureLine(String trimmed) {
+        if (trimmed.isEmpty()) {
+            return true;
+        }
+        String lowered = trimmed.toLowerCase(Locale.ROOT);
+        return trimmed.equalsIgnoreCase("end")
+                || trimmed.equalsIgnoreCase("begin")
+                || lowered.contains("as")
+                || trimmed.startsWith("--")
+                || trimmed.startsWith("/*")
+                || trimmed.endsWith(";")
+                || lowered.startsWith("create procedure")
+                || lowered.startsWith("alter procedure");
     }
 }
