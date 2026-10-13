@@ -1,10 +1,10 @@
 {
   "approvals": {
-    "ARCH_LOCKED": ".mcswe/locks/7eeffe20-cd6f-4cbf-8cb4-c850cef133ed.json",
-    "SPEC_LOCKED": ".mcswe/locks/cec8888c-0e98-46c3-bb4e-3f1f311aea25.json",
+    "ARCH_LOCKED": ".mcswe/locks/25284186-da77-40d3-a99a-411c223a0087.json",
+    "SPEC_LOCKED": ".mcswe/locks/6c43c2c1-bef5-4791-9ee0-faf9875b0e89.json",
     "TRIAGED": ".mcswe/locks/8f1b7a07-e9d7-488a-a0ba-4b339919131a.json"
   },
-  "evidence": ".mcswe/evidence/2cd36bfb-9e40-4f2d-916a-2f9288abf5e3.json",
+  "evidence": ".mcswe/evidence/73dea652-af45-43cf-9594-bc46491f5d6f.json",
   "history": [
     {
       "from": "INIT",
@@ -136,9 +136,55 @@
       "from": "AUDITED",
       "revision": 25,
       "to": "AUDITED"
+    },
+    {
+      "affected_revision": {
+        "ARCH_LOCKED": ".mcswe/locks/7eeffe20-cd6f-4cbf-8cb4-c850cef133ed.json",
+        "SPEC_LOCKED": ".mcswe/locks/cec8888c-0e98-46c3-bb4e-3f1f311aea25.json",
+        "TRIAGED": ".mcswe/locks/8f1b7a07-e9d7-488a-a0ba-4b339919131a.json"
+      },
+      "from": "AUDITED",
+      "reason": "Add REQ-011..REQ-015 and IF-025..IF-035 for S1590, S3641, S2527, S4054, S4094",
+      "revision": 26,
+      "to": "TRIAGED"
+    },
+    {
+      "from": "TRIAGED",
+      "revision": 27,
+      "to": "SPEC_LOCKED"
+    },
+    {
+      "affected_revision": {
+        "SPEC_LOCKED": ".mcswe/locks/6c43c2c1-bef5-4791-9ee0-faf9875b0e89.json",
+        "TRIAGED": ".mcswe/locks/8f1b7a07-e9d7-488a-a0ba-4b339919131a.json"
+      },
+      "from": "SPEC_LOCKED",
+      "reason": "phase gate failure",
+      "revision": 28,
+      "to": "SPEC_LOCKED"
+    },
+    {
+      "affected_revision": {
+        "SPEC_LOCKED": ".mcswe/locks/6c43c2c1-bef5-4791-9ee0-faf9875b0e89.json",
+        "TRIAGED": ".mcswe/locks/8f1b7a07-e9d7-488a-a0ba-4b339919131a.json"
+      },
+      "from": "SPEC_LOCKED",
+      "reason": "upstream failure",
+      "revision": 29,
+      "to": "SPEC_LOCKED"
+    },
+    {
+      "from": "SPEC_LOCKED",
+      "revision": 30,
+      "to": "ARCH_LOCKED"
+    },
+    {
+      "from": "ARCH_LOCKED",
+      "revision": 31,
+      "to": "AUDITED"
     }
   ],
-  "revision": 25,
+  "revision": 31,
   "schema_version": 3,
   "state": "AUDITED"
 }

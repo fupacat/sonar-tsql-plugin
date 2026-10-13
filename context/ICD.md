@@ -24,7 +24,12 @@
     "io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheck",
     "io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheck",
     "io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck",
+    "io.github.fupacat.sonar.tsql.checks.CaseInputInvariantCheck",
     "io.github.fupacat.sonar.tsql.checks.CheckList",
+    "io.github.fupacat.sonar.tsql.checks.DeleteAndUpdateWithoutWhereCheck",
+    "io.github.fupacat.sonar.tsql.checks.NotInSubqueryCheck",
+    "io.github.fupacat.sonar.tsql.checks.NullComparisonCheck",
+    "io.github.fupacat.sonar.tsql.checks.TopWithoutOrderByCheck",
     "org.sonar.api.server.profile.BuiltInQualityProfilesDefinition"
   ],
   "exchanges": []
@@ -55,7 +60,12 @@
     "io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheck",
     "io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheck",
     "io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck",
+    "io.github.fupacat.sonar.tsql.checks.CaseInputInvariantCheck",
     "io.github.fupacat.sonar.tsql.checks.CheckList",
+    "io.github.fupacat.sonar.tsql.checks.DeleteAndUpdateWithoutWhereCheck",
+    "io.github.fupacat.sonar.tsql.checks.NotInSubqueryCheck",
+    "io.github.fupacat.sonar.tsql.checks.NullComparisonCheck",
+    "io.github.fupacat.sonar.tsql.checks.TopWithoutOrderByCheck",
     "org.sonar.api.rule.RuleStatus",
     "org.sonar.api.rule.Severity",
     "org.sonar.api.rules.RuleType",
@@ -660,3 +670,231 @@
   "exchanges": []
 }
 ```
+
+```json
+{
+  "kind": "interface",
+  "id": "IF-025",
+  "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/DeleteAndUpdateWithoutWhereCheck.java",
+  "symbol": "DeleteAndUpdateWithoutWhereCheck.getRuleKey",
+  "signature": {
+    "async": false,
+    "parameters": [],
+    "return": "String"
+  },
+  "dependencies": [
+    "io.github.fupacat.ast.DeleteSpecification",
+    "io.github.fupacat.ast.TSqlConcreteFragmentVisitor",
+    "io.github.fupacat.ast.TSqlScript",
+    "io.github.fupacat.ast.UpdateSpecification"
+  ],
+  "exchanges": []
+}
+```
+
+```json
+{
+  "kind": "interface",
+  "id": "IF-026",
+  "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/DeleteAndUpdateWithoutWhereCheck.java",
+  "symbol": "DeleteAndUpdateWithoutWhereCheck.visit",
+  "signature": {
+    "async": false,
+    "parameters": [
+      {
+        "annotation": "TSqlScript",
+        "default": null,
+        "kind": "positional_or_keyword",
+        "name": "node"
+      }
+    ],
+    "return": "void"
+  },
+  "dependencies": [
+    "io.github.fupacat.ast.DeleteSpecification",
+    "io.github.fupacat.ast.TSqlConcreteFragmentVisitor",
+    "io.github.fupacat.ast.TSqlScript",
+    "io.github.fupacat.ast.UpdateSpecification"
+  ],
+  "exchanges": []
+}
+```
+
+```json
+{
+  "kind": "interface",
+  "id": "IF-027",
+  "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/NotInSubqueryCheck.java",
+  "symbol": "NotInSubqueryCheck.getRuleKey",
+  "signature": {
+    "async": false,
+    "parameters": [],
+    "return": "String"
+  },
+  "dependencies": [
+    "io.github.fupacat.ast.InPredicate"
+  ],
+  "exchanges": []
+}
+```
+
+```json
+{
+  "kind": "interface",
+  "id": "IF-028",
+  "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/NotInSubqueryCheck.java",
+  "symbol": "NotInSubqueryCheck.visit",
+  "signature": {
+    "async": false,
+    "parameters": [
+      {
+        "annotation": "InPredicate",
+        "default": null,
+        "kind": "positional_or_keyword",
+        "name": "node"
+      }
+    ],
+    "return": "void"
+  },
+  "dependencies": [
+    "io.github.fupacat.ast.InPredicate"
+  ],
+  "exchanges": []
+}
+```
+
+```json
+{
+  "kind": "interface",
+  "id": "IF-029",
+  "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/NullComparisonCheck.java",
+  "symbol": "NullComparisonCheck.getRuleKey",
+  "signature": {
+    "async": false,
+    "parameters": [],
+    "return": "String"
+  },
+  "dependencies": [
+    "io.github.fupacat.ast.BooleanComparisonExpression",
+    "io.github.fupacat.ast.BooleanComparisonType",
+    "io.github.fupacat.ast.NullLiteral"
+  ],
+  "exchanges": []
+}
+```
+
+```json
+{
+  "kind": "interface",
+  "id": "IF-030",
+  "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/NullComparisonCheck.java",
+  "symbol": "NullComparisonCheck.visit",
+  "signature": {
+    "async": false,
+    "parameters": [
+      {
+        "annotation": "BooleanComparisonExpression",
+        "default": null,
+        "kind": "positional_or_keyword",
+        "name": "node"
+      }
+    ],
+    "return": "void"
+  },
+  "dependencies": [
+    "io.github.fupacat.ast.BooleanComparisonExpression",
+    "io.github.fupacat.ast.BooleanComparisonType",
+    "io.github.fupacat.ast.NullLiteral"
+  ],
+  "exchanges": []
+}
+```
+
+```json
+{
+  "kind": "interface",
+  "id": "IF-031",
+  "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TopWithoutOrderByCheck.java",
+  "symbol": "TopWithoutOrderByCheck.getRuleKey",
+  "signature": {
+    "async": false,
+    "parameters": [],
+    "return": "String"
+  },
+  "dependencies": [
+    "io.github.fupacat.ast.QuerySpecification"
+  ],
+  "exchanges": []
+}
+```
+
+```json
+{
+  "kind": "interface",
+  "id": "IF-032",
+  "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/TopWithoutOrderByCheck.java",
+  "symbol": "TopWithoutOrderByCheck.visit",
+  "signature": {
+    "async": false,
+    "parameters": [
+      {
+        "annotation": "QuerySpecification",
+        "default": null,
+        "kind": "positional_or_keyword",
+        "name": "node"
+      }
+    ],
+    "return": "void"
+  },
+  "dependencies": [
+    "io.github.fupacat.ast.QuerySpecification"
+  ],
+  "exchanges": []
+}
+```
+
+```json
+{
+  "kind": "interface",
+  "id": "IF-033",
+  "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/CaseInputInvariantCheck.java",
+  "symbol": "CaseInputInvariantCheck.getRuleKey",
+  "signature": {
+    "async": false,
+    "parameters": [],
+    "return": "String"
+  },
+  "dependencies": [
+    "io.github.fupacat.ast.FunctionCall",
+    "io.github.fupacat.ast.SimpleCaseExpression"
+  ],
+  "exchanges": []
+}
+```
+
+```json
+{
+  "kind": "interface",
+  "id": "IF-034",
+  "path": "src/main/java/io/github/fupacat/sonar/tsql/checks/CaseInputInvariantCheck.java",
+  "symbol": "CaseInputInvariantCheck.visit",
+  "signature": {
+    "async": false,
+    "parameters": [
+      {
+        "annotation": "SimpleCaseExpression",
+        "default": null,
+        "kind": "positional_or_keyword",
+        "name": "node"
+      }
+    ],
+    "return": "void"
+  },
+  "dependencies": [
+    "io.github.fupacat.ast.FunctionCall",
+    "io.github.fupacat.ast.SimpleCaseExpression"
+  ],
+  "exchanges": []
+}
+```
+

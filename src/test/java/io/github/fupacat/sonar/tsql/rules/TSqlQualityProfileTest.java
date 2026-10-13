@@ -5,7 +5,12 @@ import io.github.fupacat.sonar.tsql.checks.AvoidDeprecatedTypesCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
+import io.github.fupacat.sonar.tsql.checks.CaseInputInvariantCheck;
 import io.github.fupacat.sonar.tsql.checks.CheckList;
+import io.github.fupacat.sonar.tsql.checks.DeleteAndUpdateWithoutWhereCheck;
+import io.github.fupacat.sonar.tsql.checks.NotInSubqueryCheck;
+import io.github.fupacat.sonar.tsql.checks.NullComparisonCheck;
+import io.github.fupacat.sonar.tsql.checks.TopWithoutOrderByCheck;
 import org.junit.jupiter.api.Test;
 import org.sonar.api.server.profile.BuiltInQualityProfilesDefinition;
 
@@ -33,6 +38,11 @@ class TSqlQualityProfileTest {
                         AvoidLeadingWildcardInLikeCheck.RULE_KEY,
                         AvoidNoLockHintCheck.RULE_KEY,
                         AvoidDeprecatedTypesCheck.RULE_KEY,
+                        DeleteAndUpdateWithoutWhereCheck.RULE_KEY,
+                        NotInSubqueryCheck.RULE_KEY,
+                        NullComparisonCheck.RULE_KEY,
+                        TopWithoutOrderByCheck.RULE_KEY,
+                        CaseInputInvariantCheck.RULE_KEY,
                         CheckList.SYNTAX_ERROR_RULE_KEY
                 );
     }
