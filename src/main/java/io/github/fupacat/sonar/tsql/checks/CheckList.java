@@ -18,7 +18,15 @@ public final class CheckList {
             NotInSubqueryCheck.class,
             NullComparisonCheck.class,
             TopWithoutOrderByCheck.class,
-            CaseInputInvariantCheck.class
+            CaseInputInvariantCheck.class,
+            UnusedLocalVariableCheck.class,
+            UnusedParameterCheck.class,
+            UnusedLabelCheck.class,
+            UnreachableCodeCheck.class,
+            SingleIterationLoopCheck.class,
+            SelfAssignmentCheck.class,
+            CatchClauseShouldDoMoreThanRethrowCheck.class,
+            RedundantJumpCheck.class
     );
 
     private CheckList() {
@@ -40,7 +48,15 @@ public final class CheckList {
                 new NotInSubqueryCheck(),
                 new NullComparisonCheck(),
                 new TopWithoutOrderByCheck(),
-                new CaseInputInvariantCheck()
+                new CaseInputInvariantCheck(),
+                new UnusedLocalVariableCheck(),
+                new UnusedParameterCheck(),
+                new UnusedLabelCheck(),
+                new UnreachableCodeCheck(),
+                new SingleIterationLoopCheck(),
+                new SelfAssignmentCheck(),
+                new CatchClauseShouldDoMoreThanRethrowCheck(),
+                new RedundantJumpCheck()
         );
     }
 }

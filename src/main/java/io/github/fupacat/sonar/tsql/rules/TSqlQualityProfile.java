@@ -6,11 +6,19 @@ import io.github.fupacat.sonar.tsql.checks.AvoidLeadingWildcardInLikeCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidNoLockHintCheck;
 import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
 import io.github.fupacat.sonar.tsql.checks.CaseInputInvariantCheck;
+import io.github.fupacat.sonar.tsql.checks.CatchClauseShouldDoMoreThanRethrowCheck;
 import io.github.fupacat.sonar.tsql.checks.CheckList;
 import io.github.fupacat.sonar.tsql.checks.DeleteAndUpdateWithoutWhereCheck;
 import io.github.fupacat.sonar.tsql.checks.NotInSubqueryCheck;
 import io.github.fupacat.sonar.tsql.checks.NullComparisonCheck;
+import io.github.fupacat.sonar.tsql.checks.RedundantJumpCheck;
+import io.github.fupacat.sonar.tsql.checks.SelfAssignmentCheck;
+import io.github.fupacat.sonar.tsql.checks.SingleIterationLoopCheck;
 import io.github.fupacat.sonar.tsql.checks.TopWithoutOrderByCheck;
+import io.github.fupacat.sonar.tsql.checks.UnreachableCodeCheck;
+import io.github.fupacat.sonar.tsql.checks.UnusedLabelCheck;
+import io.github.fupacat.sonar.tsql.checks.UnusedLocalVariableCheck;
+import io.github.fupacat.sonar.tsql.checks.UnusedParameterCheck;
 import org.sonar.api.server.profile.BuiltInQualityProfilesDefinition;
 
 /**
@@ -36,6 +44,14 @@ public class TSqlQualityProfile implements BuiltInQualityProfilesDefinition {
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, NullComparisonCheck.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, TopWithoutOrderByCheck.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, CaseInputInvariantCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, UnusedLocalVariableCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, UnusedParameterCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, UnusedLabelCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, UnreachableCodeCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, SingleIterationLoopCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, SelfAssignmentCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, CatchClauseShouldDoMoreThanRethrowCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, RedundantJumpCheck.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, CheckList.SYNTAX_ERROR_RULE_KEY);
 
         profile.done();
