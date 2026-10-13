@@ -43,8 +43,9 @@ class ConditionalLogicChecksTest {
     @Test
     void testRepeatedUnaryOperators() {
         assertThat(repeatedUnaryOperatorCheck.getRuleKey()).isEqualTo("S2761");
-        List<String> issues = CheckTestUtils.scan(repeatedUnaryOperatorCheck, "SELECT ~~~x, NOT NOT flag FROM T;");
-        assertThat(issues).hasSize(2);
+        List<String> issues = CheckTestUtils.scan(repeatedUnaryOperatorCheck,
+                "SELECT ~~~x, - -x FROM T WHERE NOT (NOT (a = 1));");
+        assertThat(issues).hasSize(4);
     }
 
     @Test
