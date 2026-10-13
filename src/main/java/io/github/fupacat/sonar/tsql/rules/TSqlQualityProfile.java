@@ -72,6 +72,9 @@ public class TSqlQualityProfile implements BuiltInQualityProfilesDefinition {
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, CaseElseMissingCheck.RULE_KEY_S131);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, GotoStatementCheck.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, NestedIfMergeCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, InPredicateIndexedColumnCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, NullableColumnIsNullCheck.RULE_KEY);
+        profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, NarrowingCastCheck.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S103Check.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S104Check.RULE_KEY);
         profile.activateRule(TSqlRulesDefinition.REPOSITORY_KEY, S105Check.RULE_KEY);

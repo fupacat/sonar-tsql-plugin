@@ -2,6 +2,7 @@ package io.github.fupacat.sonar.tsql.checks;
 
 import io.github.fupacat.ast.TSqlConcreteFragmentVisitor;
 import io.github.fupacat.ast.TSqlFragment;
+import io.github.fupacat.sonar.tsql.catalog.ProjectSchemaCatalog;
 
 /**
  * Base class for all T-SQL static analysis rules implemented as AST visitors.
@@ -12,6 +13,13 @@ public abstract class TSqlCheck extends TSqlConcreteFragmentVisitor {
     private TSqlCheckContext context;
     private TSqlFragment root;
     private String sourceText;
+
+    protected ProjectSchemaCatalog getProjectSchema() {
+        if (context != null) {
+            return context.getProjectSchema();
+        }
+        return ProjectSchemaCatalog.empty();
+    }
 
     /**
      * @return unique rule key registered in SonarQube rules repository

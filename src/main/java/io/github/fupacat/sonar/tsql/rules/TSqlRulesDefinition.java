@@ -23,6 +23,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
     private static final String TAG_SECURITY = "security";
     private static final String TAG_LOGIC = "logic";
     private static final String TAG_CONTROL_FLOW = "control-flow";
+    private static final String TAG_NULL_HANDLING = "null-handling";
     private static final String NONCOMPLIANT_HEADER = "<h3>Noncompliant Code Example</h3>";
     private static final String COMPLIANT_HEADER = "<h3>Compliant Solution</h3>";
 
@@ -119,7 +120,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.CRITICAL)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "null-handling", TAG_DATA_SAFETY);
+                .setTags(TAG_SQL_SERVER, TAG_NULL_HANDLING, TAG_DATA_SAFETY);
 
         // Rule 7: S2527
         repository.createRule(NullComparisonCheck.RULE_KEY)
@@ -133,7 +134,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "null-handling", TAG_LOGIC);
+                .setTags(TAG_SQL_SERVER, TAG_NULL_HANDLING, TAG_LOGIC);
 
         // Rule 8: S4054
         repository.createRule(TopWithoutOrderByCheck.RULE_KEY)
@@ -891,6 +892,48 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
                 .setTags(TAG_SQL_SERVER, "complexity", TAG_MAINTAINABILITY);
+
+        // Rule 10: SR0004
+        repository.createRule(InPredicateIndexedColumnCheck.RULE_KEY)
+                .setName("Avoid using unindexed columns in IN predicates")
+                .setHtmlDescription(
+                        "<p>Using a column in an <code>IN</code> predicate without an index can force a scan of the entire table and may invalidate assumptions about predicate selectivity.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>SELECT Id FROM Orders WHERE CustomerId IN (1, 2, 3);</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>CREATE INDEX IX_Orders_CustomerId ON Orders(CustomerId); SELECT Id FROM Orders WHERE CustomerId IN (1, 2, 3);</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, "performance", "indexing");
+
+        // Rule 11: SR0007
+        repository.createRule(NullableColumnIsNullCheck.RULE_KEY)
+                .setName("Use ISNULL on nullable columns in expressions")
+                .setHtmlDescription(
+                        "<p>Using <code>COALESCE</code> on a nullable column is less clear than <code>ISNULL</code> and can hide nullable-column intent in expressions.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>SELECT COALESCE(LastLogin, '1970-01-01') FROM Users;</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>SELECT ISNULL(LastLogin, '1970-01-01') FROM Users;</pre>")
+                .setSeverity(Severity.MAJOR)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_NULL_HANDLING, TAG_LOGIC);
+
+        // Rule 12: SR0014
+        repository.createRule(NarrowingCastCheck.RULE_KEY)
+                .setName("Data loss might occur when narrowing casts are used")
+                .setHtmlDescription(
+                        "<p>Converting or assigning a wider column value into a narrower type or shorter length can silently truncate or round data.</p>"
+                        + NONCOMPLIANT_HEADER
+                        + "<pre>SELECT CAST(BigNumber AS SMALLINT) FROM Orders;</pre>"
+                        + COMPLIANT_HEADER
+                        + "<pre>SELECT CAST(BigNumber AS BIGINT) FROM Orders;</pre>")
+                .setSeverity(Severity.CRITICAL)
+                .setType(RuleType.BUG)
+                .setStatus(RuleStatus.READY)
+                .setTags(TAG_SQL_SERVER, TAG_DATA_SAFETY, "data-loss");
 
         // Rule: SyntaxError
         repository.createRule(CheckList.SYNTAX_ERROR_RULE_KEY)

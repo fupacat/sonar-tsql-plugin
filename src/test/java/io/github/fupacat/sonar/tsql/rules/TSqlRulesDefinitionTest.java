@@ -23,8 +23,8 @@ class TSqlRulesDefinitionTest {
         assertThat(repository.name()).isEqualTo(TSqlRulesDefinition.REPOSITORY_NAME);
         assertThat(repository.language()).isEqualTo(TSqlLanguage.KEY);
 
-        // Verify all 68 rules are registered
-        assertThat(repository.rules()).hasSize(68);
+        // Verify all 71 rules are registered
+        assertThat(repository.rules()).hasSize(71);
 
         RulesDefinition.Rule selectAllRule = repository.rule(AvoidSelectAllCheck.RULE_KEY);
         assertThat(selectAllRule).isNotNull();

@@ -4,6 +4,7 @@ import io.github.fupacat.ParseResult;
 import io.github.fupacat.TSqlParser;
 import io.github.fupacat.ast.TSqlFragment;
 import io.github.fupacat.ast.TSqlScript;
+import io.github.fupacat.sonar.tsql.catalog.ProjectSchemaCatalog;
 import org.sonar.api.batch.fs.InputFile;
 
 import java.util.ArrayList;
@@ -27,6 +28,8 @@ public final class CheckTestUtils {
         result.fragment().Value = sql;
 
         CollectingContext context = new CollectingContext(sql);
+        context.projectSchema = new ProjectSchemaCatalog();
+        context.projectSchema.indexScript(result.fragment());
         check.scan(result.fragment(), context);
         return context.issues;
     }
@@ -37,6 +40,7 @@ public final class CheckTestUtils {
 
     public static class CollectingContext implements TSqlCheckContext {
         public final List<String> issues = new ArrayList<>();
+        private ProjectSchemaCatalog projectSchema = ProjectSchemaCatalog.empty();
         private final String sourceText;
         private final InputFile file;
 
@@ -58,6 +62,15 @@ public final class CheckTestUtils {
         @Override
         public String getSourceText() {
             return sourceText;
+        }
+
+        @Override
+        public ProjectSchemaCatalog getProjectSchema() {
+            return projectSchema;
+        }
+
+        public void setProjectSchema(ProjectSchemaCatalog projectSchema) {
+            this.projectSchema = projectSchema;
         }
 
         @Override
