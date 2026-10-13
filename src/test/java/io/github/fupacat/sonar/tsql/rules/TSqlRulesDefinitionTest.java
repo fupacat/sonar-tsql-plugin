@@ -23,8 +23,8 @@ class TSqlRulesDefinitionTest {
         assertThat(repository.name()).isEqualTo(TSqlRulesDefinition.REPOSITORY_NAME);
         assertThat(repository.language()).isEqualTo(TSqlLanguage.KEY);
 
-        // Verify all built-in rules are registered
-        assertThat(repository.rules()).hasSize(23);
+        // Verify all 30 rules are registered
+        assertThat(repository.rules()).hasSize(30);
 
         RulesDefinition.Rule selectAllRule = repository.rule(AvoidSelectAllCheck.RULE_KEY);
         assertThat(selectAllRule).isNotNull();
@@ -71,6 +71,41 @@ class TSqlRulesDefinitionTest {
         assertThat(caseInvariantRule).isNotNull();
         assertThat(caseInvariantRule.severity()).isEqualTo(Severity.CRITICAL);
         assertThat(caseInvariantRule.type()).isEqualTo(RuleType.BUG);
+
+        RulesDefinition.Rule primaryKeyRule = repository.rule(PrimaryKeyRequiredCheck.RULE_KEY);
+        assertThat(primaryKeyRule).isNotNull();
+        assertThat(primaryKeyRule.severity()).isEqualTo(Severity.BLOCKER);
+        assertThat(primaryKeyRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule insertColumnsRule = repository.rule(InsertColumnsExplicitCheck.RULE_KEY);
+        assertThat(insertColumnsRule).isNotNull();
+        assertThat(insertColumnsRule.severity()).isEqualTo(Severity.CRITICAL);
+        assertThat(insertColumnsRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule lengthRule = repository.rule(ExplicitLengthForVariableTypesCheck.RULE_KEY);
+        assertThat(lengthRule).isNotNull();
+        assertThat(lengthRule.severity()).isEqualTo(Severity.CRITICAL);
+        assertThat(lengthRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule orderByRule = repository.rule(OrderByColumnNamesCheck.RULE_KEY);
+        assertThat(orderByRule).isNotNull();
+        assertThat(orderByRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(orderByRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule existsRule = repository.rule(ExistsSelectOneCheck.RULE_KEY);
+        assertThat(existsRule).isNotNull();
+        assertThat(existsRule.severity()).isEqualTo(Severity.CRITICAL);
+        assertThat(existsRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule alterTableRule = repository.rule(AlterTableCheckEnforcementCheck.RULE_KEY);
+        assertThat(alterTableRule).isNotNull();
+        assertThat(alterTableRule.severity()).isEqualTo(Severity.MAJOR);
+        assertThat(alterTableRule.type()).isEqualTo(RuleType.CODE_SMELL);
+
+        RulesDefinition.Rule columnDepthRule = repository.rule(ColumnReferenceDepthCheck.RULE_KEY);
+        assertThat(columnDepthRule).isNotNull();
+        assertThat(columnDepthRule.severity()).isEqualTo(Severity.MINOR);
+        assertThat(columnDepthRule.type()).isEqualTo(RuleType.CODE_SMELL);
 
         RulesDefinition.Rule s103Rule = repository.rule(S103Check.RULE_KEY);
         assertThat(s103Rule).isNotNull();

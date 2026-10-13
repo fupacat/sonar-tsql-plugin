@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: Comment on PR to Summon Copilot
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.COPILOT_DISPATCH_TOKEN || secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REVIEWER: ${{ github.event.review.user.login }}
@@ -25,3 +25,4 @@ jobs:
           echo "Review submitted requesting changes by @${REVIEWER} on PR #${PR_NUMBER}."
           gh pr comment "${PR_NUMBER}" \
             --body "@copilot Changes were requested on this pull request by @${REVIEWER}. Please review the feedback, implement the necessary corrections, and push an update."
+

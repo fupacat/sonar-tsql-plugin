@@ -47,6 +47,13 @@ class TSqlQualityProfileTest {
                         S3973Check.RULE_KEY,
                         S138Check.RULE_KEY,
                         S1151Check.RULE_KEY,
+                        PrimaryKeyRequiredCheck.RULE_KEY,
+                        InsertColumnsExplicitCheck.RULE_KEY,
+                        ExplicitLengthForVariableTypesCheck.RULE_KEY,
+                        OrderByColumnNamesCheck.RULE_KEY,
+                        ExistsSelectOneCheck.RULE_KEY,
+                        AlterTableCheckEnforcementCheck.RULE_KEY,
+                        ColumnReferenceDepthCheck.RULE_KEY,
                         CheckList.SYNTAX_ERROR_RULE_KEY
                 );
     }
