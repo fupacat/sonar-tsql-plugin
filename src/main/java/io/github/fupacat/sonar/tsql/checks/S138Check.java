@@ -26,8 +26,7 @@ public class S138Check extends TSqlCheck {
 
     private int findProcedureStart(List<String> lines) {
         for (int i = 0; i < lines.size(); i++) {
-            String trimmed = lines.get(i).trim();
-            if (isProcedureDeclaration(trimmed)) {
+            if (isProcedureDeclaration(lines.get(i).trim())) {
                 return i;
             }
         }
@@ -47,7 +46,6 @@ public class S138Check extends TSqlCheck {
         for (int i = blockStart; i < lines.size(); i++) {
             String trimmed = lines.get(i).trim();
             if (isIgnoredProcedureLine(trimmed)) {
-                length++;
                 continue;
             }
             length++;
@@ -68,8 +66,9 @@ public class S138Check extends TSqlCheck {
                 || lowered.contains("as")
                 || trimmed.startsWith("--")
                 || trimmed.startsWith("/*")
-                || trimmed.endsWith(";")
                 || lowered.startsWith("create procedure")
-                || lowered.startsWith("alter procedure");
+                || lowered.startsWith("alter procedure")
+                || lowered.startsWith("create function")
+                || lowered.startsWith("alter function");
     }
 }

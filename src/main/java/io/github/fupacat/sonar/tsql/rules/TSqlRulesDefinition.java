@@ -236,7 +236,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MINOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "formatting");
+                .setTags(TAG_SQL_SERVER, TAG_FORMATTING);
 
         repository.createRule(S3973Check.RULE_KEY)
                 .setName("Blocks should be indented consistently")
@@ -244,7 +244,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MINOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "formatting");
+                .setTags(TAG_SQL_SERVER, TAG_FORMATTING);
 
         repository.createRule(S138Check.RULE_KEY)
                 .setName("Procedures should not be too long")
@@ -252,7 +252,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "maintainability");
+                .setTags(TAG_SQL_SERVER, TAG_MAINTAINABILITY);
 
         repository.createRule(S1151Check.RULE_KEY)
                 .setName("WHEN blocks should not be too long")
@@ -260,7 +260,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.CODE_SMELL)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "maintainability");
+                .setTags(TAG_SQL_SERVER, TAG_MAINTAINABILITY);
 
         // Rule 10: SyntaxError
         repository.createRule(CheckList.SYNTAX_ERROR_RULE_KEY)

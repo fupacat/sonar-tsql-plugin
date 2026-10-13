@@ -15,12 +15,9 @@ public class S1134Check extends TSqlCheck {
 
     @Override
     public void visit(TSqlScript node) {
-        List<String> lines = TextRuleSupport.lines(TextRuleSupport.sourceOf(node));
-        for (int i = 0; i < lines.size(); i++) {
-            if (lines.get(i).toLowerCase().contains("fixme")) {
-                reportIssueAtLine(i + 1, "FIXME tags should be handled.");
-            }
-        }
+        TextRuleSupport.reportIssues(this, TextRuleSupport.sourceOf(node),
+                line -> TextRuleSupport.containsAnyIgnoreCase(line, "fixme"),
+                "FIXME tags should be handled.");
         super.visit(node);
     }
 }

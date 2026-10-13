@@ -15,12 +15,9 @@ public class S1135Check extends TSqlCheck {
 
     @Override
     public void visit(TSqlScript node) {
-        List<String> lines = TextRuleSupport.lines(TextRuleSupport.sourceOf(node));
-        for (int i = 0; i < lines.size(); i++) {
-            if (lines.get(i).toLowerCase().contains("todo")) {
-                reportIssueAtLine(i + 1, "TODO tags should be handled.");
-            }
-        }
+        TextRuleSupport.reportIssues(this, TextRuleSupport.sourceOf(node),
+                line -> TextRuleSupport.containsAnyIgnoreCase(line, "todo"),
+                "TODO tags should be handled.");
         super.visit(node);
     }
 }

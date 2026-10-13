@@ -123,4 +123,17 @@ final class TextRuleSupport {
         }
         return count;
     }
+
+    static boolean hasHeader(String source) {
+        return !matchingLines(source, line -> {
+            String lower = line.toLowerCase(Locale.ROOT);
+            return lower.contains("copyright") || lower.contains("license");
+        }).isEmpty();
+    }
+
+    static void reportIssues(TSqlCheck check, String source, java.util.function.Predicate<String> predicate, String message) {
+        for (int lineNumber : matchingLines(source, predicate)) {
+            check.reportIssueAtLine(lineNumber + 1, message);
+        }
+    }
 }
