@@ -51,18 +51,16 @@ public final class ProjectSchemaCatalog {
     public static ProjectSchemaCatalog fromInputFiles(Iterable<InputFile> inputFiles) {
         ProjectSchemaCatalog catalog = new ProjectSchemaCatalog();
         for (InputFile inputFile : inputFiles) {
-            if (inputFile == null) {
-                continue;
-            }
-            String content;
-            try {
-                content = inputFile.contents();
-            } catch (IOException ignored) {
-                continue;
-            }
-            ParseResult<TSqlScript> result = new TSqlParser().parse(content);
-            if (result != null && result.fragment() != null) {
-                catalog.indexScript(result.fragment());
+            if (inputFile != null) {
+                try {
+                    String content = inputFile.contents();
+                    ParseResult<TSqlScript> result = new TSqlParser().parse(content);
+                    if (result != null && result.fragment() != null) {
+                        catalog.indexScript(result.fragment());
+                    }
+                } catch (IOException ignored) {
+                    // ignore unreadable file
+                }
             }
         }
         return catalog;
@@ -91,15 +89,7 @@ public final class ProjectSchemaCatalog {
         if (expression == null || expression.MultiPartIdentifier == null) {
             return Optional.empty();
         }
-        MultiPartIdentifier multi = expression.MultiPartIdentifier;
-        List<String> identifiers = new ArrayList<>();
-        if (multi.Identifiers != null) {
-            for (Identifier identifier : multi.Identifiers) {
-                if (identifier != null && identifier.Value != null && !identifier.Value.isBlank()) {
-                    identifiers.add(identifier.Value);
-                }
-            }
-        }
+        List<String> identifiers = extractIdentifiers(expression.MultiPartIdentifier);
         if (identifiers.isEmpty()) {
             return Optional.empty();
         }
@@ -121,6 +111,18 @@ public final class ProjectSchemaCatalog {
         }
 
         return Optional.empty();
+    }
+
+    private List<String> extractIdentifiers(MultiPartIdentifier multi) {
+        List<String> identifiers = new ArrayList<>();
+        if (multi != null && multi.Identifiers != null) {
+            for (Identifier identifier : multi.Identifiers) {
+                if (identifier != null && identifier.Value != null && !identifier.Value.isBlank()) {
+                    identifiers.add(identifier.Value);
+                }
+            }
+        }
+        return identifiers;
     }
 
     public boolean isNullable(ColumnReferenceExpression expression) {
@@ -154,13 +156,9 @@ public final class ProjectSchemaCatalog {
             return;
         }
         String normalized = normalizeTableName(tableName);
-        TableSchema existing = tables.get(normalized);
-        if (existing == null) {
-            tables.put(normalized, table);
-            return;
-        }
+        TableSchema target = tables.computeIfAbsent(normalized, key -> new TableSchema(normalized));
         for (Map.Entry<String, ColumnInfo> entry : table.columns.entrySet()) {
-            existing.columns.putIfAbsent(entry.getKey(), entry.getValue());
+            target.columns.putIfAbsent(entry.getKey(), entry.getValue());
         }
     }
 
@@ -255,19 +253,7 @@ public final class ProjectSchemaCatalog {
         }
     }
 
-    public static final class ColumnInfo {
-        private final String name;
-        private final boolean nullable;
-        private final String sqlType;
-        private final Integer length;
-
-        public ColumnInfo(String name, boolean nullable, String sqlType, Integer length) {
-            this.name = name;
-            this.sqlType = sqlType;
-            this.length = length;
-            this.nullable = nullable;
-        }
-
+    public record ColumnInfo(String name, boolean nullable, String sqlType, Integer length) {
         public String getName() {
             return name;
         }
@@ -289,21 +275,13 @@ public final class ProjectSchemaCatalog {
         }
     }
 
-    public static final class TypeInfo {
+    public record TypeInfo(String typeName, Integer length) {
         private enum TypeFamily {
             NUMERIC,
             CHARACTER,
             TEMPORAL,
             BINARY,
             OTHER
-        }
-
-        private final String typeName;
-        private final Integer length;
-
-        public TypeInfo(String typeName, Integer length) {
-            this.typeName = typeName;
-            this.length = length;
         }
 
         public String getTypeName() {
@@ -329,10 +307,7 @@ public final class ProjectSchemaCatalog {
             }
             int thisSize = effectiveLength();
             int otherSize = other.effectiveLength();
-            if (thisSize <= 0 || otherSize <= 0 || thisSize >= otherSize) {
-                return false;
-            }
-            return true;
+            return thisSize > 0 && otherSize > 0 && thisSize < otherSize;
         }
 
         private TypeFamily family() {
@@ -510,15 +485,12 @@ public final class ProjectSchemaCatalog {
             if (indexedColumns == null || indexedColumns.isEmpty()) {
                 return List.of();
             }
-            List<String> columns = new ArrayList<>();
-            for (Object entry : indexedColumns) {
-                if (entry instanceof io.github.fupacat.ast.ColumnWithSortOrder columnWithSortOrder
-                        && columnWithSortOrder.Column != null
-                        && columnWithSortOrder.Column.MultiPartIdentifier != null) {
-                    columns.add(lastIdentifier(columnWithSortOrder.Column.MultiPartIdentifier));
-                }
-            }
-            return columns;
+            return indexedColumns.stream()
+                    .filter(entry -> entry instanceof io.github.fupacat.ast.ColumnWithSortOrder c
+                            && c.Column != null
+                            && c.Column.MultiPartIdentifier != null)
+                    .map(entry -> lastIdentifier(((io.github.fupacat.ast.ColumnWithSortOrder) entry).Column.MultiPartIdentifier))
+                    .toList();
         }
 
         private String extractSqlType(DataTypeReference dataType) {
@@ -530,10 +502,10 @@ public final class ProjectSchemaCatalog {
                         ? sqlDataTypeReference.SqlDataTypeOption.name()
                         : UNKNOWN_TYPE;
             }
-            if (dataType instanceof ParameterizedDataTypeReference parameterizedDataTypeReference) {
-                if (parameterizedDataTypeReference.Name != null && parameterizedDataTypeReference.Name.BaseIdentifier != null) {
-                    return parameterizedDataTypeReference.Name.BaseIdentifier.Value;
-                }
+            if (dataType instanceof ParameterizedDataTypeReference parameterizedDataTypeReference
+                    && parameterizedDataTypeReference.Name != null
+                    && parameterizedDataTypeReference.Name.BaseIdentifier != null) {
+                return parameterizedDataTypeReference.Name.BaseIdentifier.Value;
             }
             return dataType.getClass().getSimpleName();
         }

@@ -23,6 +23,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
     private static final String TAG_SECURITY = "security";
     private static final String TAG_LOGIC = "logic";
     private static final String TAG_CONTROL_FLOW = "control-flow";
+    private static final String TAG_NULL_HANDLING = "null-handling";
     private static final String NONCOMPLIANT_HEADER = "<h3>Noncompliant Code Example</h3>";
     private static final String COMPLIANT_HEADER = "<h3>Compliant Solution</h3>";
 
@@ -119,7 +120,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.CRITICAL)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "null-handling", TAG_DATA_SAFETY);
+                .setTags(TAG_SQL_SERVER, TAG_NULL_HANDLING, TAG_DATA_SAFETY);
 
         // Rule 7: S2527
         repository.createRule(NullComparisonCheck.RULE_KEY)
@@ -133,7 +134,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "null-handling", TAG_LOGIC);
+                .setTags(TAG_SQL_SERVER, TAG_NULL_HANDLING, TAG_LOGIC);
 
         // Rule 8: S4054
         repository.createRule(TopWithoutOrderByCheck.RULE_KEY)
@@ -918,7 +919,7 @@ public class TSqlRulesDefinition implements RulesDefinition {
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
-                .setTags(TAG_SQL_SERVER, "null-handling", TAG_LOGIC);
+                .setTags(TAG_SQL_SERVER, TAG_NULL_HANDLING, TAG_LOGIC);
 
         // Rule 12: SR0014
         repository.createRule(NarrowingCastCheck.RULE_KEY)

@@ -6,6 +6,7 @@ import io.github.fupacat.ast.ConvertCall;
 import io.github.fupacat.ast.DataTypeReference;
 import io.github.fupacat.ast.ParameterizedDataTypeReference;
 import io.github.fupacat.ast.SqlDataTypeReference;
+import io.github.fupacat.ast.TryCastCall;
 import io.github.fupacat.ast.TryConvertCall;
 import io.github.fupacat.sonar.tsql.catalog.ProjectSchemaCatalog;
 
@@ -23,6 +24,13 @@ public class NarrowingCastCheck extends TSqlCheck {
     // TRACEABILITY_MAPPING: REQ-018
     @Override
     public void visit(CastCall node) {
+        checkCast(node.DataType, node.Parameter, node);
+        super.visit(node);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-018
+    @Override
+    public void visit(TryCastCall node) {
         checkCast(node.DataType, node.Parameter, node);
         super.visit(node);
     }

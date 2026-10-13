@@ -95,8 +95,12 @@ class SchemaAwareChecksTest {
         List<String> tryConvertIssues = CheckTestUtils.scan(narrowingCastCheck,
                 "CREATE TABLE Orders (CustomerId BIGINT); " +
                         "SELECT TRY_CONVERT(INT, CustomerId) FROM Orders;");
+        List<String> tryCastIssues = CheckTestUtils.scan(narrowingCastCheck,
+                "CREATE TABLE Orders (CustomerId BIGINT); " +
+                        "SELECT TRY_CAST(CustomerId AS INT) FROM Orders;");
         assertThat(convertIssues).hasSize(1);
         assertThat(tryConvertIssues).hasSize(1);
+        assertThat(tryCastIssues).hasSize(1);
     }
 
     // TRACEABILITY_MAPPING: REQ-009

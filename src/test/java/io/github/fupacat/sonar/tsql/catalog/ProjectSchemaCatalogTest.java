@@ -169,20 +169,86 @@ class ProjectSchemaCatalogTest {
         assertThat(varbinary16.isNarrowerThan(varbinary32)).isTrue();
         assertThat(unknownType.isNarrowerThan(intType)).isFalse();
         assertThat(ProjectSchemaCatalog.TypeInfo.fromSqlType(null, null).getTypeName()).isEqualTo("unknown");
+
+        // Edge case: comparing with null or unknown family
+        assertThat(intType.isNarrowerThan(null)).isFalse();
+        assertThat(new ProjectSchemaCatalog.TypeInfo(null, null).isNarrowerThan(intType)).isFalse();
+
+        // Effective length switch cases coverage
+        ProjectSchemaCatalog.TypeInfo tinyintType = new ProjectSchemaCatalog.TypeInfo("tinyint", null);
+        ProjectSchemaCatalog.TypeInfo bitType = new ProjectSchemaCatalog.TypeInfo("bit", null);
+        ProjectSchemaCatalog.TypeInfo moneyType = new ProjectSchemaCatalog.TypeInfo("money", null);
+        ProjectSchemaCatalog.TypeInfo realType = new ProjectSchemaCatalog.TypeInfo("real", null);
+        ProjectSchemaCatalog.TypeInfo floatType = new ProjectSchemaCatalog.TypeInfo("float", null);
+        ProjectSchemaCatalog.TypeInfo bigintType = new ProjectSchemaCatalog.TypeInfo("bigint", null);
+        ProjectSchemaCatalog.TypeInfo smalldatetime = new ProjectSchemaCatalog.TypeInfo("smalldatetime", null);
+        ProjectSchemaCatalog.TypeInfo datetime2 = new ProjectSchemaCatalog.TypeInfo("datetime2", null);
+        ProjectSchemaCatalog.TypeInfo timeType = new ProjectSchemaCatalog.TypeInfo("time", null);
+        ProjectSchemaCatalog.TypeInfo uniqueidentifier = new ProjectSchemaCatalog.TypeInfo("uniqueidentifier", null);
+        ProjectSchemaCatalog.TypeInfo charType = new ProjectSchemaCatalog.TypeInfo("char", null);
+        ProjectSchemaCatalog.TypeInfo ncharType = new ProjectSchemaCatalog.TypeInfo("nchar", null);
+        ProjectSchemaCatalog.TypeInfo textType = new ProjectSchemaCatalog.TypeInfo("text", null);
+        ProjectSchemaCatalog.TypeInfo nvarcharmax = new ProjectSchemaCatalog.TypeInfo("nvarcharmax", null);
+        ProjectSchemaCatalog.TypeInfo binaryType = new ProjectSchemaCatalog.TypeInfo("binary", null);
+
+        assertThat(bitType.isNarrowerThan(bigintType)).isTrue();
+        assertThat(tinyintType.isNarrowerThan(bigintType)).isTrue();
+        assertThat(realType.isNarrowerThan(floatType)).isTrue();
+        assertThat(moneyType.isNarrowerThan(bigintType)).isTrue();
+        assertThat(timeType.isNarrowerThan(datetime2)).isTrue();
+        assertThat(smalldatetime.isNarrowerThan(datetime2)).isFalse();
+        assertThat(charType.isNarrowerThan(textType)).isTrue();
+        assertThat(ncharType.isNarrowerThan(nvarcharmax)).isTrue();
+        assertThat(varbinary16.isNarrowerThan(binaryType)).isTrue();
+        assertThat(uniqueidentifier.getLength()).isNull();
     }
 
     // TRACEABILITY_MAPPING: REQ-009
     @Test
     void testTypeExtractionSupportsParameterizedTypes() {
-        ProjectSchemaCatalog catalog = catalogFromSql("CREATE TABLE Audit (Message NVARCHAR(200) NULL, Payload VARBINARY(16) NULL);");
+        ProjectSchemaCatalog catalog = catalogFromSql(
+                "CREATE TABLE Audit (Message NVARCHAR(200) NULL, Payload VARBINARY(16) NULL, Description VARCHAR(50) NOT NULL); " +
+                "CREATE INDEX IX_Audit_Message ON Audit(Message);");
 
         ProjectSchemaCatalog.ColumnInfo message = catalog.getTable("Audit").orElseThrow().getColumn("Message").orElseThrow();
         ProjectSchemaCatalog.ColumnInfo payload = catalog.getTable("Audit").orElseThrow().getColumn("Payload").orElseThrow();
+        ProjectSchemaCatalog.ColumnInfo description = catalog.getTable("Audit").orElseThrow().getColumn("Description").orElseThrow();
 
         assertThat(message.getSqlType()).isEqualToIgnoringCase("NVARCHAR");
         assertThat(message.getLength()).isEqualTo(200);
         assertThat(payload.getSqlType()).isEqualToIgnoringCase("VARBINARY");
         assertThat(payload.getLength()).isEqualTo(16);
+        assertThat(description.getLength()).isEqualTo(50);
+        assertThat(description.isNullable()).isTrue();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-009
+    @Test
+    void testTableSchemaAndCatalogEdgeCases() {
+        ProjectSchemaCatalog.TableSchema tableSchema = new ProjectSchemaCatalog.TableSchema("dbo.TestTable");
+        assertThat(tableSchema.getTableName()).isEqualTo("dbo.TestTable");
+        assertThat(tableSchema.getColumn(null)).isEmpty();
+        assertThat(tableSchema.getColumn("")).isEmpty();
+        tableSchema.addColumn(null);
+        tableSchema.addColumn(new ProjectSchemaCatalog.ColumnInfo(null, false, "int", 4));
+        tableSchema.addColumn(new ProjectSchemaCatalog.ColumnInfo("", false, "int", 4));
+        assertThat(tableSchema.getColumns()).isEmpty();
+
+        // 3-part schema name
+        ProjectSchemaCatalog catalog = catalogFromSql(
+                "CREATE TABLE mydb.dbo.Inventory (ItemId INT NOT NULL); " +
+                "CREATE INDEX IX_Inventory_ItemId ON mydb.dbo.Inventory(ItemId);");
+        assertThat(catalog.hasTable("mydb.dbo.Inventory")).isTrue();
+        assertThat(catalog.hasTable("Inventory")).isTrue();
+
+        // Column with inline index and table-level index
+        ProjectSchemaCatalog inlineIndexCatalog = catalogFromSql(
+                "CREATE TABLE Products (ProductId INT NOT NULL INDEX IX_Products_ProductId (ProductId), " +
+                "Code MyCustomType(25), INDEX IX_Products_Code (Code));");
+        assertThat(inlineIndexCatalog.hasTable("Products")).isTrue();
+        assertThat(inlineIndexCatalog.getTable("Products").orElseThrow().getColumn("Code")).isPresent();
+        assertThat(inlineIndexCatalog.getTable("Products").orElseThrow().getColumn("Code").orElseThrow().getSqlType()).isEqualTo("MyCustomType");
+        assertThat(inlineIndexCatalog.getTable("Products").orElseThrow().getColumn("Code").orElseThrow().getLength()).isEqualTo(25);
     }
 
     private static ProjectSchemaCatalog catalogFromSql(String sql) {
