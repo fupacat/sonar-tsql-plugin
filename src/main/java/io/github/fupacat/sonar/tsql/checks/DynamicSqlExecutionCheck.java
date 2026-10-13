@@ -46,9 +46,6 @@ public class DynamicSqlExecutionCheck extends TSqlCheck {
     }
 
     private boolean containsDangerousExpression(List<? extends ValueExpression> expressions) {
-        if (expressions == null) {
-            return false;
-        }
         for (ValueExpression expression : expressions) {
             if (containsDangerousScalarExpression(expression)) {
                 return true;
@@ -61,8 +58,7 @@ public class DynamicSqlExecutionCheck extends TSqlCheck {
         if (expression instanceof VariableReference) {
             return true;
         }
-        if (expression instanceof BinaryExpression binaryExpression
-                && binaryExpression.BinaryExpressionType == BinaryExpressionType.Concat) {
+        if (expression instanceof BinaryExpression binaryExpression) {
             return containsDangerousScalarExpression(binaryExpression.FirstExpression)
                     || containsDangerousScalarExpression(binaryExpression.SecondExpression);
         }
@@ -84,10 +80,7 @@ public class DynamicSqlExecutionCheck extends TSqlCheck {
     private boolean isSpExecuteSql(ExecutableProcedureReference procedureReference) {
         try {
             SchemaObjectName name = procedureReference.ProcedureReference.ProcedureReference.Name;
-            String base = name.BaseIdentifier != null ? name.BaseIdentifier.Value : "";
-            String schema = name.SchemaIdentifier != null ? name.SchemaIdentifier.Value : "";
-            return "sp_executesql".equalsIgnoreCase(base)
-                    || "sp_executesql".equalsIgnoreCase(schema + "." + base);
+            return "sp_executesql".equalsIgnoreCase(name.BaseIdentifier.Value);
         } catch (NullPointerException e) {
             return false;
         }

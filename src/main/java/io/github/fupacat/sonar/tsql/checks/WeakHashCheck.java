@@ -37,18 +37,14 @@ public class WeakHashCheck extends TSqlCheck {
     }
 
     private String extractAlgorithm(ScalarExpression expression) {
-        if (expression == null) {
-            return null;
-        }
         if (expression instanceof Literal literal && literal.Value != null) {
             String value = literal.Value.trim();
-            if (value.length() >= 2 && value.startsWith("'") && value.endsWith("'")) {
-                value = value.substring(1, value.length() - 1);
+            if (value.startsWith("'") && value.endsWith("'")) {
+                return value.substring(1, value.length() - 1);
             }
-            if (value.length() >= 2 && value.startsWith("N'") && value.endsWith("'")) {
-                value = value.substring(2, value.length() - 1);
+            if (value.startsWith("N'") && value.endsWith("'")) {
+                return value.substring(2, value.length() - 1);
             }
-            return value;
         }
         return null;
     }
