@@ -1,5 +1,10 @@
 package io.github.fupacat.sonar.tsql.checks;
 
+import io.github.fupacat.ParseResult;
+import io.github.fupacat.TSqlParser;
+import io.github.fupacat.ast.ColumnReferenceExpression;
+import io.github.fupacat.ast.TSqlConcreteFragmentVisitor;
+import io.github.fupacat.ast.TSqlScript;
 import io.github.fupacat.sonar.tsql.catalog.ProjectSchemaCatalog;
 import org.junit.jupiter.api.Test;
 
@@ -23,6 +28,15 @@ class SchemaAwareChecksTest {
     }
 
     @Test
+    void testInPredicateOnIndexedColumnIsCompliant() {
+        List<String> issues = CheckTestUtils.scan(indexedColumnCheck,
+                "CREATE TABLE Orders (OrderId INT, CustomerId INT, Total DECIMAL(18,2)); " +
+                        "CREATE INDEX IX_Orders_CustomerId ON Orders(CustomerId); " +
+                        "SELECT CustomerId FROM Orders WHERE CustomerId IN (1, 2, 3);");
+        assertThat(issues).isEmpty();
+    }
+
+    @Test
     void testNullableColumnUsesIsNull() {
         List<String> issues = CheckTestUtils.scan(nullableColumnCheck,
                 "CREATE TABLE Users (Id INT NOT NULL, LastLogin DATETIME NULL); " +
@@ -31,10 +45,77 @@ class SchemaAwareChecksTest {
     }
 
     @Test
+    void testNullableColumnAlreadyUsingIsNullIsCompliant() {
+        List<String> issues = CheckTestUtils.scan(nullableColumnCheck,
+                "CREATE TABLE Users (Id INT NOT NULL, LastLogin DATETIME NULL); " +
+                        "SELECT ISNULL(LastLogin, '1970-01-01') FROM Users;");
+        assertThat(issues).isEmpty();
+    }
+
+    @Test
     void testNarrowingCastFlagged() {
         List<String> issues = CheckTestUtils.scan(narrowingCastCheck,
                 "CREATE TABLE Orders (CustomerId INT, OrderId INT); " +
                         "SELECT CAST(CustomerId AS SMALLINT) FROM Orders;");
         assertThat(issues).hasSize(1);
+    }
+
+    @Test
+    void testWideningCastIsCompliant() {
+        List<String> issues = CheckTestUtils.scan(narrowingCastCheck,
+                "CREATE TABLE Orders (CustomerId SMALLINT, OrderId INT); " +
+                        "SELECT CAST(CustomerId AS INT) FROM Orders;");
+        assertThat(issues).isEmpty();
+    }
+
+    @Test
+    void testProjectSchemaCatalogTracksTableMetadata() {
+        ParseResult<TSqlScript> result = new TSqlParser().parse(
+                "CREATE TABLE Users (Id INT NOT NULL, LastLogin DATETIME NULL); " +
+                        "CREATE INDEX IX_Users_Id ON Users(Id); " +
+                        "CREATE TABLE Orders (CustomerId INT NOT NULL); " +
+                        "CREATE INDEX IX_Orders_CustomerId ON Orders(CustomerId);");
+        ProjectSchemaCatalog catalog = new ProjectSchemaCatalog();
+        catalog.indexScript(result.fragment());
+
+        assertThat(catalog.hasTable("Users")).isTrue();
+        assertThat(catalog.getTable("Users")).isPresent();
+        assertThat(catalog.getTable("Users").orElseThrow().getColumn("Id")).isPresent();
+        assertThat(catalog.getTable("Users").orElseThrow().getColumn("LastLogin")).isPresent();
+        assertThat(catalog.getTable("Users").orElseThrow().getColumn("Id").orElseThrow().toTypeInfo().getTypeName()).isEqualTo("int");
+        assertThat(catalog.getTable("Users").orElseThrow().getColumn("LastLogin").orElseThrow().toTypeInfo().getTypeName()).isEqualTo("datetime");
+
+        ColumnReferenceExpression customerId = findColumnReferenceExpression(
+                "SELECT CustomerId FROM Orders WHERE CustomerId IN (1, 2, 3);",
+                "CustomerId");
+        assertThat(customerId).isNotNull();
+        assertThat(catalog.isIndexed(customerId)).isTrue();
+        assertThat(catalog.typeOf(customerId).orElseThrow().getTypeName()).isEqualTo("int");
+
+        ProjectSchemaCatalog.TypeInfo intType = catalog.getTable("Users").orElseThrow().getColumn("Id").orElseThrow().toTypeInfo();
+        assertThat(intType.isNarrowerThan(new ProjectSchemaCatalog.TypeInfo("bigint", null))).isTrue();
+    }
+
+    private static ColumnReferenceExpression findColumnReferenceExpression(String sql, String targetColumn) {
+        ParseResult<TSqlScript> result = new TSqlParser().parse(sql);
+        if (result == null || result.fragment() == null) {
+            return null;
+        }
+        final ColumnReferenceExpression[] found = new ColumnReferenceExpression[1];
+        result.fragment().accept(new TSqlConcreteFragmentVisitor() {
+            @Override
+            public void visit(ColumnReferenceExpression node) {
+                if (node != null && node.MultiPartIdentifier != null && node.MultiPartIdentifier.Identifiers != null) {
+                    for (var identifier : node.MultiPartIdentifier.Identifiers) {
+                        if (identifier != null && targetColumn.equalsIgnoreCase(identifier.Value)) {
+                            found[0] = node;
+                            break;
+                        }
+                    }
+                }
+                super.visit(node);
+            }
+        });
+        return found[0];
     }
 }
