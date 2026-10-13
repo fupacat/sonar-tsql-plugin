@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public final class CheckTestUtils {
 
@@ -23,18 +24,40 @@ public final class CheckTestUtils {
         if (result.fragment() == null) {
             throw new IllegalArgumentException("Failed to parse SQL: " + sql + ", errors: " + result.errors());
         }
+        result.fragment().Value = sql;
 
-        CollectingContext context = new CollectingContext();
+        CollectingContext context = new CollectingContext(sql);
         check.scan(result.fragment(), context);
         return context.issues;
     }
 
+    public static List<String> scanWithContents(TSqlCheck check, String sql) {
+        return scan(check, sql);
+    }
+
     public static class CollectingContext implements TSqlCheckContext {
         public final List<String> issues = new ArrayList<>();
+        private final String sourceText;
+        private final InputFile file;
+
+        public CollectingContext(String sourceText) {
+            this.sourceText = sourceText;
+            this.file = mock(InputFile.class);
+            try {
+                when(file.contents()).thenReturn(sourceText);
+            } catch (Exception ignored) {
+                // Mockito mock setup exception ignored for unit tests
+            }
+        }
 
         @Override
         public InputFile getFile() {
-            return mock(InputFile.class);
+            return file;
+        }
+
+        @Override
+        public String getSourceText() {
+            return sourceText;
         }
 
         @Override
