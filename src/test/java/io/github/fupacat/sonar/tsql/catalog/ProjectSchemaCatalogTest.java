@@ -133,6 +133,48 @@ class ProjectSchemaCatalogTest {
 
     // TRACEABILITY_MAPPING: REQ-016
     @Test
+    void testQualifiedNamesRemainDistinctAcrossSchemasAndDuplicateTableNames() {
+        ProjectSchemaCatalog catalog = catalogFromSql(
+                "CREATE TABLE dbo.A (Code BIGINT);"
+                        + "CREATE TABLE dbo.B (Code SMALLINT);"
+                        + "CREATE TABLE sales.Items (Code BIGINT);"
+                        + "CREATE TABLE archive.Items (Code SMALLINT);"
+                        + "CREATE TABLE dbo.Orders (Id INT PRIMARY KEY);"
+        );
+
+        ColumnReferenceExpression firstRef = columnReferenceFrom("SELECT CAST(Code AS INT) FROM dbo.B", "Code");
+        ColumnReferenceExpression sameNameRef = columnReferenceFrom("SELECT CAST(Code AS INT) FROM archive.Items", "Code");
+        ColumnReferenceExpression aliasRef = columnReferenceFrom("SELECT o.Id FROM dbo.Orders AS o WHERE o.Id IN (1, 2)", "Id");
+
+        assertThat(catalog.resolveColumn(firstRef)).isPresent();
+        assertThat(catalog.resolveColumn(firstRef).orElseThrow().getSqlType()).isEqualTo("smallint");
+        assertThat(catalog.resolveColumn(sameNameRef).orElseThrow().getSqlType()).isEqualTo("smallint");
+        assertThat(catalog.resolveColumn(aliasRef)).isPresent();
+        assertThat(catalog.resolveColumn(aliasRef).orElseThrow().getSqlType()).isEqualTo("int");
+        assertThat(catalog.isIndexed(aliasRef)).isTrue();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-016
+    @Test
+    void testFileOrderDoesNotChangeQualifiedResolution() {
+        ProjectSchemaCatalog firstCatalog = catalogFromSql(
+                "CREATE TABLE dbo.A (Code BIGINT);"
+                        + "CREATE TABLE dbo.B (Code SMALLINT);"
+                        + "SELECT CAST(Code AS INT) FROM dbo.B;"
+        );
+        ProjectSchemaCatalog secondCatalog = catalogFromSql(
+                "CREATE TABLE dbo.B (Code SMALLINT);"
+                        + "CREATE TABLE dbo.A (Code BIGINT);"
+                        + "SELECT CAST(Code AS INT) FROM dbo.B;"
+        );
+
+        ColumnReferenceExpression firstRef = columnReferenceFrom("SELECT CAST(Code AS INT) FROM dbo.B", "Code");
+        assertThat(firstCatalog.resolveColumn(firstRef).orElseThrow().getSqlType()).isEqualTo("smallint");
+        assertThat(secondCatalog.resolveColumn(firstRef).orElseThrow().getSqlType()).isEqualTo("smallint");
+    }
+
+    // TRACEABILITY_MAPPING: REQ-016
+    @Test
     void testPrimaryKeyAndUniqueConstraintsCreateIndexedColumns() {
         ProjectSchemaCatalog catalog = catalogFromSql(
                 "CREATE TABLE Orders (OrderId INT NOT NULL, CustomerId INT NOT NULL, CONSTRAINT PK_Orders PRIMARY KEY (OrderId), CONSTRAINT UQ_Orders_CustomerId UNIQUE(CustomerId));"
