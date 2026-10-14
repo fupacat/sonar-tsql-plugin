@@ -4,6 +4,7 @@ import io.github.fupacat.ParseError;
 import io.github.fupacat.ParseResult;
 import io.github.fupacat.TSqlParser;
 import io.github.fupacat.TSqlParserToken;
+import io.github.fupacat.TSqlTokenType;
 import io.github.fupacat.ast.TSqlFragment;
 import io.github.fupacat.ast.TSqlScript;
 import io.github.fupacat.sonar.tsql.catalog.ProjectSchemaCatalog;
@@ -20,13 +21,17 @@ import org.sonar.api.batch.fs.TextRange;
 import org.sonar.api.batch.sensor.Sensor;
 import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.batch.sensor.SensorDescriptor;
+import org.sonar.api.batch.sensor.cpd.NewCpdTokens;
 import org.sonar.api.batch.sensor.issue.NewIssue;
 import org.sonar.api.batch.sensor.issue.NewIssueLocation;
 import org.sonar.api.rule.RuleKey;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * SonarQube sensor that parses Transact-SQL source files with Microsoft T-SQL ScriptDOM
@@ -92,6 +97,7 @@ public class TSqlSensor implements Sensor {
         }
 
         reportParseErrors(inputFile, context, result);
+        publishCpdTokens(inputFile, context, result.fragment(), content);
         executeChecks(inputFile, context, result.fragment(), content, activeChecks, projectSchema);
     }
 
@@ -122,6 +128,196 @@ public class TSqlSensor implements Sensor {
                 LOG.error("Error running check " + check.getRuleKey() + " on file " + inputFile.uri(), e);
             }
         }
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private void publishCpdTokens(InputFile inputFile, SensorContext context, TSqlFragment rootFragment, String sourceText) {
+        if (sourceText == null || sourceText.isBlank()) {
+            return;
+        }
+        NewCpdTokens cpdTokens = context.newCpdTokens();
+        if (cpdTokens == null) {
+            return;
+        }
+        cpdTokens.onFile(inputFile);
+        for (CpdToken token : generateCpdTokens(sourceText)) {
+            cpdTokens.addToken(token.startLine, token.startColumn, token.endLine, token.endColumn, token.normalized);
+        }
+        cpdTokens.save();
+    }
+
+    private static final Set<String> TSQL_KEYWORDS = Set.of(
+            "SELECT", "FROM", "WHERE", "INSERT", "UPDATE", "DELETE",
+            "CREATE", "ALTER", "DROP", "TABLE", "VIEW", "INDEX", "PROCEDURE", "FUNCTION",
+            "TRIGGER", "DATABASE", "SCHEMA", "AS", "ON", "IN", "INTO", "VALUES", "SET",
+            "BY", "GROUP", "ORDER", "HAVING", "JOIN", "INNER", "LEFT", "RIGHT", "FULL",
+            "OUTER", "CROSS", "UNION", "ALL", "DISTINCT", "TOP", "WITH", "EXEC", "EXECUTE",
+            "BEGIN", "END", "IF", "ELSE", "WHILE", "RETURN", "DECLARE", "CASE", "WHEN",
+            "THEN", "AND", "OR", "NOT", "IS", "NULL", "LIKE", "BETWEEN", "EXISTS", "GO"
+    );
+
+    private static final class CpdToken {
+        private final int startLine;
+        private final int startColumn;
+        private final int endLine;
+        private final int endColumn;
+        private final String normalized;
+
+        private CpdToken(int startLine, int startColumn, int endLine, int endColumn, String normalized) {
+            this.startLine = startLine;
+            this.startColumn = startColumn;
+            this.endLine = endLine;
+            this.endColumn = endColumn;
+            this.normalized = normalized;
+        }
+    }
+
+    private List<CpdToken> generateCpdTokens(String sourceText) {
+        List<CpdToken> tokens = new ArrayList<>();
+        int index = 0;
+        while (index < sourceText.length()) {
+            char ch = sourceText.charAt(index);
+            if (Character.isWhitespace(ch)) {
+                index++;
+                continue;
+            }
+            if (ch == '-' && index + 1 < sourceText.length() && sourceText.charAt(index + 1) == '-') {
+                index = skipSingleLineComment(sourceText, index);
+                continue;
+            }
+            if (ch == '/' && index + 1 < sourceText.length() && sourceText.charAt(index + 1) == '*') {
+                index = skipMultiLineComment(sourceText, index);
+                continue;
+            }
+            if (ch == 'N' || ch == 'n') {
+                if (index + 1 < sourceText.length() && sourceText.charAt(index + 1) == '\'') {
+                    int start = index;
+                    index = skipStringLiteral(sourceText, index + 1);
+                    int end = index;
+                    tokens.add(new CpdToken(lineForOffset(sourceText, start), columnForOffset(sourceText, start),
+                            lineForOffset(sourceText, end), columnForOffset(sourceText, end), "<string>"));
+                    continue;
+                }
+            }
+            if (ch == '\'') {
+                int start = index;
+                index = skipStringLiteral(sourceText, index);
+                int end = index;
+                tokens.add(new CpdToken(lineForOffset(sourceText, start), columnForOffset(sourceText, start),
+                        lineForOffset(sourceText, end), columnForOffset(sourceText, end), "<string>"));
+                continue;
+            }
+            if (Character.isLetter(ch) || ch == '_' || ch == '@' || ch == '#') {
+                int start = index;
+                index++;
+                while (index < sourceText.length()) {
+                    char next = sourceText.charAt(index);
+                    if (Character.isLetterOrDigit(next) || next == '_' || next == '$') {
+                        index++;
+                    } else {
+                        break;
+                    }
+                }
+                String raw = sourceText.substring(start, index);
+                String normalized = normalizeIdentifier(raw);
+                if (normalized != null) {
+                    int end = index;
+                    tokens.add(new CpdToken(lineForOffset(sourceText, start), columnForOffset(sourceText, start),
+                            lineForOffset(sourceText, end), columnForOffset(sourceText, end), normalized));
+                }
+                continue;
+            }
+            if (Character.isDigit(ch) || (ch == '.' && index + 1 < sourceText.length() && Character.isDigit(sourceText.charAt(index + 1)))) {
+                int start = index;
+                index = skipNumberLiteral(sourceText, index);
+                int end = index;
+                tokens.add(new CpdToken(lineForOffset(sourceText, start), columnForOffset(sourceText, start),
+                        lineForOffset(sourceText, end), columnForOffset(sourceText, end), "<number>"));
+                continue;
+            }
+            index++;
+        }
+        return tokens;
+    }
+
+    private int skipSingleLineComment(String sourceText, int index) {
+        while (index < sourceText.length() && sourceText.charAt(index) != '\n') {
+            index++;
+        }
+        return index;
+    }
+
+    private int skipMultiLineComment(String sourceText, int index) {
+        index += 2;
+        while (index + 1 < sourceText.length()) {
+            if (sourceText.charAt(index) == '*' && sourceText.charAt(index + 1) == '/') {
+                return index + 2;
+            }
+            index++;
+        }
+        return sourceText.length();
+    }
+
+    private int skipStringLiteral(String sourceText, int index) {
+        index++;
+        while (index < sourceText.length()) {
+            char ch = sourceText.charAt(index);
+            if (ch == '\'') {
+                if (index + 1 < sourceText.length() && sourceText.charAt(index + 1) == '\'') {
+                    index += 2;
+                    continue;
+                }
+                return index + 1;
+            }
+            index++;
+        }
+        return sourceText.length();
+    }
+
+    private int skipNumberLiteral(String sourceText, int index) {
+        while (index < sourceText.length()) {
+            char ch = sourceText.charAt(index);
+            if (Character.isDigit(ch) || ch == '.' || ch == 'e' || ch == 'E' || ch == '+' || ch == '-') {
+                index++;
+            } else {
+                break;
+            }
+        }
+        return index;
+    }
+
+    private String normalizeIdentifier(String raw) {
+        String trimmed = raw.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        String upper = trimmed.toUpperCase(Locale.ROOT);
+        if (TSQL_KEYWORDS.contains(upper)) {
+            return upper;
+        }
+        return trimmed.toLowerCase(Locale.ROOT);
+    }
+
+    private int lineForOffset(String text, int offset) {
+        int line = 1;
+        for (int i = 0; i < offset; i++) {
+            if (text.charAt(i) == '\n') {
+                line++;
+            }
+        }
+        return line;
+    }
+
+    private int columnForOffset(String text, int offset) {
+        int column = 0;
+        for (int i = 0; i < offset; i++) {
+            if (text.charAt(i) == '\n') {
+                column = 0;
+            } else {
+                column++;
+            }
+        }
+        return column;
     }
 
     // TRACEABILITY_MAPPING: REQ-005

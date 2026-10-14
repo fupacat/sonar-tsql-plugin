@@ -18,6 +18,7 @@ import org.sonar.api.batch.rule.ActiveRule;
 import org.sonar.api.batch.rule.ActiveRules;
 import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.batch.sensor.SensorDescriptor;
+import org.sonar.api.batch.sensor.cpd.NewCpdTokens;
 import org.sonar.api.batch.sensor.issue.NewIssue;
 import org.sonar.api.batch.sensor.issue.NewIssueLocation;
 import org.sonar.api.rule.RuleKey;
@@ -152,6 +153,41 @@ class TSqlSensorTest {
         sensor.execute(context);
 
         verify(context, never()).newIssue();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void testPublishesNormalizedCpdTokens() throws IOException {
+        SensorContext context = mock(SensorContext.class);
+        FileSystem fs = mock(FileSystem.class);
+        FilePredicates predicates = mock(FilePredicates.class);
+        FilePredicate predicate = mock(FilePredicate.class);
+        InputFile inputFile = mock(InputFile.class);
+        ActiveRules activeRules = mock(ActiveRules.class);
+        NewCpdTokens cpdTokens = mock(NewCpdTokens.class, org.mockito.Mockito.RETURNS_SELF);
+
+        when(context.fileSystem()).thenReturn(fs);
+        when(fs.predicates()).thenReturn(predicates);
+        when(predicates.hasLanguage(TSqlLanguage.KEY)).thenReturn(predicate);
+        when(fs.inputFiles(predicate)).thenReturn(List.of(inputFile));
+        when(context.activeRules()).thenReturn(activeRules);
+        when(context.newCpdTokens()).thenReturn(cpdTokens);
+
+        when(inputFile.uri()).thenReturn(URI.create("file:///cpd.sql"));
+        when(inputFile.contents()).thenReturn("SELECT firstName, N'Bob', 42 FROM dbo.Users;\n");
+        when(inputFile.lines()).thenReturn(1);
+
+        sensor.execute(context);
+
+        verify(cpdTokens).onFile(inputFile);
+        verify(cpdTokens).addToken(1, 0, 1, 6, "SELECT");
+        verify(cpdTokens).addToken(1, 7, 1, 16, "firstname");
+        verify(cpdTokens).addToken(1, 18, 1, 24, "<string>");
+        verify(cpdTokens).addToken(1, 26, 1, 28, "<number>");
+        verify(cpdTokens).addToken(1, 29, 1, 33, "FROM");
+        verify(cpdTokens).addToken(1, 34, 1, 37, "dbo");
+        verify(cpdTokens).addToken(1, 38, 1, 43, "users");
+        verify(cpdTokens).save();
     }
 
     // TRACEABILITY_MAPPING: REQ-005
