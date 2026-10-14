@@ -90,9 +90,6 @@ public class DynamicSqlExecutionCheck extends TSqlCheck {
                 continue;
             }
 
-            if (index == 0 && containsDangerousScalarExpression(parameter.ParameterValue)) {
-                return true;
-            }
         }
         return false;
     }
