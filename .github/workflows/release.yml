@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to release (e.g. v0.1.0)'
+        description: 'Tag/ref to release (e.g. v0.1.0)'
         required: true
         type: string
 
@@ -20,10 +20,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Validate requested tag
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Requested tag '$TAG' is not a valid release tag. Expected vX.Y.Z."
+            exit 1
+          fi
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
+
+      - name: Verify project version matches tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          POM_VERSION="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"
+          if [[ "$POM_VERSION" != "$VERSION" ]]; then
+            echo "POM version '$POM_VERSION' does not match requested release tag '$TAG' (expected '$VERSION')."
+            echo "Update pom.xml and CHANGELOG.md before creating the release."
+            exit 1
+          fi
 
       - name: Set up JDK 17
         uses: actions/setup-java@v6
@@ -35,10 +63,26 @@ jobs:
       - name: Build Plugin JAR
         run: mvn clean verify --batch-mode
 
+      - name: Verify packaged artifact name and metadata
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.version.outputs.version }}"
+          ARTIFACT="target/sonar-tsql-plugin-${VERSION}.jar"
+          if [[ ! -f "$ARTIFACT" ]]; then
+            echo "Expected packaged artifact '$ARTIFACT' was not produced."
+            exit 1
+          fi
+          jar tf "$ARTIFACT" >/tmp/sonar-tsql-plugin-contents.txt
+          if ! grep -q 'io/github/fupacat/sonar/tsql/TSqlPlugin.class' /tmp/sonar-tsql-plugin-contents.txt; then
+            echo "Packaged JAR does not contain the plugin main class."
+            exit 1
+          fi
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
-          files: target/sonar-tsql-plugin-*.jar
+          tag_name: ${{ steps.version.outputs.tag }}
+          files: target/sonar-tsql-plugin-${{ steps.version.outputs.version }}.jar
           generate_release_notes: true
           draft: false
           prerelease: false

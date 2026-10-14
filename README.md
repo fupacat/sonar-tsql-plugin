@@ -43,10 +43,17 @@ Powered by [**tsql-scriptdom-java**](https://github.com/fupacat/tsql-scriptdom-j
 
 ## Installation
 
-1. Download the latest `sonar-tsql-plugin-<version>.jar` from [Releases](https://github.com/fupacat/sonar-tsql-plugin/releases).
-2. Copy the `.jar` into your SonarQube server's plugin directory:
+This repository is currently on the `0.1.0-SNAPSHOT` development line and does not have a published production release on GitHub Releases yet. Until a release tag is created and published, install the plugin by building the current checkout from source.
+
+1. Build the current project from source:
    ```bash
-   cp sonar-tsql-plugin-*.jar $SONARQUBE_HOME/extensions/plugins/
+   git clone https://github.com/fupacat/sonar-tsql-plugin.git
+   cd sonar-tsql-plugin
+   mvn clean package
+   ```
+2. Copy the generated JAR into your SonarQube server's plugin directory:
+   ```bash
+   cp target/sonar-tsql-plugin-*.jar $SONARQUBE_HOME/extensions/plugins/
    ```
 3. Restart your SonarQube server:
    ```bash
@@ -54,21 +61,19 @@ Powered by [**tsql-scriptdom-java**](https://github.com/fupacat/tsql-scriptdom-j
    ```
 4. Verify under **Administration > Marketplace > Installed Plugins** that "SonarQube T-SQL Plugin" is active.
 
+For a tagged release such as `v0.1.0`, the plugin artifact will be named `target/sonar-tsql-plugin-0.1.0.jar`, matching the Git tag without the leading `v`.
+
 ---
 
-## Building from Source
+## Release Procedure
 
-Prerequisites:
-- JDK 17+
-- Maven 3.8+
+This repository does not publish a production release as part of issue resolution. A release is only created after the tag, POM version, changelog, and artifact name agree.
 
-```bash
-git clone https://github.com/fupacat/sonar-tsql-plugin.git
-cd sonar-tsql-plugin
-mvn clean package
-```
-
-The packaged plugin will be generated at `target/sonar-tsql-plugin-<version>.jar`.
+1. Update `pom.xml` to the intended release version (for example `0.1.0`) and remove `-SNAPSHOT`.
+2. Update `CHANGELOG.md` to the same version and record the release notes.
+3. Create and push the matching Git tag, such as `v0.1.0`.
+4. Run the GitHub Actions `Release` workflow for that tag.
+5. Verify the built artifact exists as `target/sonar-tsql-plugin-<version>.jar` and matches the requested tag before publishing the GitHub release.
 
 ---
 
