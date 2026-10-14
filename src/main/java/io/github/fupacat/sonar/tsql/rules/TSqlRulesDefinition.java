@@ -911,11 +911,11 @@ public class TSqlRulesDefinition implements RulesDefinition {
         repository.createRule(NullableColumnIsNullCheck.RULE_KEY)
                 .setName("Ensure ISNULL replacements preserve type and length semantics")
                 .setHtmlDescription(
-                        "<p>Replacing <code>COALESCE(column, fallback)</code> with <code>ISNULL(column, fallback)</code> can change the result's type, length, and precedence. Only recommend this rewrite when the fallback is type-compatible and does not narrow the result or otherwise change behavior.</p>"
+                        "<p>Replacing a multi-argument <code>COALESCE(column, fallback, ...)</code> with a binary <code>ISNULL</code> expression can change evaluation order, type precedence, and result length semantics. Only recommend this rewrite when the fallback preserves the original expression behavior.</p>"
                                 + NONCOMPLIANT_HEADER
-                                + "<pre>SELECT COALESCE(Code, 'fallback') FROM dbo.Items;</pre>"
+                                + "<pre>SELECT COALESCE(Code, 'fallback', 'other') FROM dbo.Items;</pre>"
                                 + COMPLIANT_HEADER
-                                + "<pre>SELECT COALESCE(Code, 'fallback') FROM dbo.Items; -- only replace with ISNULL when the fallback preserves the column's length and type semantics.</pre>")
+                                + "<pre>SELECT COALESCE(Code, 'fallback') FROM dbo.Items; -- a two-argument fallback is compliant because ISNULL is not a safe replacement for the full COALESCE semantics.</pre>")
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)
