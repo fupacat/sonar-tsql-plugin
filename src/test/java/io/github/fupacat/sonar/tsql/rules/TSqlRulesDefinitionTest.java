@@ -7,6 +7,11 @@ import org.sonar.api.rule.Severity;
 import org.sonar.api.rules.RuleType;
 import org.sonar.api.server.rule.RulesDefinition;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class TSqlRulesDefinitionTest {
@@ -175,5 +180,21 @@ class TSqlRulesDefinitionTest {
         assertThat(syntaxErrorRule).isNotNull();
         assertThat(syntaxErrorRule.severity()).isEqualTo(Severity.BLOCKER);
         assertThat(syntaxErrorRule.type()).isEqualTo(RuleType.BUG);
+    }
+
+    @Test
+    void testReadmeDocumentsCurrentRuleInventory() throws IOException {
+        Path readmePath = Path.of("README.md");
+        String readme = Files.readString(readmePath, StandardCharsets.UTF_8);
+
+        assertThat(readme).contains("71 built-in T-SQL rules");
+        assertThat(readme).contains("`AvoidSelectAll`");
+        assertThat(readme).contains("`DynamicSqlExecution`");
+        assertThat(readme).contains("`DuplicateBinaryOperand`");
+        assertThat(readme).contains("`NarrowingCast`");
+        assertThat(readme).contains("`SyntaxError`");
+        assertThat(readme).contains("Cross-file DDL catalog scope and limitations");
+        assertThat(readme).contains("Maintaining rule inventory consistency");
+        assertThat(readme).contains("default `Sonar way` profile");
     }
 }
