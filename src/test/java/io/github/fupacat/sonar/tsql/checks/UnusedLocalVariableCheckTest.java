@@ -54,4 +54,49 @@ class UnusedLocalVariableCheckTest {
         List<String> readAndWriteIssues = CheckTestUtils.scan(check, "DECLARE @x INT; SET @x = @x + 1;");
         assertThat(readAndWriteIssues).isEmpty();
     }
+
+    // TRACEABILITY_MAPPING: REQ-025
+    @Test
+    void testCoversAlternateProcedureAndFunctionBodies() {
+        String sql = "CREATE PROCEDURE dbo.P AS BEGIN DECLARE @p INT; END; GO "
+                + "CREATE OR ALTER PROCEDURE dbo.P2 AS BEGIN DECLARE @p INT; SELECT @p; END; GO "
+                + "ALTER PROCEDURE dbo.P AS BEGIN DECLARE @p INT; END; GO "
+                + "CREATE FUNCTION dbo.F() RETURNS INT AS BEGIN DECLARE @f INT; RETURN @f; END; GO "
+                + "CREATE OR ALTER FUNCTION dbo.F2() RETURNS INT AS BEGIN DECLARE @f INT; RETURN @f; END; GO "
+                + "ALTER FUNCTION dbo.F() RETURNS INT AS BEGIN DECLARE @f INT; RETURN @f; END; GO";
+
+        List<String> issues = CheckTestUtils.scan(check, sql);
+        assertThat(issues).anyMatch(issue -> issue.contains("@p"));
+    }
+
+    // TRACEABILITY_MAPPING: REQ-025
+    @Test
+    void testTraversesStatementAndAssignmentBranches() {
+        SetVariableStatement setVariableStatement = new SetVariableStatement();
+        setVariableStatement.Expression = new VariableReference();
+        setVariableStatement.Expression.Name = "@x";
+        setVariableStatement.Parameters = List.of(new VariableReference(), new VariableReference());
+        setVariableStatement.Parameters.get(0).Name = "@y";
+        setVariableStatement.Parameters.get(1).Name = "@z";
+
+        AssignmentSetClause assignmentSetClause = new AssignmentSetClause();
+        assignmentSetClause.NewValue = new VariableReference();
+        assignmentSetClause.NewValue.Name = "@a";
+
+        SelectSetVariable selectSetVariable = new SelectSetVariable();
+        selectSetVariable.Expression = new VariableReference();
+        selectSetVariable.Expression.Name = "@b";
+
+        check.visit(setVariableStatement);
+        check.visit(assignmentSetClause);
+        check.visit(selectSetVariable);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-025
+    @Test
+    void testHandlesNullRootGracefully() {
+        CheckTestUtils.CollectingContext context = new CheckTestUtils.CollectingContext("DECLARE @x INT;");
+        check.scan(null, context);
+        assertThat(context.issues).isEmpty();
+    }
 }
