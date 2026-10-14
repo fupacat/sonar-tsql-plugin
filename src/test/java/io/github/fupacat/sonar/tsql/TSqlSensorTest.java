@@ -151,8 +151,8 @@ class TSqlSensorTest {
         when(context.activeRules()).thenReturn(activeRules);
         when(context.newMeasure()).thenReturn(measure);
         when(inputFile.uri()).thenReturn(URI.create("file:///metrics.sql"));
-        when(inputFile.contents()).thenReturn("-- comment\nBEGIN\n  IF 1 = 1\n    SELECT 1;\n  END;\n\nTRY\nBEGIN\n  SELECT 1;\nEND\nCATCH\nBEGIN\n  SELECT 2;\nEND;\n");
-        when(inputFile.lines()).thenReturn(10);
+        when(inputFile.contents()).thenReturn("-- comment\nBEGIN\n  IF 1 = 1\n    SELECT 1;\n  END;\n\nBEGIN TRY\n  SELECT 1;\nEND TRY\nBEGIN CATCH\n  SELECT 2;\nEND CATCH;\n");
+        when(inputFile.lines()).thenReturn(12);
 
         sensor.execute(context);
 
@@ -160,7 +160,7 @@ class TSqlSensorTest {
         verify(measure).forMetric(CoreMetrics.COMMENT_LINES);
         verify(measure).forMetric(CoreMetrics.STATEMENTS);
         verify(measure).forMetric(CoreMetrics.COMPLEXITY);
-        verify(measure, atLeastOnce()).withValue(13);
+        verify(measure, atLeastOnce()).withValue(10);
         verify(measure, atLeastOnce()).withValue(1);
         verify(measure, atLeastOnce()).withValue(5);
         verify(measure, atLeastOnce()).withValue(3);

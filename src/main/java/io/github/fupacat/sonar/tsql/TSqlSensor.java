@@ -98,6 +98,7 @@ public class TSqlSensor implements Sensor {
         executeChecks(inputFile, context, result.fragment(), content, activeChecks, projectSchema);
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     private void publishSourceMetrics(InputFile inputFile, SensorContext context, String content) {
         TSqlSourceMetrics metrics = TSqlSourceMetrics.fromText(content);
         saveMeasure(context, inputFile, CoreMetrics.NCLOC, metrics.nonCommentLines());
@@ -106,6 +107,7 @@ public class TSqlSensor implements Sensor {
         saveMeasure(context, inputFile, CoreMetrics.COMPLEXITY, metrics.complexity());
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     private void saveMeasure(SensorContext context, InputFile inputFile,
             org.sonar.api.measures.Metric<Integer> metric, int value) {
         if (metric == null || context == null) {

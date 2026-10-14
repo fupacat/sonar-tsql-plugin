@@ -5,7 +5,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 final class TSqlSourceMetrics {
-    private static final Pattern KEYWORD_PATTERN = Pattern.compile("(?i)\\b(IF|WHILE|CASE|TRY|CATCH)\\b");
+    private static final Pattern KEYWORD_PATTERN = Pattern.compile("(?i)(\\b(IF|WHILE|CASE)\\b|\\bBEGIN\\s+(TRY|CATCH)\\b)");
     private static final Pattern STATEMENT_SEPARATOR_PATTERN = Pattern.compile("(?i)(?:;|\\bGO\\b)");
 
     private final int lines;
@@ -30,11 +30,12 @@ final class TSqlSourceMetrics {
         List<String> lines = sourceText.lines().toList();
         int lineCount = lines.size();
         int commentLineCount = countCommentLines(sourceText);
+        int ncloc = countNonCommentCodeLines(sourceText);
         String sanitized = stripCommentsAndStringLiterals(sourceText);
         int statementCount = countMatches(sanitized, STATEMENT_SEPARATOR_PATTERN);
         int complexityCount = countMatches(sanitized, KEYWORD_PATTERN);
 
-        return new TSqlSourceMetrics(lineCount, commentLineCount, lineCount - commentLineCount, statementCount, complexityCount);
+        return new TSqlSourceMetrics(lineCount, commentLineCount, ncloc, statementCount, complexityCount);
     }
 
     private static int countCommentLines(String sourceText) {
@@ -144,6 +145,114 @@ final class TSqlSourceMetrics {
         return commentLineCount;
     }
 
+    private static int countNonCommentCodeLines(String sourceText) {
+        int ncloc = 0;
+        boolean inSingleQuote = false;
+        boolean inDoubleQuote = false;
+        boolean inLineComment = false;
+        boolean inBlockComment = false;
+        boolean lineHasCode = false;
+
+        for (int i = 0; i < sourceText.length(); i++) {
+            char current = sourceText.charAt(i);
+            char next = i + 1 < sourceText.length() ? sourceText.charAt(i + 1) : '\0';
+
+            if (inLineComment) {
+                if (current == '\n') {
+                    if (lineHasCode) {
+                        ncloc++;
+                    }
+                    inLineComment = false;
+                    lineHasCode = false;
+                }
+                continue;
+            }
+
+            if (inBlockComment) {
+                if (current == '*' && next == '/') {
+                    inBlockComment = false;
+                    i++;
+                } else if (current == '\n') {
+                    if (lineHasCode) {
+                        ncloc++;
+                    }
+                    lineHasCode = false;
+                }
+                continue;
+            }
+
+            if (inSingleQuote) {
+                if (current == '\n') {
+                    if (lineHasCode) {
+                        ncloc++;
+                    }
+                    lineHasCode = false;
+                } else if (current == '\'' && next == '\'') {
+                    i++;
+                } else if (current == '\'') {
+                    inSingleQuote = false;
+                }
+                continue;
+            }
+
+            if (inDoubleQuote) {
+                if (current == '\n') {
+                    if (lineHasCode) {
+                        ncloc++;
+                    }
+                    lineHasCode = false;
+                } else if (current == '"' && next == '"') {
+                    i++;
+                } else if (current == '"') {
+                    inDoubleQuote = false;
+                }
+                continue;
+            }
+
+            if (current == '\n') {
+                if (lineHasCode) {
+                    ncloc++;
+                }
+                lineHasCode = false;
+                continue;
+            }
+
+            if (current == '-' && next == '-') {
+                inLineComment = true;
+                i++;
+                continue;
+            }
+
+            if (current == '/' && next == '*') {
+                inBlockComment = true;
+                i++;
+                continue;
+            }
+
+            if (current == '\'') {
+                inSingleQuote = true;
+                lineHasCode = true;
+                continue;
+            }
+
+            if (current == '"') {
+                inDoubleQuote = true;
+                lineHasCode = true;
+                continue;
+            }
+
+            if (!Character.isWhitespace(current)) {
+                lineHasCode = true;
+            }
+        }
+
+        if (lineHasCode) {
+            ncloc++;
+        }
+
+        return ncloc;
+    }
+
     int lines() {
         return lines;
     }
@@ -193,11 +302,12 @@ final class TSqlSourceMetrics {
                 continue;
             }
             if (inSingleQuote) {
+                if (current == '\n') {
+                    result.append(current);
+                }
                 if (current == '\'' && next == '\'') {
-                    result.append("''");
                     i++;
                 } else {
-                    result.append(current);
                     if (current == '\'') {
                         inSingleQuote = false;
                     }
@@ -205,11 +315,12 @@ final class TSqlSourceMetrics {
                 continue;
             }
             if (inDoubleQuote) {
+                if (current == '\n') {
+                    result.append(current);
+                }
                 if (current == '"' && next == '"') {
-                    result.append("\"\"");
                     i++;
                 } else {
-                    result.append(current);
                     if (current == '"') {
                         inDoubleQuote = false;
                     }
@@ -228,12 +339,12 @@ final class TSqlSourceMetrics {
             }
             if (current == '\'') {
                 inSingleQuote = true;
-                result.append(current);
+                result.append(' ');
                 continue;
             }
             if (current == '"') {
                 inDoubleQuote = true;
-                result.append(current);
+                result.append(' ');
                 continue;
             }
             result.append(current);
