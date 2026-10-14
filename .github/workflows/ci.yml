@@ -64,8 +64,11 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Package plugin for smoke test
-        run: mvn -DskipTests package --batch-mode
+      - name: Download verified plugin for smoke test
+        uses: actions/download-artifact@v4
+        with:
+          name: sonar-tsql-plugin
+          path: target/
 
       - name: Validate packaged plugin against SonarQube ${{ matrix.sq-version }}
         env:
