@@ -20,6 +20,8 @@ import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.batch.sensor.SensorDescriptor;
 import org.sonar.api.batch.sensor.issue.NewIssue;
 import org.sonar.api.batch.sensor.issue.NewIssueLocation;
+import org.sonar.api.batch.sensor.measure.NewMeasure;
+import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.rule.RuleKey;
 
 import java.io.IOException;
@@ -128,6 +130,41 @@ class TSqlSensorTest {
         verify(issue, atLeastOnce()).forRule(syntaxRuleKey);
         verify(issue, atLeastOnce()).at(location);
         verify(issue, atLeastOnce()).save();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void testPublishesSourceMetrics() throws IOException {
+        SensorContext context = mock(SensorContext.class);
+        FileSystem fs = mock(FileSystem.class);
+        FilePredicates predicates = mock(FilePredicates.class);
+        FilePredicate predicate = mock(FilePredicate.class);
+        InputFile inputFile = mock(InputFile.class);
+        ActiveRules activeRules = mock(ActiveRules.class);
+        @SuppressWarnings("unchecked")
+        NewMeasure measure = mock(NewMeasure.class, org.mockito.Mockito.RETURNS_SELF);
+
+        when(context.fileSystem()).thenReturn(fs);
+        when(fs.predicates()).thenReturn(predicates);
+        when(predicates.hasLanguage(TSqlLanguage.KEY)).thenReturn(predicate);
+        when(fs.inputFiles(predicate)).thenReturn(List.of(inputFile));
+        when(context.activeRules()).thenReturn(activeRules);
+        when(context.newMeasure()).thenReturn(measure);
+        when(inputFile.uri()).thenReturn(URI.create("file:///metrics.sql"));
+        when(inputFile.contents()).thenReturn("-- comment\nBEGIN\n  IF 1 = 1\n    SELECT 1;\n  END;\n\nTRY\nBEGIN\n  SELECT 1;\nEND\nCATCH\nBEGIN\n  SELECT 2;\nEND;\n");
+        when(inputFile.lines()).thenReturn(10);
+
+        sensor.execute(context);
+
+        verify(measure).forMetric(CoreMetrics.NCLOC);
+        verify(measure).forMetric(CoreMetrics.COMMENT_LINES);
+        verify(measure).forMetric(CoreMetrics.STATEMENTS);
+        verify(measure).forMetric(CoreMetrics.COMPLEXITY);
+        verify(measure, atLeastOnce()).withValue(13);
+        verify(measure, atLeastOnce()).withValue(1);
+        verify(measure, atLeastOnce()).withValue(5);
+        verify(measure, atLeastOnce()).withValue(3);
+        verify(measure, atLeastOnce()).save();
     }
 
     // TRACEABILITY_MAPPING: REQ-005

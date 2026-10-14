@@ -18,6 +18,27 @@ Powered by [**tsql-scriptdom-java**](https://github.com/fupacat/tsql-scriptdom-j
 - **Deep AST Analysis:** Evaluates parsed Abstract Syntax Tree fragments with token streams and exact file coordinates.
 - **Syntax Error Detection:** Flags parsing and grammar violations with line and column precision.
 - **Built-in Quality Profile:** Pre-configured "Sonar way" quality profile activating all built-in rules out of the box.
+- **Source Metrics:** Publishes standard SonarQube file measures for NCLOC, comment lines, statements, and cyclomatic complexity.
+
+---
+
+## Source Metrics
+
+The sensor publishes the core file metrics SonarQube expects for T-SQL sources:
+
+- `ncloc`: non-comment lines of code
+- `comment_lines`: comment-only and inline comment lines
+- `statements`: statement separators such as `;` and `GO`
+- `complexity`: complexity contributions from branching and exception-control constructs
+
+For complexity, the parser counts the primary T-SQL control-flow keywords that increase branching. In practice:
+
+- `IF` adds a branch point for each conditional block
+- `WHILE` adds loop complexity for iterative control flow
+- `CASE` adds an alternate branch for each conditional expression or search expression
+- `TRY` / `CATCH` adds an exception flow path and structured error-handling branch
+
+This means representative routines such as nested `IF` blocks, `CASE` expressions, looped `WHILE` statements, and `TRY/CATCH` blocks are reflected in the published `complexity` measure.
 
 ---
 
