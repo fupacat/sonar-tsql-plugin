@@ -28,6 +28,9 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
+      - name: Validate release guard scenarios
+        run: bash scripts/test-release-contract.sh
+
       - name: Build and Test with Maven
         run: mvn clean verify --batch-mode
 
@@ -67,4 +70,3 @@ jobs:
               "/repos/${GH_REPO}/pulls/${PR_NUM}/update-branch" \
               || echo "Could not auto-update PR #${PR_NUM} (may have merge conflicts)."
           done
-
