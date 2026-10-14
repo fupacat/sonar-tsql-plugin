@@ -114,6 +114,7 @@ public class TSqlSensor implements Sensor {
         if (rootFragment == null || activeChecks.isEmpty()) {
             return;
         }
+        projectSchema.indexScript(rootFragment);
         TSqlCheckContext checkContext = new SensorCheckContext(inputFile, context, rootFragment, sourceText, projectSchema);
         for (TSqlCheck check : activeChecks) {
             try {

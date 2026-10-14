@@ -101,6 +101,9 @@ public final class ProjectSchemaCatalog {
         if (exact != null) {
             return Optional.of(exact);
         }
+        if (normalized.contains(".")) {
+            return Optional.empty();
+        }
         String shortName = shortTableName(normalized);
         List<String> matches = shortTableNames.get(shortName);
         if (matches == null || matches.isEmpty()) {
@@ -125,7 +128,7 @@ public final class ProjectSchemaCatalog {
         String columnName = identifiers.get(identifiers.size() - 1);
         QueryScope scope = findEnclosingScope(expression);
         if (identifiers.size() > 1) {
-            String qualifier = identifiers.get(identifiers.size() - 2);
+            String qualifier = qualifierFor(identifiers);
             TableSchema resolved = resolveTableReference(qualifier, scope);
             if (resolved != null) {
                 return resolved.getColumn(columnName);
@@ -133,15 +136,9 @@ public final class ProjectSchemaCatalog {
             return Optional.empty();
         }
 
-        List<TableSchema> matches = (scope == null) ? List.of() : findColumnMatchesInScope(scope, columnName);
+        List<TableSchema> matches = (scope == null) ? findUnqualifiedColumnMatches(columnName) : findColumnMatchesInScope(scope, columnName);
         if (matches.size() == 1) {
             return matches.get(0).getColumn(columnName);
-        }
-        if (matches.isEmpty()) {
-            matches = findUnqualifiedColumnMatches(columnName);
-            if (matches.size() == 1) {
-                return matches.get(0).getColumn(columnName);
-            }
         }
         return Optional.empty();
     }
@@ -163,7 +160,7 @@ public final class ProjectSchemaCatalog {
         String columnName = identifiers.get(identifiers.size() - 1);
         QueryScope scope = findEnclosingScope(expression);
         if (identifiers.size() > 1) {
-            String qualifier = identifiers.get(identifiers.size() - 2);
+            String qualifier = qualifierFor(identifiers);
             TableSchema table = resolveTableReference(qualifier, scope);
             if (table == null) {
                 return false;
@@ -171,15 +168,9 @@ public final class ProjectSchemaCatalog {
             return hasIndexedColumn(table.getTableName(), columnName);
         }
 
-        List<TableSchema> matches = scope == null ? List.of() : findColumnMatchesInScope(scope, columnName);
+        List<TableSchema> matches = (scope == null) ? findUnqualifiedColumnMatches(columnName) : findColumnMatchesInScope(scope, columnName);
         if (matches.size() == 1) {
             return hasIndexedColumn(matches.get(0).getTableName(), columnName);
-        }
-        if (matches.isEmpty()) {
-            matches = findUnqualifiedColumnMatches(columnName);
-            if (matches.size() == 1) {
-                return hasIndexedColumn(matches.get(0).getTableName(), columnName);
-            }
         }
         return false;
     }
@@ -270,7 +261,31 @@ public final class ProjectSchemaCatalog {
             String aliasTarget = scope.aliasLookup.get(normalized);
             return aliasTarget == null ? null : getTable(aliasTarget).orElse(null);
         }
+        String exact = normalizeTableName(qualifier);
+        if (tables.containsKey(exact)) {
+            return tables.get(exact);
+        }
+        if (normalized.contains(".")) {
+            return null;
+        }
         return getTable(qualifier).orElse(null);
+    }
+
+    private static String qualifierFor(List<String> identifiers) {
+        if (identifiers == null || identifiers.isEmpty()) {
+            return "";
+        }
+        if (identifiers.size() == 1) {
+            return identifiers.get(0);
+        }
+        StringBuilder qualifier = new StringBuilder();
+        for (int i = 0; i < identifiers.size() - 1; i++) {
+            if (i > 0) {
+                qualifier.append('.');
+            }
+            qualifier.append(identifiers.get(i));
+        }
+        return qualifier.toString();
     }
 
     private List<TableSchema> findUnqualifiedColumnMatches(String columnName) {

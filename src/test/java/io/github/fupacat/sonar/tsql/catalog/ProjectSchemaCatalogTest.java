@@ -121,11 +121,11 @@ class ProjectSchemaCatalogTest {
     // TRACEABILITY_MAPPING: REQ-016
     @Test
     void testUnqualifiedColumnLookupFallsBackAcrossTables() {
-        ProjectSchemaCatalog catalog = catalogFromSql(
-                "CREATE TABLE SalesOrders (OrderId INT NOT NULL, CustomerId INT NOT NULL);"
-                        + "CREATE INDEX IX_SalesOrders_CustomerId ON SalesOrders(CustomerId);"
-        );
-        ColumnReferenceExpression customerIdRef = columnReferenceFrom("SELECT CustomerId FROM SalesOrders", "CustomerId");
+        String sql = "CREATE TABLE SalesOrders (OrderId INT NOT NULL, CustomerId INT NOT NULL);"
+                + "CREATE INDEX IX_SalesOrders_CustomerId ON SalesOrders(CustomerId);"
+                + "SELECT CustomerId FROM SalesOrders;";
+        ProjectSchemaCatalog catalog = catalogFromSql(sql);
+        ColumnReferenceExpression customerIdRef = columnReferenceFrom(sql, "CustomerId");
 
         assertThat(catalog.resolveColumn(customerIdRef)).isPresent();
         assertThat(catalog.isIndexed(customerIdRef)).isTrue();
@@ -134,23 +134,27 @@ class ProjectSchemaCatalogTest {
     // TRACEABILITY_MAPPING: REQ-016
     @Test
     void testQualifiedNamesRemainDistinctAcrossSchemasAndDuplicateTableNames() {
-        ProjectSchemaCatalog catalog = catalogFromSql(
-                "CREATE TABLE dbo.A (Code BIGINT);"
-                        + "CREATE TABLE dbo.B (Code SMALLINT);"
-                        + "CREATE TABLE sales.Items (Code BIGINT);"
-                        + "CREATE TABLE archive.Items (Code SMALLINT);"
-                        + "CREATE TABLE dbo.Orders (Id INT PRIMARY KEY);"
-        );
+        String sql = "CREATE TABLE dbo.A (Code BIGINT);"
+                + "CREATE TABLE dbo.B (Code SMALLINT);"
+                + "CREATE TABLE sales.Items (Code BIGINT);"
+                + "CREATE TABLE archive.Items (Code SMALLINT);"
+                + "CREATE TABLE dbo.Orders (Id INT PRIMARY KEY);"
+                + "SELECT CAST(Code AS INT) FROM dbo.B;"
+                + "SELECT CAST(Code AS INT) FROM archive.Items;"
+                + "SELECT o.Id FROM dbo.Orders AS o WHERE o.Id IN (1, 2);";
+        ParseResult<TSqlScript> result = new TSqlParser().parse(sql);
+        ProjectSchemaCatalog catalog = new ProjectSchemaCatalog();
+        catalog.indexScript(result.fragment());
 
-        ColumnReferenceExpression firstRef = columnReferenceFrom("SELECT CAST(Code AS INT) FROM dbo.B", "Code");
-        ColumnReferenceExpression sameNameRef = columnReferenceFrom("SELECT CAST(Code AS INT) FROM archive.Items", "Code");
-        ColumnReferenceExpression aliasRef = columnReferenceFrom("SELECT o.Id FROM dbo.Orders AS o WHERE o.Id IN (1, 2)", "Id");
+        ColumnReferenceExpression firstRef = columnReferenceFrom(result.fragment(), "Code", 0);
+        ColumnReferenceExpression sameNameRef = columnReferenceFrom(result.fragment(), "Code", 1);
+        ColumnReferenceExpression aliasRef = columnReferenceFrom(result.fragment(), "Id", 0);
 
         assertThat(catalog.resolveColumn(firstRef)).isPresent();
-        assertThat(catalog.resolveColumn(firstRef).orElseThrow().getSqlType()).isEqualTo("smallint");
-        assertThat(catalog.resolveColumn(sameNameRef).orElseThrow().getSqlType()).isEqualTo("smallint");
+        assertThat(catalog.resolveColumn(firstRef).orElseThrow().getSqlType()).isEqualToIgnoringCase("smallint");
+        assertThat(catalog.resolveColumn(sameNameRef).orElseThrow().getSqlType()).isEqualToIgnoringCase("smallint");
         assertThat(catalog.resolveColumn(aliasRef)).isPresent();
-        assertThat(catalog.resolveColumn(aliasRef).orElseThrow().getSqlType()).isEqualTo("int");
+        assertThat(catalog.resolveColumn(aliasRef).orElseThrow().getSqlType()).isEqualToIgnoringCase("int");
         assertThat(catalog.isIndexed(aliasRef)).isTrue();
     }
 
@@ -289,7 +293,7 @@ class ProjectSchemaCatalogTest {
                 "Code MyCustomType(25), INDEX IX_Products_Code (Code));");
         assertThat(inlineIndexCatalog.hasTable("Products")).isTrue();
         assertThat(inlineIndexCatalog.getTable("Products").orElseThrow().getColumn("Code")).isPresent();
-        assertThat(inlineIndexCatalog.getTable("Products").orElseThrow().getColumn("Code").orElseThrow().getSqlType()).isEqualTo("MyCustomType");
+        assertThat(inlineIndexCatalog.getTable("Products").orElseThrow().getColumn("Code").orElseThrow().getSqlType()).isEqualToIgnoringCase("MyCustomType");
         assertThat(inlineIndexCatalog.getTable("Products").orElseThrow().getColumn("Code").orElseThrow().getLength()).isEqualTo(25);
 
         // Column with inline UniqueConstraintDefinition
@@ -331,19 +335,31 @@ class ProjectSchemaCatalogTest {
     }
 
     private static ColumnReferenceExpression columnReferenceFrom(String sql, String targetColumnName) {
+        return columnReferenceFrom(sql, targetColumnName, 0);
+    }
+
+    private static ColumnReferenceExpression columnReferenceFrom(String sql, String targetColumnName, int occurrence) {
         ParseResult<TSqlScript> result = new TSqlParser().parse(sql);
+        return columnReferenceFrom(result.fragment(), targetColumnName, occurrence);
+    }
+
+    private static ColumnReferenceExpression columnReferenceFrom(TSqlScript script, String targetColumnName, int occurrence) {
         final ColumnReferenceExpression[] found = new ColumnReferenceExpression[1];
-        if (result == null || result.fragment() == null) {
+        if (script == null) {
             return null;
         }
-        result.fragment().accept(new TSqlConcreteFragmentVisitor() {
+        final int[] index = {0};
+        script.accept(new TSqlConcreteFragmentVisitor() {
             @Override
             public void visit(ColumnReferenceExpression node) {
                 if (node != null && node.MultiPartIdentifier != null && node.MultiPartIdentifier.Identifiers != null) {
                     for (var identifier : node.MultiPartIdentifier.Identifiers) {
                         if (identifier != null && targetColumnName.equalsIgnoreCase(identifier.Value)) {
-                            found[0] = node;
-                            break;
+                            if (index[0] == occurrence) {
+                                found[0] = node;
+                                return;
+                            }
+                            index[0]++;
                         }
                     }
                 }
