@@ -39,33 +39,41 @@ class SchemaAwareChecksTest {
         assertThat(issues).isEmpty();
     }
 
-    // TRACEABILITY_MAPPING: REQ-009
+    // TRACEABILITY_MAPPING: REQ-017
     @Test
-    void testNullableColumnUsesIsNull() {
+    void testNullableColumnCoalesceTwoArgumentFallbackIsCompliant() {
         List<String> issues = CheckTestUtils.scan(nullableColumnCheck,
-                "CREATE TABLE Users (Id INT NOT NULL, LastLogin DATETIME NULL); " +
-                        "SELECT COALESCE(LastLogin, '1970-01-01') FROM Users;");
-        assertThat(issues).hasSize(1);
-        assertThat(issues.get(0)).contains("Use ISNULL");
+                "CREATE TABLE dbo.Items (Code VARCHAR(3) NULL); " +
+                        "SELECT COALESCE(Code, 'fallback') FROM dbo.Items;");
+        assertThat(issues).isEmpty();
     }
 
-    // TRACEABILITY_MAPPING: REQ-009
+    // TRACEABILITY_MAPPING: REQ-017
+    @Test
+    void testNullableColumnCoalesceWithNullableFallbackIsCompliant() {
+        List<String> issues = CheckTestUtils.scan(nullableColumnCheck,
+                "CREATE TABLE dbo.Items (Code VARCHAR(3) NULL, AltCode VARCHAR(10) NULL); " +
+                        "SELECT COALESCE(Code, AltCode) FROM dbo.Items;");
+        assertThat(issues).isEmpty();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-017
+    @Test
+    void testNullableColumnCoalesceMultipleArgumentsFlagged() {
+        List<String> issues = CheckTestUtils.scan(nullableColumnCheck,
+                "CREATE TABLE dbo.Items (Code VARCHAR(3) NULL); " +
+                        "SELECT COALESCE(Code, 'fallback', 'another') FROM dbo.Items;");
+        assertThat(issues).hasSize(1);
+        assertThat(issues.get(0)).contains("more than two arguments");
+    }
+
+    // TRACEABILITY_MAPPING: REQ-017
     @Test
     void testNullableColumnAlreadyUsingIsNullIsCompliant() {
         List<String> issues = CheckTestUtils.scan(nullableColumnCheck,
                 "CREATE TABLE Users (Id INT NOT NULL, LastLogin DATETIME NULL); " +
                         "SELECT ISNULL(LastLogin, '1970-01-01') FROM Users;");
         assertThat(issues).isEmpty();
-    }
-
-    // TRACEABILITY_MAPPING: REQ-009
-    @Test
-    void testPrimaryKeyColumnIsNotTreatedAsNullable() {
-        List<String> issues = CheckTestUtils.scan(nullableColumnCheck,
-                "CREATE TABLE Orders (OrderId INT NOT NULL PRIMARY KEY, CustomerId INT NULL); " +
-                        "SELECT COALESCE(CustomerId, 0) FROM Orders;");
-        assertThat(issues).hasSize(1);
-        assertThat(issues.get(0)).contains("Use ISNULL");
     }
 
     // TRACEABILITY_MAPPING: REQ-009

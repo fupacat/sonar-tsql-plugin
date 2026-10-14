@@ -226,15 +226,15 @@
 }
 ```
 
-[REQ-017] NullableColumnIsNullCheck SHALL flag COALESCE expressions that take a nullable column as the first argument.
+[REQ-017] NullableColumnIsNullCheck SHALL flag COALESCE expressions that cannot be replaced with ISNULL without changing semantics, such as multi-argument COALESCE or cases where the fallback changes type precedence or length.
 
 ```json
 {
   "requirement": "REQ-017",
   "kind": "categorical",
-  "precondition": "COALESCE expression over a nullable table column parsed",
+  "precondition": "COALESCE expression with a nullable column and a fallback that may change result semantics parsed",
   "action": "invoke NullableColumnIsNullCheck scan",
-  "expected": "issue reported for nullable-column COALESCE patterns",
+  "expected": "issue reported only when the COALESCE/ISNULL rewrite would alter evaluation order, type precedence, or result length",
   "method": "junit",
   "expected_output": "void"
 }
