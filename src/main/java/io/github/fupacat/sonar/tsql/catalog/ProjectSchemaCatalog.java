@@ -20,6 +20,8 @@ import io.github.fupacat.ast.TSqlConcreteFragmentVisitor;
 import io.github.fupacat.ast.TSqlFragment;
 import io.github.fupacat.ast.TSqlScript;
 import io.github.fupacat.ast.UniqueConstraintDefinition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sonar.api.batch.fs.InputFile;
 
 import java.io.IOException;
@@ -36,6 +38,7 @@ import java.util.Set;
 
 public final class ProjectSchemaCatalog {
 
+    private static final Logger LOG = LoggerFactory.getLogger(ProjectSchemaCatalog.class);
     private static final String UNKNOWN_TYPE = "unknown";
     private static final char DOT = '.';
     private static final char OPEN_BRACKET = '[';
@@ -60,6 +63,8 @@ public final class ProjectSchemaCatalog {
                     }
                 } catch (IOException ignored) {
                     // ignore unreadable file
+                } catch (RuntimeException e) {
+                    LOG.warn("Failed to index schema catalog for file: {}", inputFile.uri(), e);
                 }
             }
         }
