@@ -10,6 +10,8 @@ FIXTURE_DIR="$ROOT_DIR/integration/smoke/fixture"
 SONAR_LOGIN="${SONAR_LOGIN:-admin}"
 SONAR_PASSWORD="${SONAR_PASSWORD:-admin}"
 
+export SONAR_LOGIN SONAR_PASSWORD
+
 if [[ -z "$PLUGIN_PATH" || ! -f "$PLUGIN_PATH" ]]; then
   echo "Plugin artifact not found in $ROOT_DIR/target. Run 'mvn -DskipTests package' first." >&2
   exit 1
@@ -27,31 +29,29 @@ for required in docker curl python3; do
   fi
 done
 
+wait_for_sonarqube() {
+  local status_url="http://localhost:9000/api/system/status"
+  for _ in $(seq 1 120); do
+    if curl -fsS "$status_url" >/tmp/sonarqube-status.json 2>/dev/null; then
+      local status
+      status="$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("status", ""))' </tmp/sonarqube-status.json)"
+      if [[ "$status" == "UP" ]]; then
+        return 0
+      fi
+    fi
+    sleep 10
+  done
+  return 1
+}
+
 echo "==> Starting SonarQube ${SQ_VERSION}"
 docker run -d --name "$CONTAINER_NAME" \
   -p 9000:9000 \
   -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
   "sonarqube:${SQ_VERSION}-community"
 
-for _ in $(seq 1 120); do
-  if curl -fsS "http://localhost:9000/api/system/status" >/tmp/sonarqube-status.json 2>/dev/null; then
-    STATUS="$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("status", ""))' </tmp/sonarqube-status.json)"
-    if [[ "$STATUS" == "UP" ]]; then
-      break
-    fi
-  fi
-  sleep 10
-done
-
-if ! curl -fsS "http://localhost:9000/api/system/status" >/tmp/sonarqube-status.json 2>/dev/null; then
+if ! wait_for_sonarqube; then
   echo "SonarQube did not become ready in time." >&2
-  docker logs "$CONTAINER_NAME" >&2 || true
-  exit 1
-fi
-
-STATUS="$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("status", ""))' </tmp/sonarqube-status.json)"
-if [[ "$STATUS" != "UP" ]]; then
-  echo "SonarQube status is '$STATUS', expected 'UP'." >&2
   docker logs "$CONTAINER_NAME" >&2 || true
   exit 1
 fi
@@ -60,17 +60,7 @@ echo "==> Installing plugin artifact"
 docker cp "$PLUGIN_PATH" "$CONTAINER_NAME:/opt/sonarqube/extensions/plugins/sonar-tsql-plugin.jar"
 docker restart "$CONTAINER_NAME" >/dev/null
 
-for _ in $(seq 1 120); do
-  if curl -fsS "http://localhost:9000/api/system/status" >/tmp/sonarqube-status.json 2>/dev/null; then
-    STATUS="$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("status", ""))' </tmp/sonarqube-status.json)"
-    if [[ "$STATUS" == "UP" ]]; then
-      break
-    fi
-  fi
-  sleep 10
-done
-
-if [[ "$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("status", ""))' </tmp/sonarqube-status.json)" != "UP" ]]; then
+if ! wait_for_sonarqube; then
   echo "SonarQube did not recover after plugin installation." >&2
   docker logs "$CONTAINER_NAME" >&2 || true
   exit 1
@@ -84,3 +74,66 @@ sonar.host.url=http://localhost:9000
 sonar.sources=ddl,routines
 sonar.sourceEncoding=UTF-8
 sonar.qualitygate.wait=false
+EOF
+
+echo "==> Running scanner against smoke fixture"
+docker run --rm --network host \
+  -v "$FIXTURE_DIR:/usr/src" \
+  -w /usr/src \
+  "$SCANNER_IMAGE" \
+  -Dsonar.login="$SONAR_LOGIN" \
+  -Dsonar.****** \
+  -Dsonar.projectKey=tsql-smoke \
+  -Dsonar.projectName='T-SQL smoke' \
+  -Dsonar.projectVersion=1.0 \
+  -Dsonar.sources=ddl,routines \
+  -Dsonar.host.url=http://localhost:9000 \
+  -Dsonar.qualitygate.wait=false
+
+python3 - <<'PY'
+import base64
+import json
+import os
+import time
+import urllib.request
+
+base = 'http://localhost:9000'
+login = os.environ['SONAR_LOGIN']
+password = os.environ['SONAR_PASSWORD']
+
+
+def fetch(path):
+    token = base64.b64encode(f'{login}:{password}'.encode()).decode()
+    request = urllib.request.Request(base + path, headers={'Authorization': f'Basic {token}'})
+    with urllib.request.urlopen(request, timeout=30) as response:
+        return json.load(response)
+
+for _ in range(30):
+    try:
+        languages = fetch('/api/languages/list')['languages']
+        if any(language.get('key') == 'tsql' for language in languages):
+            break
+    except Exception:
+        time.sleep(2)
+else:
+    raise SystemExit('T-SQL language never registered in SonarQube')
+
+languages = fetch('/api/languages/list')['languages']
+assert any(language.get('key') == 'tsql' for language in languages), languages
+
+rules = fetch('/api/rules/search?languages=tsql&ps=100')['rules']
+assert rules, 'No T-SQL rules were registered'
+
+profiles = fetch('/api/qualityprofiles/search?language=tsql')['profiles']
+assert any(profile.get('name') == 'Sonar way' for profile in profiles), profiles
+
+issues = fetch('/api/issues/search?componentKeys=tsql-smoke&ps=100&resolved=false')['issues']
+assert issues, 'No issues were reported for the smoke fixture; scanner did not exercise the plugin.'
+assert any(issue.get('rule') == 'tsql:AvoidSelectAll' for issue in issues), issues
+assert any(issue.get('rule') == 'tsql:SyntaxError' for issue in issues), issues
+assert all(issue.get('line') is not None for issue in issues), issues
+
+print(f"Validated language registration, rule registration, quality profile, and {len(issues)} issues for tsql-smoke.")
+PY
+
+echo "==> Smoke test passed"
