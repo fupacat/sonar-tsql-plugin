@@ -100,9 +100,7 @@ public class DynamicSqlExecutionCheck extends TSqlCheck {
     private boolean isStatementParameter(int index, ExecuteParameter parameter) {
         if (parameter.Variable != null) {
             String variableName = parameter.Variable.Name;
-            if (variableName != null && ("@stmt".equalsIgnoreCase(variableName) || "@statement".equalsIgnoreCase(variableName))) {
-                return true;
-            }
+            return variableName != null && "@stmt".equalsIgnoreCase(variableName);
         }
         return index == 0 && parameter.Variable == null;
     }
@@ -110,9 +108,7 @@ public class DynamicSqlExecutionCheck extends TSqlCheck {
     private boolean isParameterDeclarationParameter(int index, ExecuteParameter parameter) {
         if (parameter.Variable != null) {
             String variableName = parameter.Variable.Name;
-            if (variableName != null && ("@params".equalsIgnoreCase(variableName) || "@parameterlist".equalsIgnoreCase(variableName))) {
-                return true;
-            }
+            return variableName != null && "@params".equalsIgnoreCase(variableName);
         }
         return index == 1 && parameter.Variable == null;
     }
@@ -122,9 +118,7 @@ public class DynamicSqlExecutionCheck extends TSqlCheck {
             String variableName = parameter.Variable.Name;
             return variableName != null
                     && !"@stmt".equalsIgnoreCase(variableName)
-                    && !"@statement".equalsIgnoreCase(variableName)
-                    && !"@params".equalsIgnoreCase(variableName)
-                    && !"@parameterlist".equalsIgnoreCase(variableName);
+                    && !"@params".equalsIgnoreCase(variableName);
         }
         return index >= 2;
     }
