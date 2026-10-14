@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to release (e.g. v0.1.0)'
+        description: 'Tag/ref to release (e.g. v0.1.0)'
         required: true
         type: string
 
@@ -20,10 +20,45 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Validate requested tag
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REQUESTED_TAG: ${{ github.event.inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            TAG="$REQUESTED_TAG"
+          else
+            TAG="$REF_NAME"
+          fi
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Requested tag '$TAG' is not a valid release tag. Expected vX.Y.Z."
+            exit 1
+          fi
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Verify requested tag exists on origin
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          REPO_URL: https://github.com/${{ github.repository }}.git
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! git ls-remote --exit-code --refs "$REPO_URL" "refs/tags/$TAG" > /dev/null; then
+            echo "Requested release tag '$TAG' does not exist on origin."
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          ref: ${{ steps.version.outputs.tag }}
 
       - name: Set up JDK 17
         uses: actions/setup-java@v6
@@ -35,10 +70,23 @@ jobs:
       - name: Build Plugin JAR
         run: mvn clean verify --batch-mode
 
+      - name: Validate release contract before publication
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+          REPO_URL: https://github.com/${{ github.repository }}.git
+        shell: bash
+        run: |
+          set -euo pipefail
+          POM_VERSION="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"
+          ARTIFACT="target/sonar-tsql-plugin-${VERSION}.jar"
+          bash scripts/validate-release-contract.sh "$TAG" "$POM_VERSION" "$ARTIFACT" "$REPO_URL"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
-          files: target/sonar-tsql-plugin-*.jar
+          tag_name: ${{ steps.version.outputs.tag }}
+          files: target/sonar-tsql-plugin-${{ steps.version.outputs.version }}.jar
           generate_release_notes: true
           draft: false
           prerelease: false
