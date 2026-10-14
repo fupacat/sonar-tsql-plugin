@@ -99,16 +99,14 @@ public class DynamicSqlExecutionCheck extends TSqlCheck {
 
     private boolean isStatementParameter(int index, ExecuteParameter parameter) {
         if (parameter.Variable != null) {
-            String variableName = parameter.Variable.Name;
-            return variableName != null && "@stmt".equalsIgnoreCase(variableName);
+            return matchesNamedParameter(parameter.Variable.Name, "@stmt");
         }
         return index == 0 && parameter.Variable == null;
     }
 
     private boolean isParameterDeclarationParameter(int index, ExecuteParameter parameter) {
         if (parameter.Variable != null) {
-            String variableName = parameter.Variable.Name;
-            return variableName != null && "@params".equalsIgnoreCase(variableName);
+            return matchesNamedParameter(parameter.Variable.Name, "@params");
         }
         return index == 1 && parameter.Variable == null;
     }
@@ -116,11 +114,14 @@ public class DynamicSqlExecutionCheck extends TSqlCheck {
     private boolean isBoundDataParameter(int index, ExecuteParameter parameter) {
         if (parameter.Variable != null) {
             String variableName = parameter.Variable.Name;
-            return variableName != null
-                    && !"@stmt".equalsIgnoreCase(variableName)
-                    && !"@params".equalsIgnoreCase(variableName);
+            return !matchesNamedParameter(variableName, "@stmt")
+                    && !matchesNamedParameter(variableName, "@params");
         }
         return index >= 2;
+    }
+
+    private boolean matchesNamedParameter(String candidate, String expected) {
+        return candidate != null && expected.equalsIgnoreCase(candidate);
     }
 
     private boolean isSpExecuteSql(ExecutableProcedureReference procedureReference) {
