@@ -6,6 +6,8 @@ import io.github.fupacat.ast.TSqlScript;
 import io.github.fupacat.sonar.tsql.catalog.ProjectSchemaCatalog;
 import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
 import io.github.fupacat.sonar.tsql.checks.CheckList;
+import io.github.fupacat.sonar.tsql.checks.InPredicateIndexedColumnCheck;
+import io.github.fupacat.sonar.tsql.checks.TSqlCheck;
 import io.github.fupacat.sonar.tsql.rules.TSqlRulesDefinition;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -128,6 +130,40 @@ class TSqlSensorTest {
         verify(issue, atLeastOnce()).forRule(syntaxRuleKey);
         verify(issue, atLeastOnce()).at(location);
         verify(issue, atLeastOnce()).save();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void testSkipsSchemaCatalogWhenOnlyNonSchemaRulesAreActive() throws IOException {
+        RuleKey ruleKey = RuleKey.of(TSqlRulesDefinition.REPOSITORY_KEY, AvoidSelectAllCheck.RULE_KEY);
+
+        SensorContext context = mock(SensorContext.class);
+        FileSystem fs = mock(FileSystem.class);
+        FilePredicates predicates = mock(FilePredicates.class);
+        FilePredicate predicate = mock(FilePredicate.class);
+        InputFile inputFile = mock(InputFile.class);
+        ActiveRules activeRules = mock(ActiveRules.class);
+        ActiveRule activeRule = mock(ActiveRule.class);
+
+        when(context.fileSystem()).thenReturn(fs);
+        when(fs.predicates()).thenReturn(predicates);
+        when(predicates.hasLanguage(TSqlLanguage.KEY)).thenReturn(predicate);
+        when(fs.inputFiles(predicate)).thenReturn(List.of(inputFile));
+        when(inputFile.uri()).thenReturn(URI.create("file:///sample.sql"));
+        when(inputFile.contents()).thenReturn("SELECT * FROM Customers;\n");
+        when(inputFile.lines()).thenReturn(1);
+        when(context.activeRules()).thenReturn(activeRules);
+        when(activeRules.find(ruleKey)).thenReturn(activeRule);
+
+        NewIssue issue = mock(NewIssue.class, org.mockito.Mockito.RETURNS_SELF);
+        NewIssueLocation location = mock(NewIssueLocation.class, org.mockito.Mockito.RETURNS_SELF);
+        when(context.newIssue()).thenReturn(issue);
+        when(issue.newLocation()).thenReturn(location);
+
+        sensor.execute(context);
+
+        verify(context, atLeastOnce()).newIssue();
+        verify(issue).forRule(ruleKey);
     }
 
     // TRACEABILITY_MAPPING: REQ-005

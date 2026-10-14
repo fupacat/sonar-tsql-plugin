@@ -8,6 +8,9 @@ import io.github.fupacat.ast.TSqlFragment;
 import io.github.fupacat.ast.TSqlScript;
 import io.github.fupacat.sonar.tsql.catalog.ProjectSchemaCatalog;
 import io.github.fupacat.sonar.tsql.checks.CheckList;
+import io.github.fupacat.sonar.tsql.checks.InPredicateIndexedColumnCheck;
+import io.github.fupacat.sonar.tsql.checks.NarrowingCastCheck;
+import io.github.fupacat.sonar.tsql.checks.NullableColumnIsNullCheck;
 import io.github.fupacat.sonar.tsql.checks.TSqlCheck;
 import io.github.fupacat.sonar.tsql.checks.TSqlCheckContext;
 import io.github.fupacat.sonar.tsql.rules.TSqlRulesDefinition;
@@ -26,7 +29,11 @@ import org.sonar.api.rule.RuleKey;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * SonarQube sensor that parses Transact-SQL source files with Microsoft T-SQL ScriptDOM
@@ -35,6 +42,11 @@ import java.util.List;
 public class TSqlSensor implements Sensor {
 
     private static final Logger LOG = LoggerFactory.getLogger(TSqlSensor.class);
+    private static final Set<String> SCHEMA_AWARE_RULE_KEYS = Set.of(
+            InPredicateIndexedColumnCheck.RULE_KEY,
+            NullableColumnIsNullCheck.RULE_KEY,
+            NarrowingCastCheck.RULE_KEY
+    );
 
     // TRACEABILITY_MAPPING: REQ-005
     @Override
@@ -43,20 +55,65 @@ public class TSqlSensor implements Sensor {
                 .onlyOnLanguage(TSqlLanguage.KEY);
     }
 
-    // TRACEABILITY_MAPPING: REQ-005
     @Override
     public void execute(SensorContext context) {
         FileSystem fs = context.fileSystem();
         FilePredicate predicate = fs.predicates().hasLanguage(TSqlLanguage.KEY);
-        Iterable<InputFile> inputFiles = fs.inputFiles(predicate);
+        List<InputFile> inputFiles = new ArrayList<>();
+        for (InputFile inputFile : fs.inputFiles(predicate)) {
+            inputFiles.add(inputFile);
+        }
 
-        ProjectSchemaCatalog projectSchema = ProjectSchemaCatalog.fromInputFiles(inputFiles);
         List<TSqlCheck> activeChecks = getActiveChecks(context);
-        LOG.info("Analyzing T-SQL files with {} active rules", activeChecks.size());
+        boolean needsSchema = requiresProjectSchema(activeChecks);
+        Map<InputFile, ParsedFile> parsedFiles = parseInputFiles(inputFiles);
+        ProjectSchemaCatalog projectSchema = needsSchema
+                ? ProjectSchemaCatalog.fromParsedResults(parsedFiles.values().stream()
+                .map(ParsedFile::result)
+                .filter(Objects::nonNull)
+                .toList())
+                : ProjectSchemaCatalog.empty();
+        LOG.info("Analyzing T-SQL files with {} active rules{}", activeChecks.size(), needsSchema ? " and schema indexing" : "");
 
         for (InputFile inputFile : inputFiles) {
-            analyzeFile(inputFile, context, activeChecks, projectSchema);
+            ParsedFile parsedFile = parsedFiles.get(inputFile);
+            if (parsedFile != null) {
+                analyzeFile(inputFile, context, activeChecks, parsedFile, projectSchema);
+            }
         }
+    }
+
+    private boolean requiresProjectSchema(List<TSqlCheck> activeChecks) {
+        if (activeChecks == null || activeChecks.isEmpty()) {
+            return false;
+        }
+        for (TSqlCheck check : activeChecks) {
+            if (SCHEMA_AWARE_RULE_KEYS.contains(check.getRuleKey())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Map<InputFile, ParsedFile> parseInputFiles(List<InputFile> inputFiles) {
+        Map<InputFile, ParsedFile> parsedFiles = new LinkedHashMap<>();
+        for (InputFile inputFile : inputFiles) {
+            if (inputFile == null) {
+                continue;
+            }
+            try {
+                String content = inputFile.contents();
+                ParseResult<TSqlScript> result = TSqlParser.parse(content);
+                parsedFiles.put(inputFile, new ParsedFile(content, result, null));
+            } catch (IOException e) {
+                LOG.error("Failed to read contents of file: " + inputFile.uri(), e);
+                parsedFiles.put(inputFile, new ParsedFile(null, null, e));
+            } catch (Exception e) {
+                LOG.warn("Unexpected parser exception on file: " + inputFile.uri(), e);
+                parsedFiles.put(inputFile, new ParsedFile(null, null, e));
+            }
+        }
+        return parsedFiles;
     }
 
     // TRACEABILITY_MAPPING: REQ-005
@@ -72,32 +129,31 @@ public class TSqlSensor implements Sensor {
     }
 
     // TRACEABILITY_MAPPING: REQ-005
-    private void analyzeFile(InputFile inputFile, SensorContext context, List<TSqlCheck> activeChecks, ProjectSchemaCatalog projectSchema) {
+    private void analyzeFile(InputFile inputFile, SensorContext context, List<TSqlCheck> activeChecks, ParsedFile parsedFile, ProjectSchemaCatalog projectSchema) {
         LOG.debug("Analyzing T-SQL file: {}", inputFile.uri());
-        String content;
-        try {
-            content = inputFile.contents();
-        } catch (IOException e) {
-            LOG.error("Failed to read contents of file: " + inputFile.uri(), e);
+        if (parsedFile == null) {
             return;
         }
-
-        ParseResult<TSqlScript> result;
-        try {
-            result = TSqlParser.parse(content);
-        } catch (Exception e) {
-            LOG.warn("Unexpected parser exception on file: " + inputFile.uri(), e);
-            reportSyntaxError(inputFile, context, 1, "Failed to parse T-SQL script: " + e.getMessage());
+        if (parsedFile.parseException() != null) {
+            reportSyntaxError(inputFile, context, 1, "Failed to parse T-SQL script: " + parsedFile.parseException().getMessage());
             return;
         }
+        if (parsedFile.result() == null) {
+            return;
+        }
+        reportParseErrors(inputFile, context, parsedFile.result());
+        if (parsedFile.result().fragment() == null) {
+            return;
+        }
+        executeChecks(inputFile, context, parsedFile.result().fragment(), parsedFile.content(), activeChecks, projectSchema);
+    }
 
-        reportParseErrors(inputFile, context, result);
-        executeChecks(inputFile, context, result.fragment(), content, activeChecks, projectSchema);
+    private record ParsedFile(String content, ParseResult<TSqlScript> result, Exception parseException) {
     }
 
     // TRACEABILITY_MAPPING: REQ-005
     private void reportParseErrors(InputFile inputFile, SensorContext context, ParseResult<TSqlScript> result) {
-        if (!result.hasErrors() || result.errors() == null) {
+        if (result == null || !result.hasErrors() || result.errors() == null) {
             return;
         }
         for (ParseError error : result.errors()) {
@@ -238,32 +294,18 @@ public class TSqlSensor implements Sensor {
             }
             int lastIdx = fragment.lastTokenIndex;
             if (lastIdx < firstIdx || lastIdx >= tokenStream.size()) {
-                lastIdx = firstIdx;
-            }
-
-            Object startObj = tokenStream.get(firstIdx);
-            Object endObj = tokenStream.get(lastIdx);
-
-            if (startObj instanceof TSqlParserToken startToken && endObj instanceof TSqlParserToken endToken) {
-                return createRangeFromTokens(startToken, endToken, file);
-            }
-            return null;
-        }
-
-        private TextRange createRangeFromTokens(TSqlParserToken startToken, TSqlParserToken endToken, InputFile file) {
-            int startLine = startToken.getLine();
-            int endLine = endToken.getLine();
-            if (startLine < 1 || endLine < startLine || startLine > file.lines() || endLine > file.lines()) {
                 return null;
             }
-            int startCol = Math.max(0, startToken.getColumn() - 1);
-            int endTextLen = endToken.getText() != null ? endToken.getText().length() : 0;
-            int endCol = Math.max(startCol, endToken.getColumn() - 1 + endTextLen);
-            try {
-                return file.newRange(startLine, startCol, endLine, endCol);
-            } catch (Exception ignored) {
+            TSqlParserToken firstToken = tokenStream.get(firstIdx) instanceof TSqlParserToken token ? token : null;
+            TSqlParserToken lastToken = tokenStream.get(lastIdx) instanceof TSqlParserToken token ? token : null;
+            if (firstToken == null || lastToken == null) {
                 return null;
             }
+            int startLine = Math.max(1, firstToken.getLine());
+            int startColumn = Math.max(0, firstToken.getColumn() - 1);
+            int endLine = Math.max(startLine, lastToken.getLine());
+            int endColumn = Math.max(startColumn, lastToken.getColumn() - 1 + Math.max(1, lastToken.getText() == null ? 0 : lastToken.getText().length()));
+            return file.newRange(startLine, startColumn, endLine, endColumn);
         }
     }
 }

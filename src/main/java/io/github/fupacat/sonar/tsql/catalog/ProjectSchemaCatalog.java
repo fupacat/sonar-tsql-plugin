@@ -49,18 +49,34 @@ public final class ProjectSchemaCatalog {
     }
 
     public static ProjectSchemaCatalog fromInputFiles(Iterable<InputFile> inputFiles) {
-        ProjectSchemaCatalog catalog = new ProjectSchemaCatalog();
+        if (inputFiles == null) {
+            return empty();
+        }
+        List<ParseResult<TSqlScript>> parsedResults = new ArrayList<>();
         for (InputFile inputFile : inputFiles) {
-            if (inputFile != null) {
-                try {
-                    String content = inputFile.contents();
-                    ParseResult<TSqlScript> result = TSqlParser.parse(content);
-                    if (result != null && result.fragment() != null) {
-                        catalog.indexScript(result.fragment());
-                    }
-                } catch (IOException ignored) {
-                    // ignore unreadable file
-                }
+            if (inputFile == null) {
+                continue;
+            }
+            try {
+                String content = inputFile.contents();
+                parsedResults.add(TSqlParser.parse(content));
+            } catch (IOException ignored) {
+                // ignore unreadable file
+            } catch (Exception ignored) {
+                // ignore parser failures while building the cross-file catalog
+            }
+        }
+        return fromParsedResults(parsedResults);
+    }
+
+    public static ProjectSchemaCatalog fromParsedResults(Iterable<ParseResult<TSqlScript>> parsedResults) {
+        ProjectSchemaCatalog catalog = new ProjectSchemaCatalog();
+        if (parsedResults == null) {
+            return catalog;
+        }
+        for (ParseResult<TSqlScript> result : parsedResults) {
+            if (result != null && result.fragment() != null) {
+                catalog.indexScript(result.fragment());
             }
         }
         return catalog;
