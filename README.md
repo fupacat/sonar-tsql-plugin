@@ -74,7 +74,7 @@ The plugin builds a project-wide schema catalog from the T-SQL DDL it can parse 
 - Full dependency analysis across external libraries, generated scripts, or stored procedures not included in the project scan
 - Full SQL Server semantic coverage such as alias resolution beyond the simplest same-name lookups, advanced partitioning, constraint semantics, or runtime object metadata
 
-This catalog is intentionally best-effort: it is designed to support project-aware checks without requiring a remote database connection or a full SQL Server engine. Same-name resolution and alias resolution are intentionally limited to the project-derived metadata that is currently indexed.
+This catalog is intentionally best-effort: it is designed to support project-aware checks without requiring a remote database connection or a full SQL Server engine. Current limitations include dropping schema/database qualifiers when indexing tables, treating aliases as table names, and falling back to a matching column elsewhere in the project. These can produce incorrect findings when names collide or metadata is missing; scoped resolution is tracked in issue #37.
 
 ---
 
@@ -162,7 +162,7 @@ Publish:
 
 ## Maintaining rule inventory consistency
 
-To reduce drift between the rule implementation and the documentation, the test suite includes a lightweight consistency check in `TSqlRulesDefinitionTest` that asserts the README still documents the current rule inventory, default profile, cross-file DDL catalog, and representative implementation keys (`AvoidSelectAll`, `DynamicSqlExecution`, `DuplicateBinaryOperand`, `NarrowingCast`, `SyntaxError`). This keeps the human-facing documentation aligned with the source of truth in `TSqlRulesDefinition` and `CheckList` without generating a full documentation artifact at build time.
+The consistency test in TSqlRulesDefinitionTest extracts every documented rule key from the category lists and compares the complete set against the registered RulesDefinition repository, rejecting missing, extra, or duplicate entries. It also checks the displayed rule count against the registry size and verifies the default profile and catalog documentation. This keeps the inventory aligned with the actual Sonar rule keys rather than implementation class names.
 
 ---
 

@@ -188,12 +188,20 @@ class TSqlRulesDefinitionTest {
         Path readmePath = Path.of("README.md");
         String readme = Files.readString(readmePath, StandardCharsets.UTF_8);
 
-        assertThat(readme).contains("71 built-in T-SQL rules");
-        assertThat(readme).contains("`AvoidSelectAll`");
-        assertThat(readme).contains("`S1523`");
-        assertThat(readme).contains("`S1764`");
-        assertThat(readme).contains("`SR0014`");
-        assertThat(readme).contains("`SyntaxError`");
+        RulesDefinition.Context context = new RulesDefinition.Context();
+        new TSqlRulesDefinition().define(context);
+        var rules = context.repository(TSqlRulesDefinition.REPOSITORY_KEY).rules();
+        assertThat(readme).contains(rules.size() + " built-in T-SQL rules");
+
+        int start = readme.indexOf("#### Core correctness and query safety");
+        int end = readme.indexOf("> The `Sonar way` profile", start);
+        assertThat(start).isGreaterThanOrEqualTo(0);
+        assertThat(end).isGreaterThan(start);
+        var documentedKeys = java.util.regex.Pattern.compile("`([^`]+)`")
+                .matcher(readme.substring(start, end)).results()
+                .map(match -> match.group(1)).toList();
+        assertThat(documentedKeys).doesNotHaveDuplicates()
+                .containsExactlyInAnyOrderElementsOf(rules.stream().map(RulesDefinition.Rule::key).toList());
         assertThat(readme).contains("Cross-file DDL catalog scope and limitations");
         assertThat(readme).contains("Maintaining rule inventory consistency");
         assertThat(readme).contains("default `Sonar way` profile");
