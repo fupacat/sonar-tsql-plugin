@@ -4,7 +4,6 @@ import io.github.fupacat.ParseError;
 import io.github.fupacat.ParseResult;
 import io.github.fupacat.TSqlParser;
 import io.github.fupacat.TSqlParserToken;
-import io.github.fupacat.TSqlTokenType;
 import io.github.fupacat.ast.TSqlFragment;
 import io.github.fupacat.ast.TSqlScript;
 import io.github.fupacat.sonar.tsql.catalog.ProjectSchemaCatalog;
@@ -119,30 +118,11 @@ public class TSqlSensor implements Sensor {
             return;
         }
 
-        TSqlScript script = result.fragment();
         NewHighlighting highlighting = context.newHighlighting();
         if (highlighting == null) {
             return;
         }
         highlighting.onFile(inputFile);
-
-        if (script != null && script.ScriptTokenStream != null && !script.ScriptTokenStream.isEmpty()) {
-            for (Object tokenObj : script.ScriptTokenStream) {
-                if (!(tokenObj instanceof TSqlParserToken token)) {
-                    continue;
-                }
-                TypeOfText type = mapTokenToType(token);
-                if (type == null) {
-                    continue;
-                }
-                TextRange range = toTextRange(token, inputFile);
-                if (range != null) {
-                    highlighting.highlight(range, type);
-                }
-            }
-            highlighting.save();
-            return;
-        }
 
         publishHighlightingFromSourceText(inputFile, highlighting, content);
     }
@@ -323,136 +303,6 @@ public class TSqlSensor implements Sensor {
         }
         try {
             return file.newRange(rangeStartLine, rangeStartColumn, rangeEndLine, rangeEndColumn);
-        } catch (Exception ignored) {
-            return null;
-        }
-    }
-
-    private TypeOfText mapTokenToType(TSqlParserToken token) {
-        if (token == null || token.getText() == null || token.getText().isEmpty() || token.tokenType == null) {
-            return null;
-        }
-
-        switch (token.tokenType) {
-            case SingleLineComment:
-            case MultilineComment:
-                return TypeOfText.COMMENT;
-            case AsciiStringLiteral:
-            case UnicodeStringLiteral:
-                return TypeOfText.STRING;
-            case Identifier:
-            case QuotedIdentifier:
-            case AsciiStringOrQuotedIdentifier:
-            case Variable:
-                return TypeOfText.KEYWORD_LIGHT;
-            case Select:
-            case From:
-            case Where:
-            case Insert:
-            case Update:
-            case Delete:
-            case Create:
-            case Alter:
-            case Drop:
-            case Table:
-            case View:
-            case Index:
-            case Procedure:
-            case Function:
-            case Trigger:
-            case Database:
-            case Schema:
-            case As:
-            case On:
-            case In:
-            case Into:
-            case Values:
-            case Set:
-            case By:
-            case Group:
-            case Order:
-            case Having:
-            case Join:
-            case Inner:
-            case Left:
-            case Right:
-            case Full:
-            case Outer:
-            case Cross:
-            case Union:
-            case All:
-            case Distinct:
-            case Top:
-            case With:
-            case Exec:
-            case Execute:
-            case Begin:
-            case End:
-            case If:
-            case Else:
-            case While:
-            case Return:
-            case Declare:
-            case Case:
-            case When:
-            case Then:
-            case And:
-            case Or:
-            case Not:
-            case Is:
-            case Null:
-            case Like:
-            case Between:
-            case Exists:
-                return TypeOfText.KEYWORD;
-            default:
-                return null;
-        }
-    }
-
-    private TextRange toTextRange(io.github.fupacat.TSqlParserToken token, InputFile file) {
-        if (token == null || file == null) {
-            return null;
-        }
-
-        String text = token.getText();
-        if (text == null || text.isEmpty()) {
-            return null;
-        }
-
-        int startLine = token.getLine();
-        if (startLine < 1 || startLine > file.lines()) {
-            return null;
-        }
-
-        int startColumn = Math.max(0, token.getColumn() - 1);
-        int endLine = startLine;
-        int endColumn = startColumn + text.length();
-
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            if (c == '\r' || c == '\n') {
-                endLine = startLine;
-                if (c == '\r' && i + 1 < text.length() && text.charAt(i + 1) == '\n') {
-                    i++;
-                }
-                if (i + 1 < text.length()) {
-                    endLine++;
-                }
-            }
-        }
-
-        if (text.contains("\n") || text.contains("\r")) {
-            int lastLineStart = text.lastIndexOf('\n');
-            if (lastLineStart < 0) {
-                lastLineStart = text.lastIndexOf('\r');
-            }
-            int lineLength = text.substring(lastLineStart + 1).length();
-            endColumn = lineLength;
-        }
-
-        try {
-            return file.newRange(startLine, startColumn, endLine, endColumn);
         } catch (Exception ignored) {
             return null;
         }

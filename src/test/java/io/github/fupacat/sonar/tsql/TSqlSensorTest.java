@@ -225,13 +225,14 @@ class TSqlSensorTest {
         when(inputFile.contents()).thenReturn("SELECT 'x';\n-- comment\n");
         when(inputFile.lines()).thenReturn(3);
         when(inputFile.newRange(1, 0, 1, 6)).thenReturn(keywordRange);
-        when(inputFile.newRange(1, 7, 1, 12)).thenReturn(stringRange);
+        when(inputFile.newRange(1, 7, 1, 10)).thenReturn(stringRange);
         when(inputFile.newRange(2, 0, 2, 10)).thenReturn(commentRange);
 
         sensor.execute(context);
 
         verify(highlighting).onFile(inputFile);
         verify(highlighting, atLeastOnce()).highlight(any(TextRange.class), eq(TypeOfText.KEYWORD));
+        verify(highlighting, atLeastOnce()).highlight(any(TextRange.class), eq(TypeOfText.STRING));
         verify(highlighting, atLeastOnce()).highlight(any(TextRange.class), eq(TypeOfText.COMMENT));
         verify(highlighting, atLeastOnce()).save();
     }
