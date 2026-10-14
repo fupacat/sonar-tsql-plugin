@@ -128,7 +128,16 @@ assert rules, 'No T-SQL rules were registered'
 profiles = fetch('/api/qualityprofiles/search?language=tsql')['profiles']
 assert any(profile.get('name') == 'Sonar way' for profile in profiles), profiles
 
-issues = fetch('/api/issues/search?componentKeys=tsql-smoke&ps=100&resolved=false')['issues']
+issues = []
+for _ in range(30):
+    try:
+        issues = fetch('/api/issues/search?componentKeys=tsql-smoke&ps=100&resolved=false')['issues']
+        if issues:
+            break
+    except Exception:
+        pass
+    time.sleep(2)
+
 assert issues, 'No issues were reported for the smoke fixture; scanner did not exercise the plugin.'
 assert any(issue.get('rule') == 'tsql:AvoidSelectAll' for issue in issues), issues
 assert any(issue.get('rule') == 'tsql:SyntaxError' for issue in issues), issues

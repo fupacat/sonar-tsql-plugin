@@ -34,42 +34,54 @@ public class UnusedParameterCheck extends TSqlCheck {
     public void visit(io.github.fupacat.ast.CreateProcedureStatement node) {
         registerProcedureParameters(node);
         super.visit(node);
-        activeProcedureStack.pop();
+        if (!activeProcedureStack.isEmpty() && activeProcedureStack.peek() == node) {
+            activeProcedureStack.pop();
+        }
     }
 
     @Override
     public void visit(io.github.fupacat.ast.CreateOrAlterProcedureStatement node) {
         registerProcedureParameters(node);
         super.visit(node);
-        activeProcedureStack.pop();
+        if (!activeProcedureStack.isEmpty() && activeProcedureStack.peek() == node) {
+            activeProcedureStack.pop();
+        }
     }
 
     @Override
     public void visit(io.github.fupacat.ast.AlterProcedureStatement node) {
         registerProcedureParameters(node);
         super.visit(node);
-        activeProcedureStack.pop();
+        if (!activeProcedureStack.isEmpty() && activeProcedureStack.peek() == node) {
+            activeProcedureStack.pop();
+        }
     }
 
     @Override
     public void visit(io.github.fupacat.ast.CreateFunctionStatement node) {
         registerProcedureParameters(node);
         super.visit(node);
-        activeProcedureStack.pop();
+        if (!activeProcedureStack.isEmpty() && activeProcedureStack.peek() == node) {
+            activeProcedureStack.pop();
+        }
     }
 
     @Override
     public void visit(io.github.fupacat.ast.CreateOrAlterFunctionStatement node) {
         registerProcedureParameters(node);
         super.visit(node);
-        activeProcedureStack.pop();
+        if (!activeProcedureStack.isEmpty() && activeProcedureStack.peek() == node) {
+            activeProcedureStack.pop();
+        }
     }
 
     @Override
     public void visit(io.github.fupacat.ast.AlterFunctionStatement node) {
         registerProcedureParameters(node);
         super.visit(node);
-        activeProcedureStack.pop();
+        if (!activeProcedureStack.isEmpty() && activeProcedureStack.peek() == node) {
+            activeProcedureStack.pop();
+        }
     }
 
     private void registerProcedureParameters(ProcedureStatementBodyBase node) {
