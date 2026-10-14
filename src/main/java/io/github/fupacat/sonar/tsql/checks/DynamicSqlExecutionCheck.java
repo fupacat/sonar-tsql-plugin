@@ -69,12 +69,64 @@ public class DynamicSqlExecutionCheck extends TSqlCheck {
         if (parameters == null) {
             return false;
         }
-        for (ExecuteParameter parameter : parameters) {
-            if (parameter != null && containsDangerousScalarExpression(parameter.ParameterValue)) {
+        for (int index = 0; index < parameters.size(); index++) {
+            ExecuteParameter parameter = parameters.get(index);
+            if (parameter == null) {
+                continue;
+            }
+
+            if (isStatementParameter(index, parameter)) {
+                if (containsDangerousScalarExpression(parameter.ParameterValue)) {
+                    return true;
+                }
+                continue;
+            }
+
+            if (isParameterDeclarationParameter(index, parameter)) {
+                continue;
+            }
+
+            if (isBoundDataParameter(index, parameter)) {
+                continue;
+            }
+
+            if (index == 0 && containsDangerousScalarExpression(parameter.ParameterValue)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private boolean isStatementParameter(int index, ExecuteParameter parameter) {
+        if (parameter.Variable != null) {
+            String variableName = parameter.Variable.Name;
+            if (variableName != null && ("@stmt".equalsIgnoreCase(variableName) || "@statement".equalsIgnoreCase(variableName))) {
+                return true;
+            }
+        }
+        return index == 0 && parameter.Variable == null;
+    }
+
+    private boolean isParameterDeclarationParameter(int index, ExecuteParameter parameter) {
+        if (parameter.Variable != null) {
+            String variableName = parameter.Variable.Name;
+            if (variableName != null && ("@params".equalsIgnoreCase(variableName) || "@parameterlist".equalsIgnoreCase(variableName))) {
+                return true;
+            }
+        }
+        return index == 1 && parameter.Variable == null;
+    }
+
+    private boolean isBoundDataParameter(int index, ExecuteParameter parameter) {
+        if (parameter.Variable != null) {
+            String variableName = parameter.Variable.Name;
+            return variableName != null
+                    && !"@stmt".equalsIgnoreCase(variableName)
+                    && !"@statement".equalsIgnoreCase(variableName)
+                    && !"@params".equalsIgnoreCase(variableName)
+                    && !"@parameterlist".equalsIgnoreCase(variableName);
+        }
+        return index >= 2;
     }
 
     private boolean isSpExecuteSql(ExecutableProcedureReference procedureReference) {
