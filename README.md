@@ -45,6 +45,11 @@ Powered by [**tsql-scriptdom-java**](https://github.com/fupacat/tsql-scriptdom-j
 
 This repository is currently on the `0.1.0-SNAPSHOT` development line and does not have a published production release on GitHub Releases yet. Until a release tag is created and published, install the plugin by building the current checkout from source.
 
+Prerequisites for source builds:
+
+- Java Development Kit (JDK) 17+
+- Maven 3.8+
+
 1. Build the current project from source:
    ```bash
    git clone https://github.com/fupacat/sonar-tsql-plugin.git
@@ -67,13 +72,18 @@ For a tagged release such as `v0.1.0`, the plugin artifact will be named `target
 
 ## Release Procedure
 
-This repository does not publish a production release as part of issue resolution. A release is only created after the tag, POM version, changelog, and artifact name agree.
+Release publication is triggered by pushing a matching semantic-version tag (`vX.Y.Z`). The workflow enforces that the requested tag exists, the POM version matches the tag, and the packaged artifact exists with the expected plugin class before creating the GitHub release.
+
+Before tagging:
 
 1. Update `pom.xml` to the intended release version (for example `0.1.0`) and remove `-SNAPSHOT`.
 2. Update `CHANGELOG.md` to the same version and record the release notes.
-3. Create and push the matching Git tag, such as `v0.1.0`.
-4. Run the GitHub Actions `Release` workflow for that tag.
-5. Verify the built artifact exists as `target/sonar-tsql-plugin-<version>.jar` and matches the requested tag before publishing the GitHub release.
+3. Run `mvn clean verify --batch-mode` locally to confirm the release artifact builds cleanly.
+
+Publish:
+
+1. Create and push the matching Git tag, such as `v0.1.0`.
+2. Confirm the `Release` workflow succeeds for that tag.
 
 ---
 
