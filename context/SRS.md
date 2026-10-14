@@ -226,13 +226,13 @@
 }
 ```
 
-[REQ-017] NullableColumnIsNullCheck SHALL flag COALESCE expressions that cannot be replaced with ISNULL without changing semantics, such as multi-argument COALESCE or cases where the fallback changes type precedence or length.
+[REQ-017] NullableColumnIsNullCheck SHALL flag only unsafe multi-argument COALESCE expressions that cannot be replaced with ISNULL without changing semantics. A common two-argument nullable fallback is compliant because the rewrite is not a semantically equivalent binary ISNULL replacement.
 
 ```json
 {
   "requirement": "REQ-017",
   "kind": "categorical",
-  "precondition": "COALESCE expression with a nullable column and a fallback that may change result semantics parsed",
+  "precondition": "multi-argument COALESCE expression with a nullable column parsed",
   "action": "invoke NullableColumnIsNullCheck scan",
   "expected": "issue reported only when the COALESCE/ISNULL rewrite would alter evaluation order, type precedence, or result length",
   "method": "junit",
