@@ -66,7 +66,7 @@ if ! wait_for_sonarqube; then
   exit 1
 fi
 
-cat >"$FIXTURE_DIR/sonar-project.properties" <<EOF
+cat >"$FIXTURE_DIR/sonar-project.properties" <<EOF2
 sonar.projectKey=tsql-smoke
 sonar.projectName=T-SQL smoke
 sonar.projectVersion=1.0
@@ -74,7 +74,7 @@ sonar.host.url=http://localhost:9000
 sonar.sources=ddl,routines
 sonar.sourceEncoding=UTF-8
 sonar.qualitygate.wait=false
-EOF
+EOF2
 
 echo "==> Running scanner against smoke fixture"
 docker run --rm --network host \
