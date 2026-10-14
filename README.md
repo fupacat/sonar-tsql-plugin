@@ -32,17 +32,15 @@ All implemented rules below are active by default in the built-in `Sonar way` qu
 
 ### Rule inventory by category
 
+The keys below are the actual rule keys registered by `TSqlRulesDefinition` and activated in the default `Sonar way` profile. Custom plugin rules use their implementation names (for example `AvoidSelectAll`), while standard Sonar keys use the corresponding Sonar identifier (for example `S1523`, `SR0014`, `S1614`).
+
 #### Core correctness and query safety (default active)
 
-`AvoidSelectAll`, `AvoidLeadingWildcardInLike`, `AvoidNoLockHint`, `AvoidDeprecatedTypes`, `DeleteAndUpdateWithoutWhere`, `NotInSubquery`, `NullComparison`, `TopWithoutOrderBy`, `CaseInputInvariant`, `PrimaryKeyRequired`, `InsertColumnsExplicit`, `ExplicitLengthForVariableTypes`, `OrderByColumnNames`, `ExistsSelectOne`, `AlterTableCheckEnforcement`, `ColumnReferenceDepth`, `SargableWhere`, `UseScopeIdentity`, `AvoidVariableLengthDataType`, `AvoidDeprecatedJoinSyntax`, `AvoidSpecialCharactersInObjectNames`, `AvoidReservedWordsInObjectNames`, `StoredProcedureOutputParameter`, `DeterministicFunctionInWhere`, `AvoidSpPrefixProcedureName`, `SetNoCount`, `SetAnsiWarningsAndArithabort`, `SetAnsiNulls`, `AvoidDeprecatedSystemTables`, `FetchIntoCursorCount`, `CaseSubquery`, `TriggerResultSetCheck`, `AvoidLikeWithoutWildcard`, `AvoidNonStandardComparisonOperators`, `InPredicateIndexedColumn`, `NullableColumnIsNull`, `NarrowingCast`, `SyntaxError`
-
-#### Security and vulnerability checks (default active)
-
-`DynamicSqlExecution`, `WeakHash`, `HardCodedCredentials`
+`AvoidSelectAll`, `AvoidLeadingWildcardInLike`, `AvoidNoLockHint`, `AvoidDeprecatedTypes`, `S1590`, `S3641`, `S2527`, `S4054`, `S4094`, `S1523`, `S2070`, `S2068`, `S1614`, `S1745`, `S4078`, `S1735`, `S4801`, `S4102`, `S4149`, `SR0006`, `S4108`, `SR0009`, `SR0010`, `SR0011`, `S4413`, `S4196`, `SR0015`, `SR0016`, `S4819`, `S6498`, `S4154`, `S4155`, `S4103`, `S4104`, `S4109`, `S3643`, `S1742`, `SR0004`, `SR0007`, `SR0014`, `SyntaxError`
 
 #### Logic and control-flow checks (default active)
 
-`UnusedLocalVariable`, `UnusedParameter`, `UnusedLabel`, `UnreachableCode`, `SingleIterationLoop`, `SelfAssignment`, `CatchClauseShouldDoMoreThanRethrow`, `RedundantJump`, `DuplicateBinaryOperand`, `DuplicateIfCondition`, `IdenticalBranch`, `RepeatedUnaryOperator`, `WhereClauseRedundancy`, `ControlStructureBlock`, `CaseElseMissing`, `GotoStatement`, `NestedIfMerge`
+`S1481`, `S1172`, `S1065`, `S1763`, `S1751`, `S1656`, `S2737`, `S3626`, `S1764`, `S1862`, `S1871`, `S2761`, `S3633`, `S121`, `S131`, `S907`, `S1066`
 
 #### Maintainability, formatting, and conventions (default active)
 
@@ -56,16 +54,17 @@ All implemented rules below are active by default in the built-in `Sonar way` qu
 
 The plugin builds a project-wide schema catalog from the T-SQL DDL it can parse in the analyzed codebase. This catalog is used by schema-aware checks such as:
 
-- `InPredicateIndexedColumn`
-- `NullableColumnIsNull`
-- `NarrowingCast`
-- `PrimaryKeyRequired`
+- `SR0004` (`InPredicateIndexedColumn`)
+- `SR0007` (`NullableColumnIsNull`)
+- `SR0014` (`NarrowingCast`)
+
+`S1614` (`PrimaryKeyRequired`) inspects `CREATE TABLE` statements directly and does not depend on the cross-file project catalog.
 
 ### What the catalog covers
 
 - `CREATE TABLE` statements, including column definitions and basic nullability metadata
 - `CREATE INDEX` / indexed column discovery for the project scope
-- Cross-file resolution of column references and table/column lookups within the analyzed project
+- Cross-file resolution of table and column names within the analyzed project for those checks that explicitly read the project catalog
 - Case-insensitive table / column matching for SQL Server-style identifier behavior
 
 ### What the catalog does not cover
@@ -73,9 +72,9 @@ The plugin builds a project-wide schema catalog from the T-SQL DDL it can parse 
 - Live database metadata or remote schema introspection
 - Dynamic DDL generation, runtime schema creation, or migration tools executed outside the analyzed files
 - Full dependency analysis across external libraries, generated scripts, or stored procedures not included in the project scan
-- A complete model of every SQL Server object type, partitioning, or advanced constraint semantics
+- Full SQL Server semantic coverage such as alias resolution beyond the simplest same-name lookups, advanced partitioning, constraint semantics, or runtime object metadata
 
-This catalog is intentionally best-effort: it is designed to support project-aware checks without requiring a remote database connection or a full SQL Server engine.
+This catalog is intentionally best-effort: it is designed to support project-aware checks without requiring a remote database connection or a full SQL Server engine. Same-name resolution and alias resolution are intentionally limited to the project-derived metadata that is currently indexed.
 
 ---
 
@@ -93,16 +92,17 @@ The implemented rules are intentionally scoped to what the plugin can reason abo
 
 Implemented today:
 
-- AST parsing and rule execution
-- Built-in Sonar rule registration and default quality profile
-- Schema-aware checks based on project DDL catalog
-- Rule metadata, severities, and repository registration
+- AST parsing and rule execution for T-SQL files
+- Built-in Sonar rule registration and the default `Sonar way` quality profile
+- Schema-aware checks that rely on the best-effort project DDL catalog
+- Rule metadata, severities, tags, and repository registration
 
 Not currently implemented:
 
-- UI-level highlighting and code annotations
-- Duplicate detection / clone analysis beyond local rule logic
-- Project metrics dashboards or SQL-quality trend reporting
+- Syntax highlighting in the IDE or Sonar UI
+- CPD token-based duplication detection
+- Source code measures such as lines-of-code, complexity metrics, or code churn dashboards
+- Live SQL execution metrics, runtime query plans, or dashboards backed by a running SQL Server instance
 
 ---
 

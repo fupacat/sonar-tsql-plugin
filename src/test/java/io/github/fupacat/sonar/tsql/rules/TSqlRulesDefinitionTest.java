@@ -182,6 +182,7 @@ class TSqlRulesDefinitionTest {
         assertThat(syntaxErrorRule.type()).isEqualTo(RuleType.BUG);
     }
 
+    // TRACEABILITY_MAPPING: REQ-003, REQ-006
     @Test
     void testReadmeDocumentsCurrentRuleInventory() throws IOException {
         Path readmePath = Path.of("README.md");
@@ -189,12 +190,13 @@ class TSqlRulesDefinitionTest {
 
         assertThat(readme).contains("71 built-in T-SQL rules");
         assertThat(readme).contains("`AvoidSelectAll`");
-        assertThat(readme).contains("`DynamicSqlExecution`");
-        assertThat(readme).contains("`DuplicateBinaryOperand`");
-        assertThat(readme).contains("`NarrowingCast`");
+        assertThat(readme).contains("`S1523`");
+        assertThat(readme).contains("`S1764`");
+        assertThat(readme).contains("`SR0014`");
         assertThat(readme).contains("`SyntaxError`");
         assertThat(readme).contains("Cross-file DDL catalog scope and limitations");
         assertThat(readme).contains("Maintaining rule inventory consistency");
         assertThat(readme).contains("default `Sonar way` profile");
+        assertThat(readme).contains("`S1614` (`PrimaryKeyRequired`) inspects `CREATE TABLE` statements directly");
     }
 }
