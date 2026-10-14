@@ -10,7 +10,7 @@ class UnusedLocalVariableCheckTest {
 
     private final UnusedLocalVariableCheck check = new UnusedLocalVariableCheck();
 
-    // TRACEABILITY_MAPPING: REQ-018
+    // TRACEABILITY_MAPPING: REQ-025
     @Test
     void testFlagsUnusedDeclaredVariable() {
         String sql = "DECLARE @unused INT; SET @unused = 1;";
@@ -19,7 +19,7 @@ class UnusedLocalVariableCheckTest {
         assertThat(issues.get(0)).contains("unused");
     }
 
-    // TRACEABILITY_MAPPING: REQ-018
+    // TRACEABILITY_MAPPING: REQ-025
     @Test
     void testAllowsUsedDeclaredVariable() {
         String sql = "DECLARE @used INT; SET @used = 1; SELECT @used;";
@@ -27,7 +27,7 @@ class UnusedLocalVariableCheckTest {
         assertThat(issues).isEmpty();
     }
 
-    // TRACEABILITY_MAPPING: REQ-018
+    // TRACEABILITY_MAPPING: REQ-025
     @Test
     void testSeparatesVariablesAcrossProcedures() {
         String sql = "CREATE PROCEDURE dbo.A AS BEGIN DECLARE @x INT; END; GO "
@@ -37,7 +37,7 @@ class UnusedLocalVariableCheckTest {
         assertThat(issues.get(0)).contains("@x");
     }
 
-    // TRACEABILITY_MAPPING: REQ-018
+    // TRACEABILITY_MAPPING: REQ-025
     @Test
     void testNestedBlocksShareSameVariableScope() {
         String sql = "BEGIN DECLARE @x INT; BEGIN SELECT @x; END; END;";
@@ -45,7 +45,7 @@ class UnusedLocalVariableCheckTest {
         assertThat(issues).isEmpty();
     }
 
-    // TRACEABILITY_MAPPING: REQ-018
+    // TRACEABILITY_MAPPING: REQ-025
     @Test
     void testCountsReadsButNotWritesAsUsage() {
         List<String> writtenOnlyIssues = CheckTestUtils.scan(check, "DECLARE @x INT; SET @x = 5;");

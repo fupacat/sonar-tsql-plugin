@@ -36,13 +36,13 @@ public class UnusedLocalVariableCheck extends TSqlCheck {
     private TSqlFragment rootScope;
     private TSqlCheckContext analysisContext;
 
-    // TRACEABILITY_MAPPING: REQ-018
+    // TRACEABILITY_MAPPING: REQ-025
     @Override
     public String getRuleKey() {
         return RULE_KEY;
     }
 
-    // TRACEABILITY_MAPPING: REQ-018
+    // TRACEABILITY_MAPPING: REQ-025
     @Override
     public void scan(TSqlFragment root, TSqlCheckContext context) {
         declarationsByScope.clear();
