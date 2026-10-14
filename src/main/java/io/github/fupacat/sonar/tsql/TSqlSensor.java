@@ -55,6 +55,7 @@ public class TSqlSensor implements Sensor {
                 .onlyOnLanguage(TSqlLanguage.KEY);
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     @Override
     public void execute(SensorContext context) {
         FileSystem fs = context.fileSystem();
@@ -67,12 +68,18 @@ public class TSqlSensor implements Sensor {
         List<TSqlCheck> activeChecks = getActiveChecks(context);
         boolean needsSchema = requiresProjectSchema(activeChecks);
         Map<InputFile, ParsedFile> parsedFiles = parseInputFiles(inputFiles);
-        ProjectSchemaCatalog projectSchema = needsSchema
-                ? ProjectSchemaCatalog.fromParsedResults(parsedFiles.values().stream()
+        List<ParseResult<TSqlScript>> parsedResults = parsedFiles.values().stream()
                 .map(ParsedFile::result)
                 .filter(Objects::nonNull)
-                .toList())
-                : ProjectSchemaCatalog.empty();
+                .toList();
+        ProjectSchemaCatalog projectSchema = ProjectSchemaCatalog.empty();
+        if (needsSchema) {
+            try {
+                projectSchema = buildProjectSchema(parsedResults);
+            } catch (Exception e) {
+                LOG.warn("Failed to build project schema catalog; continuing analysis without schema metadata", e);
+            }
+        }
         LOG.info("Analyzing T-SQL files with {} active rules{}", activeChecks.size(), needsSchema ? " and schema indexing" : "");
 
         for (InputFile inputFile : inputFiles) {
@@ -83,6 +90,7 @@ public class TSqlSensor implements Sensor {
         }
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     private boolean requiresProjectSchema(List<TSqlCheck> activeChecks) {
         if (activeChecks == null || activeChecks.isEmpty()) {
             return false;
@@ -95,6 +103,12 @@ public class TSqlSensor implements Sensor {
         return false;
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
+    ProjectSchemaCatalog buildProjectSchema(Iterable<ParseResult<TSqlScript>> parsedResults) {
+        return ProjectSchemaCatalog.fromParsedResults(parsedResults);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
     private Map<InputFile, ParsedFile> parseInputFiles(List<InputFile> inputFiles) {
         Map<InputFile, ParsedFile> parsedFiles = new LinkedHashMap<>();
         for (InputFile inputFile : inputFiles) {
@@ -103,14 +117,18 @@ public class TSqlSensor implements Sensor {
             }
             try {
                 String content = inputFile.contents();
-                ParseResult<TSqlScript> result = TSqlParser.parse(content);
-                parsedFiles.put(inputFile, new ParsedFile(content, result, null));
+                ParseResult<TSqlScript> result;
+                try {
+                    result = TSqlParser.parse(content);
+                } catch (Exception e) {
+                    LOG.warn("Unexpected parser exception on file: " + inputFile.uri(), e);
+                    parsedFiles.put(inputFile, new ParsedFile(content, null, null, e));
+                    continue;
+                }
+                parsedFiles.put(inputFile, new ParsedFile(content, result, null, null));
             } catch (IOException e) {
                 LOG.error("Failed to read contents of file: " + inputFile.uri(), e);
-                parsedFiles.put(inputFile, new ParsedFile(null, null, e));
-            } catch (Exception e) {
-                LOG.warn("Unexpected parser exception on file: " + inputFile.uri(), e);
-                parsedFiles.put(inputFile, new ParsedFile(null, null, e));
+                parsedFiles.put(inputFile, new ParsedFile(null, null, e, null));
             }
         }
         return parsedFiles;
@@ -134,6 +152,9 @@ public class TSqlSensor implements Sensor {
         if (parsedFile == null) {
             return;
         }
+        if (parsedFile.readException() != null) {
+            return;
+        }
         if (parsedFile.parseException() != null) {
             reportSyntaxError(inputFile, context, 1, "Failed to parse T-SQL script: " + parsedFile.parseException().getMessage());
             return;
@@ -148,7 +169,7 @@ public class TSqlSensor implements Sensor {
         executeChecks(inputFile, context, parsedFile.result().fragment(), parsedFile.content(), activeChecks, projectSchema);
     }
 
-    private record ParsedFile(String content, ParseResult<TSqlScript> result, Exception parseException) {
+    private record ParsedFile(String content, ParseResult<TSqlScript> result, IOException readException, Exception parseException) {
     }
 
     // TRACEABILITY_MAPPING: REQ-005
@@ -294,18 +315,30 @@ public class TSqlSensor implements Sensor {
             }
             int lastIdx = fragment.lastTokenIndex;
             if (lastIdx < firstIdx || lastIdx >= tokenStream.size()) {
+                lastIdx = firstIdx;
+            }
+            Object startObj = tokenStream.get(firstIdx);
+            Object endObj = tokenStream.get(lastIdx);
+            if (startObj instanceof TSqlParserToken startToken && endObj instanceof TSqlParserToken endToken) {
+                return createRangeFromTokens(startToken, endToken, file);
+            }
+            return null;
+        }
+
+        private TextRange createRangeFromTokens(TSqlParserToken startToken, TSqlParserToken endToken, InputFile file) {
+            int startLine = startToken.getLine();
+            int endLine = endToken.getLine();
+            if (startLine < 1 || endLine < startLine || startLine > file.lines() || endLine > file.lines()) {
                 return null;
             }
-            TSqlParserToken firstToken = tokenStream.get(firstIdx) instanceof TSqlParserToken token ? token : null;
-            TSqlParserToken lastToken = tokenStream.get(lastIdx) instanceof TSqlParserToken token ? token : null;
-            if (firstToken == null || lastToken == null) {
+            int startCol = Math.max(0, startToken.getColumn() - 1);
+            int endTextLen = endToken.getText() != null ? endToken.getText().length() : 0;
+            int endCol = Math.max(startCol, endToken.getColumn() - 1 + endTextLen);
+            try {
+                return file.newRange(startLine, startCol, endLine, endCol);
+            } catch (Exception ignored) {
                 return null;
             }
-            int startLine = Math.max(1, firstToken.getLine());
-            int startColumn = Math.max(0, firstToken.getColumn() - 1);
-            int endLine = Math.max(startLine, lastToken.getLine());
-            int endColumn = Math.max(startColumn, lastToken.getColumn() - 1 + Math.max(1, lastToken.getText() == null ? 0 : lastToken.getText().length()));
-            return file.newRange(startLine, startColumn, endLine, endColumn);
         }
     }
 }
