@@ -58,4 +58,12 @@ class UnusedParameterCheckTest {
         List<String> issues = CheckTestUtils.scan(check, sql);
         assertThat(issues).isEmpty();
     }
+
+    @Test
+    void testHandlesMultipleProceduresWithoutStackUnderflow() {
+        String sql = "CREATE PROCEDURE dbo.FirstProc (@a INT) AS BEGIN SELECT @a; END; " +
+                "CREATE FUNCTION dbo.SecondFunc (@b INT) RETURNS INT AS BEGIN RETURN @b; END;";
+        List<String> issues = CheckTestUtils.scan(check, sql);
+        assertThat(issues).isEmpty();
+    }
 }

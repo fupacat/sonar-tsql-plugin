@@ -72,12 +72,13 @@ sonar.projectKey=tsql-smoke
 sonar.projectName=T-SQL smoke
 sonar.projectVersion=1.0
 sonar.host.url=http://localhost:9000
-sonar.sources=ddl,routines
+sonar.sources=ddl,routines,syntax_error.sql
 sonar.sourceEncoding=UTF-8
 sonar.qualitygate.wait=false
 EOF2
 
 echo "==> Running scanner against smoke fixture"
+SCAN_LOG="$(mktemp)"
 docker run --rm --network host \
   -v "$FIXTURE_DIR:/usr/src" \
   -w /usr/src \
@@ -87,9 +88,17 @@ docker run --rm --network host \
   -Dsonar.projectKey=tsql-smoke \
   -Dsonar.projectName='T-SQL smoke' \
   -Dsonar.projectVersion=1.0 \
-  -Dsonar.sources=ddl,routines \
+  -Dsonar.sources=ddl,routines,syntax_error.sql \
   -Dsonar.host.url=http://localhost:9000 \
-  -Dsonar.qualitygate.wait=false
+  -Dsonar.qualitygate.wait=false >"$SCAN_LOG" 2>&1 || { cat "$SCAN_LOG"; exit 1; }
+
+TASK_ID="$(grep -o 'api/ce/task?id=[A-Za-z0-9_-]*' "$SCAN_LOG" | sed 's#.*id=##' | tail -n 1)"
+if [[ -z "$TASK_ID" ]]; then
+  echo "Could not determine SonarQube task id from scanner output." >&2
+  cat "$SCAN_LOG" >&2
+  exit 1
+fi
+export TASK_ID
 
 python3 - <<'PY'
 import base64
@@ -101,6 +110,7 @@ import urllib.request
 base = 'http://localhost:9000'
 login = os.environ['SONAR_LOGIN']
 password = os.environ['SONAR_PASSWORD']
+task_id = os.environ['TASK_ID']
 
 
 def fetch(path):
@@ -108,6 +118,17 @@ def fetch(path):
     request = urllib.request.Request(base + path, headers={'Authorization': f'Basic {token}'})
     with urllib.request.urlopen(request, timeout=30) as response:
         return json.load(response)
+
+for _ in range(90):
+    task = fetch(f'/api/ce/task?id={task_id}')
+    status = task.get('task', {}).get('status')
+    if status in {'SUCCESS', 'FAILED', 'CANCELED'}:
+        if status != 'SUCCESS':
+            raise SystemExit(f"SonarQube task ended in {status}: {task}")
+        break
+    time.sleep(2)
+else:
+    raise SystemExit(f"SonarQube task {task_id} did not finish in time.")
 
 for _ in range(30):
     try:
@@ -129,7 +150,7 @@ profiles = fetch('/api/qualityprofiles/search?language=tsql')['profiles']
 assert any(profile.get('name') == 'Sonar way' for profile in profiles), profiles
 
 issues = []
-for _ in range(30):
+for _ in range(60):
     try:
         issues = fetch('/api/issues/search?componentKeys=tsql-smoke&ps=100&resolved=false')['issues']
         if issues:
@@ -139,12 +160,15 @@ for _ in range(30):
     time.sleep(2)
 
 assert issues, 'No issues were reported for the smoke fixture; scanner did not exercise the plugin.'
-assert any(issue.get('rule') in {'tsql:AvoidSelectAll', 'tsql:S1451', 'tsql:S1614', 'tsql:S4819'} for issue in issues), issues
+assert any(issue.get('rule') == 'tsql:AvoidSelectAll' for issue in issues), issues
+assert any(issue.get('rule') == 'tsql:SyntaxError' for issue in issues), issues
 assert any(issue.get('component', '').endswith('ddl/001_schema.sql') for issue in issues), issues
 assert any(issue.get('component', '').endswith('routines/010_get_accounts.sql') for issue in issues), issues
 assert all(issue.get('line') is not None for issue in issues), issues
 
 print(f"Validated language registration, rule registration, quality profile, and {len(issues)} issues for tsql-smoke.")
 PY
+
+rm -f "$SCAN_LOG"
 
 echo "==> Smoke test passed"

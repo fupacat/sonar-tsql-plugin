@@ -34,54 +34,42 @@ public class UnusedParameterCheck extends TSqlCheck {
     public void visit(io.github.fupacat.ast.CreateProcedureStatement node) {
         registerProcedureParameters(node);
         super.visit(node);
-        if (!activeProcedureStack.isEmpty() && activeProcedureStack.peek() == node) {
-            activeProcedureStack.pop();
-        }
+        popCurrentProcedure(node);
     }
 
     @Override
     public void visit(io.github.fupacat.ast.CreateOrAlterProcedureStatement node) {
         registerProcedureParameters(node);
         super.visit(node);
-        if (!activeProcedureStack.isEmpty() && activeProcedureStack.peek() == node) {
-            activeProcedureStack.pop();
-        }
+        popCurrentProcedure(node);
     }
 
     @Override
     public void visit(io.github.fupacat.ast.AlterProcedureStatement node) {
         registerProcedureParameters(node);
         super.visit(node);
-        if (!activeProcedureStack.isEmpty() && activeProcedureStack.peek() == node) {
-            activeProcedureStack.pop();
-        }
+        popCurrentProcedure(node);
     }
 
     @Override
     public void visit(io.github.fupacat.ast.CreateFunctionStatement node) {
         registerProcedureParameters(node);
         super.visit(node);
-        if (!activeProcedureStack.isEmpty() && activeProcedureStack.peek() == node) {
-            activeProcedureStack.pop();
-        }
+        popCurrentProcedure(node);
     }
 
     @Override
     public void visit(io.github.fupacat.ast.CreateOrAlterFunctionStatement node) {
         registerProcedureParameters(node);
         super.visit(node);
-        if (!activeProcedureStack.isEmpty() && activeProcedureStack.peek() == node) {
-            activeProcedureStack.pop();
-        }
+        popCurrentProcedure(node);
     }
 
     @Override
     public void visit(io.github.fupacat.ast.AlterFunctionStatement node) {
         registerProcedureParameters(node);
         super.visit(node);
-        if (!activeProcedureStack.isEmpty() && activeProcedureStack.peek() == node) {
-            activeProcedureStack.pop();
-        }
+        popCurrentProcedure(node);
     }
 
     private void registerProcedureParameters(ProcedureStatementBodyBase node) {
@@ -99,6 +87,12 @@ public class UnusedParameterCheck extends TSqlCheck {
             parametersByProcedure.put(node, parameters);
             usedParametersByProcedure.put(node, new HashSet<>());
             activeProcedureStack.push(node);
+        }
+    }
+
+    private void popCurrentProcedure(ProcedureStatementBodyBase node) {
+        if (!activeProcedureStack.isEmpty() && activeProcedureStack.peek() == node) {
+            activeProcedureStack.pop();
         }
     }
 
