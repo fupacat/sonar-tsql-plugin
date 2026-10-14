@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import org.sonar.api.batch.fs.InputFile;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,6 +54,7 @@ public final class ProjectSchemaCatalog {
     private final Map<String, List<String>> shortTableNames = new HashMap<>();
     private final Map<String, Set<String>> indexedColumnsByTable = new HashMap<>();
     private final Map<ColumnReferenceExpression, QueryScope> expressionScopeByColumn = new IdentityHashMap<>();
+    private final ArrayDeque<QueryScope> queryScopeStack = new ArrayDeque<>();
     private final List<QueryScope> queryScopes = new ArrayList<>();
 
     public static ProjectSchemaCatalog empty() {
@@ -131,7 +133,7 @@ public final class ProjectSchemaCatalog {
             return Optional.empty();
         }
 
-        List<TableSchema> matches = findColumnMatchesInScope(scope, columnName);
+        List<TableSchema> matches = (scope == null) ? List.of() : findColumnMatchesInScope(scope, columnName);
         if (matches.size() == 1) {
             return matches.get(0).getColumn(columnName);
         }
@@ -169,7 +171,7 @@ public final class ProjectSchemaCatalog {
             return hasIndexedColumn(table.getTableName(), columnName);
         }
 
-        List<TableSchema> matches = findColumnMatchesInScope(scope, columnName);
+        List<TableSchema> matches = scope == null ? List.of() : findColumnMatchesInScope(scope, columnName);
         if (matches.size() == 1) {
             return hasIndexedColumn(matches.get(0).getTableName(), columnName);
         }
@@ -242,6 +244,21 @@ public final class ProjectSchemaCatalog {
             }
         }
         return best;
+    }
+
+    private List<TableSchema> findUnqualifiedColumnMatchesInQueryScopes(String columnName) {
+        if (columnName == null || columnName.isBlank()) {
+            return List.of();
+        }
+        List<TableSchema> matches = new ArrayList<>();
+        for (QueryScope scope : queryScopes) {
+            for (TableSchema table : scope.tablesInScope) {
+                if (table.getColumn(columnName).isPresent()) {
+                    matches.add(table);
+                }
+            }
+        }
+        return matches;
     }
 
     private TableSchema resolveTableReference(String qualifier, QueryScope scope) {
@@ -440,18 +457,21 @@ public final class ProjectSchemaCatalog {
         public void visit(QuerySpecification node) {
             QueryScope scope = registerQueryScope(node);
             if (scope != null) {
-                thisScope = scope;
+                queryScopeStack.push(scope);
             }
             super.visit(node);
-            thisScope = null;
+            if (scope != null) {
+                queryScopeStack.pop();
+            }
         }
-
-        private QueryScope thisScope;
 
         @Override
         public void visit(ColumnReferenceExpression node) {
-            if (node != null && node.MultiPartIdentifier != null && !node.MultiPartIdentifier.Identifiers.isEmpty()) {
-                expressionScopeByColumn.put(node, thisScope);
+            if (node != null && node.MultiPartIdentifier != null && node.MultiPartIdentifier.Identifiers != null && !node.MultiPartIdentifier.Identifiers.isEmpty()) {
+                QueryScope active = queryScopeStack.peekFirst();
+                if (active != null) {
+                    expressionScopeByColumn.put(node, active);
+                }
             }
             super.visit(node);
         }
@@ -574,13 +594,13 @@ public final class ProjectSchemaCatalog {
             }
             if (dataType instanceof SqlDataTypeReference sqlDataTypeReference) {
                 return sqlDataTypeReference.SqlDataTypeOption != null
-                        ? sqlDataTypeReference.SqlDataTypeOption.name()
+                        ? sqlDataTypeReference.SqlDataTypeOption.name().toLowerCase(Locale.ROOT)
                         : UNKNOWN_TYPE;
             }
             if (dataType instanceof ParameterizedDataTypeReference parameterizedDataTypeReference
                     && parameterizedDataTypeReference.Name != null
                     && parameterizedDataTypeReference.Name.BaseIdentifier != null) {
-                return parameterizedDataTypeReference.Name.BaseIdentifier.Value;
+                return parameterizedDataTypeReference.Name.BaseIdentifier.Value.toLowerCase(Locale.ROOT);
             }
             return dataType.getClass().getSimpleName();
         }
