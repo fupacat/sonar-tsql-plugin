@@ -9,9 +9,8 @@ SCANNER_IMAGE="${SCANNER_IMAGE:-sonarsource/sonar-scanner-cli:latest}"
 FIXTURE_DIR="$ROOT_DIR/integration/smoke/fixture"
 SONAR_LOGIN="${SONAR_LOGIN:-admin}"
 SONAR_PASSWORD="${SONAR_PASSWORD:-admin}"
-PASSWORD_PROP="$(printf 'p%s' 'assword')"
 
-export SONAR_LOGIN SONAR_PASSWORD PASSWORD_PROP
+export SONAR_LOGIN SONAR_PASSWORD
 
 if [[ -z "$PLUGIN_PATH" || ! -f "$PLUGIN_PATH" ]]; then
   echo "Plugin artifact not found in $ROOT_DIR/target. Run 'mvn -DskipTests package' first." >&2
@@ -67,16 +66,6 @@ if ! wait_for_sonarqube; then
   exit 1
 fi
 
-cat >"$FIXTURE_DIR/sonar-project.properties" <<EOF2
-sonar.projectKey=tsql-smoke
-sonar.projectName=T-SQL smoke
-sonar.projectVersion=1.0
-sonar.host.url=http://localhost:9000
-sonar.sources=ddl,routines,syntax_error.sql
-sonar.sourceEncoding=UTF-8
-sonar.qualitygate.wait=false
-EOF2
-
 echo "==> Running scanner against smoke fixture"
 SCAN_LOG="$(mktemp)"
 docker run --rm --network host \
@@ -84,13 +73,7 @@ docker run --rm --network host \
   -w /usr/src \
   "$SCANNER_IMAGE" \
   -Dsonar.login="$SONAR_LOGIN" \
-  -Dsonar.${PASSWORD_PROP}="$SONAR_PASSWORD" \
-  -Dsonar.projectKey=tsql-smoke \
-  -Dsonar.projectName='T-SQL smoke' \
-  -Dsonar.projectVersion=1.0 \
-  -Dsonar.sources=ddl,routines,syntax_error.sql \
-  -Dsonar.host.url=http://localhost:9000 \
-  -Dsonar.qualitygate.wait=false >"$SCAN_LOG" 2>&1 || { cat "$SCAN_LOG"; exit 1; }
+  -Dsonar.password="$SONAR_PASSWORD" >"$SCAN_LOG" 2>&1 || { cat "$SCAN_LOG"; exit 1; }
 
 TASK_ID="$(grep -o 'api/ce/task?id=[A-Za-z0-9_-]*' "$SCAN_LOG" | sed 's#.*id=##' | tail -n 1)"
 if [[ -z "$TASK_ID" ]]; then
