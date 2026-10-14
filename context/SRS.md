@@ -254,3 +254,17 @@
 }
 ```
 
+[REQ-025] UnusedLocalVariableCheck SHALL flag local variables declared in a batch or procedure body that are never read after declaration.
+
+```json
+{
+  "requirement": "REQ-025",
+  "kind": "categorical",
+  "precondition": "local variable declared in a script batch or procedure body parsed",
+  "action": "invoke UnusedLocalVariableCheck scan",
+  "expected": "issue reported when the variable has no reads in its enclosing scope and is not written-only in a way that still counts as usage",
+  "method": "junit",
+  "expected_output": "void"
+}
+```
+

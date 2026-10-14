@@ -7,6 +7,11 @@ import org.sonar.api.rule.Severity;
 import org.sonar.api.rules.RuleType;
 import org.sonar.api.server.rule.RulesDefinition;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class TSqlRulesDefinitionTest {
@@ -175,5 +180,31 @@ class TSqlRulesDefinitionTest {
         assertThat(syntaxErrorRule).isNotNull();
         assertThat(syntaxErrorRule.severity()).isEqualTo(Severity.BLOCKER);
         assertThat(syntaxErrorRule.type()).isEqualTo(RuleType.BUG);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-003, REQ-006
+    @Test
+    void testReadmeDocumentsCurrentRuleInventory() throws IOException {
+        Path readmePath = Path.of("README.md");
+        String readme = Files.readString(readmePath, StandardCharsets.UTF_8);
+
+        RulesDefinition.Context context = new RulesDefinition.Context();
+        new TSqlRulesDefinition().define(context);
+        var rules = context.repository(TSqlRulesDefinition.REPOSITORY_KEY).rules();
+        assertThat(readme).contains(rules.size() + " built-in T-SQL rules");
+
+        int start = readme.indexOf("#### Core correctness and query safety");
+        int end = readme.indexOf("> The `Sonar way` profile", start);
+        assertThat(start).isGreaterThanOrEqualTo(0);
+        assertThat(end).isGreaterThan(start);
+        var documentedKeys = java.util.regex.Pattern.compile("`([^`]+)`")
+                .matcher(readme.substring(start, end)).results()
+                .map(match -> match.group(1)).toList();
+        assertThat(documentedKeys).doesNotHaveDuplicates()
+                .containsExactlyInAnyOrderElementsOf(rules.stream().map(RulesDefinition.Rule::key).toList());
+        assertThat(readme).contains("Cross-file DDL catalog scope and limitations");
+        assertThat(readme).contains("Maintaining rule inventory consistency");
+        assertThat(readme).contains("default `Sonar way` profile");
+        assertThat(readme).contains("`S1614` (`PrimaryKeyRequired`) inspects `CREATE TABLE` statements directly");
     }
 }
