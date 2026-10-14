@@ -64,10 +64,22 @@ This means representative routines such as nested `IF` blocks, `CASE` expression
 
 ## Installation
 
-1. Download the latest `sonar-tsql-plugin-<version>.jar` from [Releases](https://github.com/fupacat/sonar-tsql-plugin/releases).
-2. Copy the `.jar` into your SonarQube server's plugin directory:
+This repository is currently on the `0.1.0-SNAPSHOT` development line and does not have a published production release on GitHub Releases yet. Until a release tag is created and published, install the plugin by building the current checkout from source.
+
+Prerequisites for source builds:
+
+- Java Development Kit (JDK) 17+
+- Maven 3.8+
+
+1. Build the current project from source:
    ```bash
-   cp sonar-tsql-plugin-*.jar $SONARQUBE_HOME/extensions/plugins/
+   git clone https://github.com/fupacat/sonar-tsql-plugin.git
+   cd sonar-tsql-plugin
+   mvn clean package
+   ```
+2. Copy the generated JAR into your SonarQube server's plugin directory:
+   ```bash
+   cp target/sonar-tsql-plugin-*.jar $SONARQUBE_HOME/extensions/plugins/
    ```
 3. Restart your SonarQube server:
    ```bash
@@ -75,21 +87,24 @@ This means representative routines such as nested `IF` blocks, `CASE` expression
    ```
 4. Verify under **Administration > Marketplace > Installed Plugins** that "SonarQube T-SQL Plugin" is active.
 
+For a tagged release such as `v0.1.0`, the plugin artifact will be named `target/sonar-tsql-plugin-0.1.0.jar`, matching the Git tag without the leading `v`.
+
 ---
 
-## Building from Source
+## Release Procedure
 
-Prerequisites:
-- JDK 17+
-- Maven 3.8+
+Release publication is triggered by pushing a matching semantic-version tag (`vX.Y.Z`). The workflow enforces that the requested tag exists, the POM version matches the tag, and the packaged artifact exists with the expected plugin class before creating the GitHub release.
 
-```bash
-git clone https://github.com/fupacat/sonar-tsql-plugin.git
-cd sonar-tsql-plugin
-mvn clean package
-```
+Before tagging:
 
-The packaged plugin will be generated at `target/sonar-tsql-plugin-<version>.jar`.
+1. Update `pom.xml` to the intended release version (for example `0.1.0`) and remove `-SNAPSHOT`.
+2. Update `CHANGELOG.md` to the same version and record the release notes.
+3. Run `mvn clean verify --batch-mode` locally to confirm the release artifact builds cleanly.
+
+Publish:
+
+1. Create and push the matching Git tag, such as `v0.1.0`.
+2. Confirm the `Release` workflow succeeds for that tag.
 
 ---
 
