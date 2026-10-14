@@ -18,6 +18,8 @@ import org.sonar.api.batch.rule.ActiveRule;
 import org.sonar.api.batch.rule.ActiveRules;
 import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.batch.sensor.SensorDescriptor;
+import org.sonar.api.batch.sensor.highlighting.NewHighlighting;
+import org.sonar.api.batch.sensor.highlighting.TypeOfText;
 import org.sonar.api.batch.sensor.issue.NewIssue;
 import org.sonar.api.batch.sensor.issue.NewIssueLocation;
 import org.sonar.api.rule.RuleKey;
@@ -27,7 +29,9 @@ import java.net.URI;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -196,5 +200,39 @@ class TSqlSensorTest {
         // Explicit reportIssueAtLine
         checkContext.reportIssueAtLine(check, 2, "Line 2 issue");
         verify(inputFile).selectLine(2);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void testPublishesHighlightingForKeywordsStringsAndComments() throws IOException {
+        SensorContext context = mock(SensorContext.class);
+        FileSystem fs = mock(FileSystem.class);
+        FilePredicates predicates = mock(FilePredicates.class);
+        FilePredicate predicate = mock(FilePredicate.class);
+        InputFile inputFile = mock(InputFile.class);
+        NewHighlighting highlighting = mock(NewHighlighting.class, org.mockito.Mockito.RETURNS_SELF);
+        TextRange keywordRange = mock(TextRange.class);
+        TextRange stringRange = mock(TextRange.class);
+        TextRange commentRange = mock(TextRange.class);
+
+        when(context.fileSystem()).thenReturn(fs);
+        when(fs.predicates()).thenReturn(predicates);
+        when(predicates.hasLanguage(TSqlLanguage.KEY)).thenReturn(predicate);
+        when(fs.inputFiles(predicate)).thenReturn(List.of(inputFile));
+        when(context.activeRules()).thenReturn(mock(ActiveRules.class));
+        when(context.newHighlighting()).thenReturn(highlighting);
+        when(inputFile.uri()).thenReturn(URI.create("file:///highlight.sql"));
+        when(inputFile.contents()).thenReturn("SELECT 'x';\n-- comment\n");
+        when(inputFile.lines()).thenReturn(3);
+        when(inputFile.newRange(1, 0, 1, 6)).thenReturn(keywordRange);
+        when(inputFile.newRange(1, 7, 1, 12)).thenReturn(stringRange);
+        when(inputFile.newRange(2, 0, 2, 10)).thenReturn(commentRange);
+
+        sensor.execute(context);
+
+        verify(highlighting).onFile(inputFile);
+        verify(highlighting, atLeastOnce()).highlight(any(TextRange.class), eq(TypeOfText.KEYWORD));
+        verify(highlighting, atLeastOnce()).highlight(any(TextRange.class), eq(TypeOfText.COMMENT));
+        verify(highlighting, atLeastOnce()).save();
     }
 }

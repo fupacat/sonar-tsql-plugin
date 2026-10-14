@@ -4,6 +4,7 @@ import io.github.fupacat.ParseError;
 import io.github.fupacat.ParseResult;
 import io.github.fupacat.TSqlParser;
 import io.github.fupacat.TSqlParserToken;
+import io.github.fupacat.TSqlTokenType;
 import io.github.fupacat.ast.TSqlFragment;
 import io.github.fupacat.ast.TSqlScript;
 import io.github.fupacat.sonar.tsql.catalog.ProjectSchemaCatalog;
@@ -20,6 +21,8 @@ import org.sonar.api.batch.fs.TextRange;
 import org.sonar.api.batch.sensor.Sensor;
 import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.batch.sensor.SensorDescriptor;
+import org.sonar.api.batch.sensor.highlighting.NewHighlighting;
+import org.sonar.api.batch.sensor.highlighting.TypeOfText;
 import org.sonar.api.batch.sensor.issue.NewIssue;
 import org.sonar.api.batch.sensor.issue.NewIssueLocation;
 import org.sonar.api.rule.RuleKey;
@@ -92,6 +95,7 @@ public class TSqlSensor implements Sensor {
         }
 
         reportParseErrors(inputFile, context, result);
+        publishHighlighting(inputFile, context, result, content);
         executeChecks(inputFile, context, result.fragment(), content, activeChecks, projectSchema);
     }
 
@@ -106,6 +110,351 @@ public class TSqlSensor implements Sensor {
                     ? error.message
                     : "T-SQL syntax error";
             reportSyntaxError(inputFile, context, line, msg);
+        }
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private void publishHighlighting(InputFile inputFile, SensorContext context, ParseResult<TSqlScript> result, String content) {
+        if (context == null || inputFile == null || content == null || result == null) {
+            return;
+        }
+
+        TSqlScript script = result.fragment();
+        NewHighlighting highlighting = context.newHighlighting();
+        if (highlighting == null) {
+            return;
+        }
+        highlighting.onFile(inputFile);
+
+        if (script != null && script.ScriptTokenStream != null && !script.ScriptTokenStream.isEmpty()) {
+            for (Object tokenObj : script.ScriptTokenStream) {
+                if (!(tokenObj instanceof TSqlParserToken token)) {
+                    continue;
+                }
+                TypeOfText type = mapTokenToType(token);
+                if (type == null) {
+                    continue;
+                }
+                TextRange range = toTextRange(token, inputFile);
+                if (range != null) {
+                    highlighting.highlight(range, type);
+                }
+            }
+            highlighting.save();
+            return;
+        }
+
+        publishHighlightingFromSourceText(inputFile, highlighting, content);
+    }
+
+    private void publishHighlightingFromSourceText(InputFile inputFile, NewHighlighting highlighting, String content) {
+        if (inputFile == null || highlighting == null || content == null || content.isEmpty()) {
+            return;
+        }
+
+        int index = 0;
+        while (index < content.length()) {
+            char ch = content.charAt(index);
+            if (Character.isWhitespace(ch)) {
+                index++;
+                continue;
+            }
+            if (ch == '-' && index + 1 < content.length() && content.charAt(index + 1) == '-') {
+                int end = index + 2;
+                while (end < content.length() && content.charAt(end) != '\n' && content.charAt(end) != '\r') {
+                    end++;
+                }
+                highlightRange(inputFile, highlighting, content, index, end, TypeOfText.COMMENT);
+                index = end;
+                continue;
+            }
+            if (ch == '/' && index + 1 < content.length() && content.charAt(index + 1) == '*') {
+                int end = index + 2;
+                while (end + 1 < content.length() && !(content.charAt(end) == '*' && content.charAt(end + 1) == '/')) {
+                    end++;
+                }
+                if (end + 1 < content.length()) {
+                    end += 2;
+                } else {
+                    end = content.length();
+                }
+                highlightRange(inputFile, highlighting, content, index, end, TypeOfText.COMMENT);
+                index = end;
+                continue;
+            }
+            if (ch == 'N' || ch == 'n' || ch == '\'') {
+                if ((ch == 'N' || ch == 'n') && index + 1 < content.length() && content.charAt(index + 1) == '\'') {
+                    int end = index + 2;
+                    while (end < content.length()) {
+                        if (content.charAt(end) == '\'') {
+                            if (end + 1 < content.length() && content.charAt(end + 1) == '\'') {
+                                end += 2;
+                                continue;
+                            }
+                            end++;
+                            break;
+                        }
+                        end++;
+                    }
+                    highlightRange(inputFile, highlighting, content, index, end, TypeOfText.STRING);
+                    index = end;
+                    continue;
+                }
+                if (ch == '\'') {
+                    int end = index + 1;
+                    while (end < content.length()) {
+                        if (content.charAt(end) == '\'') {
+                            if (end + 1 < content.length() && content.charAt(end + 1) == '\'') {
+                                end += 2;
+                                continue;
+                            }
+                            end++;
+                            break;
+                        }
+                        end++;
+                    }
+                    highlightRange(inputFile, highlighting, content, index, end, TypeOfText.STRING);
+                    index = end;
+                    continue;
+                }
+            }
+            if (ch == '[') {
+                int end = index + 1;
+                while (end < content.length() && content.charAt(end) != ']') {
+                    end++;
+                }
+                if (end < content.length()) {
+                    end++;
+                } else {
+                    end = content.length();
+                }
+                highlightRange(inputFile, highlighting, content, index, end, TypeOfText.KEYWORD_LIGHT);
+                index = end;
+                continue;
+            }
+            if (isIdentifierStart(ch)) {
+                int end = index + 1;
+                while (end < content.length() && isIdentifierPart(content.charAt(end))) {
+                    end++;
+                }
+                String word = content.substring(index, end);
+                TypeOfText type = isKeyword(word) ? TypeOfText.KEYWORD : TypeOfText.KEYWORD_LIGHT;
+                highlightRange(inputFile, highlighting, content, index, end, type);
+                index = end;
+                continue;
+            }
+            index++;
+        }
+        highlighting.save();
+    }
+
+    private static boolean isIdentifierStart(char ch) {
+        return Character.isLetter(ch) || ch == '_' || ch == '@';
+    }
+
+    private static boolean isIdentifierPart(char ch) {
+        return Character.isLetterOrDigit(ch) || ch == '_' || ch == '@' || ch == '$';
+    }
+
+    private static boolean isKeyword(String value) {
+        return switch (value.toUpperCase(java.util.Locale.ROOT)) {
+            case "SELECT", "FROM", "WHERE", "INSERT", "UPDATE", "DELETE", "CREATE", "ALTER", "DROP",
+                "TABLE", "VIEW", "INDEX", "PROCEDURE", "FUNCTION", "TRIGGER", "DATABASE", "SCHEMA",
+                "AS", "ON", "IN", "INTO", "VALUES", "SET", "BY", "GROUP", "ORDER", "HAVING",
+                "JOIN", "INNER", "LEFT", "RIGHT", "FULL", "OUTER", "CROSS", "UNION", "ALL",
+                "DISTINCT", "TOP", "WITH", "EXEC", "EXECUTE", "BEGIN", "END", "IF", "ELSE",
+                "WHILE", "RETURN", "DECLARE", "CASE", "WHEN", "THEN", "AND", "OR", "NOT", "IS",
+                "NULL", "LIKE", "BETWEEN", "EXISTS" -> true;
+            default -> false;
+        };
+    }
+
+    private static void highlightRange(InputFile inputFile, NewHighlighting highlighting, String content, int start, int end, TypeOfText type) {
+        if (inputFile == null || highlighting == null || content == null || start < 0 || end < start || end > content.length()) {
+            return;
+        }
+        TextRange range = rangeForOffsets(content, start, end, inputFile);
+        if (range != null) {
+            highlighting.highlight(range, type);
+        }
+    }
+
+    private static TextRange rangeForOffsets(String content, int start, int end, InputFile file) {
+        if (content == null || file == null || start < 0 || end < start || end > content.length()) {
+            return null;
+        }
+        int line = 1;
+        int column = 0;
+        int rangeStartLine = 1;
+        int rangeStartColumn = 0;
+        int rangeEndLine = 1;
+        int rangeEndColumn = 0;
+        boolean started = false;
+        for (int i = 0; i <= content.length(); i++) {
+            if (i == start) {
+                rangeStartLine = line;
+                rangeStartColumn = column;
+                started = true;
+            }
+            if (i == end) {
+                rangeEndLine = line;
+                rangeEndColumn = column;
+                break;
+            }
+            if (i >= content.length()) {
+                break;
+            }
+            char ch = content.charAt(i);
+            if (ch == '\r') {
+                if (i + 1 < content.length() && content.charAt(i + 1) == '\n') {
+                    i++;
+                }
+                line++;
+                column = 0;
+            } else if (ch == '\n') {
+                line++;
+                column = 0;
+            } else {
+                column++;
+            }
+        }
+        if (!started) {
+            return null;
+        }
+        try {
+            return file.newRange(rangeStartLine, rangeStartColumn, rangeEndLine, rangeEndColumn);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private TypeOfText mapTokenToType(TSqlParserToken token) {
+        if (token == null || token.getText() == null || token.getText().isEmpty() || token.tokenType == null) {
+            return null;
+        }
+
+        switch (token.tokenType) {
+            case SingleLineComment:
+            case MultilineComment:
+                return TypeOfText.COMMENT;
+            case AsciiStringLiteral:
+            case UnicodeStringLiteral:
+                return TypeOfText.STRING;
+            case Identifier:
+            case QuotedIdentifier:
+            case AsciiStringOrQuotedIdentifier:
+            case Variable:
+                return TypeOfText.KEYWORD_LIGHT;
+            case Select:
+            case From:
+            case Where:
+            case Insert:
+            case Update:
+            case Delete:
+            case Create:
+            case Alter:
+            case Drop:
+            case Table:
+            case View:
+            case Index:
+            case Procedure:
+            case Function:
+            case Trigger:
+            case Database:
+            case Schema:
+            case As:
+            case On:
+            case In:
+            case Into:
+            case Values:
+            case Set:
+            case By:
+            case Group:
+            case Order:
+            case Having:
+            case Join:
+            case Inner:
+            case Left:
+            case Right:
+            case Full:
+            case Outer:
+            case Cross:
+            case Union:
+            case All:
+            case Distinct:
+            case Top:
+            case With:
+            case Exec:
+            case Execute:
+            case Begin:
+            case End:
+            case If:
+            case Else:
+            case While:
+            case Return:
+            case Declare:
+            case Case:
+            case When:
+            case Then:
+            case And:
+            case Or:
+            case Not:
+            case Is:
+            case Null:
+            case Like:
+            case Between:
+            case Exists:
+                return TypeOfText.KEYWORD;
+            default:
+                return null;
+        }
+    }
+
+    private TextRange toTextRange(io.github.fupacat.TSqlParserToken token, InputFile file) {
+        if (token == null || file == null) {
+            return null;
+        }
+
+        String text = token.getText();
+        if (text == null || text.isEmpty()) {
+            return null;
+        }
+
+        int startLine = token.getLine();
+        if (startLine < 1 || startLine > file.lines()) {
+            return null;
+        }
+
+        int startColumn = Math.max(0, token.getColumn() - 1);
+        int endLine = startLine;
+        int endColumn = startColumn + text.length();
+
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '\r' || c == '\n') {
+                endLine = startLine;
+                if (c == '\r' && i + 1 < text.length() && text.charAt(i + 1) == '\n') {
+                    i++;
+                }
+                if (i + 1 < text.length()) {
+                    endLine++;
+                }
+            }
+        }
+
+        if (text.contains("\n") || text.contains("\r")) {
+            int lastLineStart = text.lastIndexOf('\n');
+            if (lastLineStart < 0) {
+                lastLineStart = text.lastIndexOf('\r');
+            }
+            int lineLength = text.substring(lastLineStart + 1).length();
+            endColumn = lineLength;
+        }
+
+        try {
+            return file.newRange(startLine, startColumn, endLine, endColumn);
+        } catch (Exception ignored) {
+            return null;
         }
     }
 
