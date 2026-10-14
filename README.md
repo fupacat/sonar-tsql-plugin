@@ -35,9 +35,11 @@ Powered by [**tsql-scriptdom-java**](https://github.com/fupacat/tsql-scriptdom-j
 
 ## Compatibility
 
-- **SonarQube Server:** 9.9 LTS and 10.x+
+- **SonarQube Server:** 9.9.1 (minimum supported release) and 10.11.0.2468 (validated against the plugin API used in this build)
 - **Java Runtime:** Java 17 or higher
 - **SQL Server Versions:** SQL Server 2008 through SQL Server 2022, Azure SQL Database
+
+The packaged plugin is smoke-tested against the minimum supported SonarQube release and the current API target using the harness in `scripts/sonarqube-smoke-test.sh`.
 
 ---
 
@@ -61,6 +63,7 @@ Powered by [**tsql-scriptdom-java**](https://github.com/fupacat/tsql-scriptdom-j
 Prerequisites:
 - JDK 17+
 - Maven 3.8+
+- Docker (for the packaged-plugin smoke test)
 
 ```bash
 git clone https://github.com/fupacat/sonar-tsql-plugin.git
@@ -69,6 +72,21 @@ mvn clean package
 ```
 
 The packaged plugin will be generated at `target/sonar-tsql-plugin-<version>.jar`.
+
+## Packaged Plugin Smoke Test
+
+```bash
+mvn -DskipTests package
+SQ_VERSION=9.9.1 ./scripts/sonarqube-smoke-test.sh
+SQ_VERSION=10.11.0.2468 ./scripts/sonarqube-smoke-test.sh
+```
+
+The smoke test starts a SonarQube container, installs the built JAR, scans the fixture project under `integration/smoke/fixture`, and validates that:
+
+- the `tsql` language is registered;
+- the built-in rules and `Sonar way` profile are active;
+- the fixture produces issues under the plugin; and
+- cross-file schema/routine scan behavior works for separate DDL and routine files.
 
 ---
 
