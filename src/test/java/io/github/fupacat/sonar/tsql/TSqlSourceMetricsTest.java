@@ -64,4 +64,29 @@ class TSqlSourceMetricsTest {
         assertThat(metrics.statements()).isEqualTo(2);
         assertThat(metrics.complexity()).isZero();
     }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void handlesEscapedQuotesWithoutInflatingMetrics() {
+        String sql = "SELECT 'it''s -- text ; GO';\nSELECT \"\"\"IF\"\"\";\n";
+        TSqlSourceMetrics metrics = TSqlSourceMetrics.fromText(sql);
+
+        assertThat(metrics.lines()).isEqualTo(2);
+        assertThat(metrics.commentLines()).isZero();
+        assertThat(metrics.nonCommentLines()).isEqualTo(2);
+        assertThat(metrics.statements()).isEqualTo(2);
+        assertThat(metrics.complexity()).isZero();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void countsCommentOnlyTrailingLineWithoutTerminatingNewline() {
+        TSqlSourceMetrics metrics = TSqlSourceMetrics.fromText("SELECT 1;\n-- trailing comment");
+
+        assertThat(metrics.lines()).isEqualTo(2);
+        assertThat(metrics.commentLines()).isEqualTo(1);
+        assertThat(metrics.nonCommentLines()).isEqualTo(1);
+        assertThat(metrics.statements()).isEqualTo(1);
+        assertThat(metrics.complexity()).isZero();
+    }
 }

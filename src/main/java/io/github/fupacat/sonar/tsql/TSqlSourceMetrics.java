@@ -29,21 +29,18 @@ final class TSqlSourceMetrics {
 
         List<String> lines = sourceText.lines().toList();
         int lineCount = lines.size();
-        int commentLineCount = countCommentLines(sourceText);
-        int ncloc = countNonCommentCodeLines(sourceText);
-        String sanitized = stripCommentsAndStringLiterals(sourceText);
-        int statementCount = countMatches(sanitized, STATEMENT_SEPARATOR_PATTERN);
-        int complexityCount = countMatches(sanitized, KEYWORD_PATTERN);
+        ScanResult scanResult = scanSourceText(sourceText);
+        int statementCount = countMatches(scanResult.sanitizedText(), STATEMENT_SEPARATOR_PATTERN);
+        int complexityCount = countMatches(scanResult.sanitizedText(), KEYWORD_PATTERN);
 
-        return new TSqlSourceMetrics(lineCount, commentLineCount, ncloc, statementCount, complexityCount);
+        return new TSqlSourceMetrics(lineCount, scanResult.commentLines(), scanResult.ncloc(), statementCount, complexityCount);
     }
 
-    private static int countCommentLines(String sourceText) {
-        int commentLineCount = 0;
-        boolean inSingleQuote = false;
-        boolean inDoubleQuote = false;
-        boolean inLineComment = false;
-        boolean inBlockComment = false;
+    private static ScanResult scanSourceText(String sourceText) {
+        StringBuilder sanitized = new StringBuilder(sourceText.length());
+        ParseState state = ParseState.CODE;
+        int commentLines = 0;
+        int ncloc = 0;
         boolean lineHasCode = false;
         boolean lineHasComment = false;
 
@@ -51,206 +48,126 @@ final class TSqlSourceMetrics {
             char current = sourceText.charAt(i);
             char next = i + 1 < sourceText.length() ? sourceText.charAt(i + 1) : '\0';
 
-            if (inLineComment) {
+            if (state == ParseState.LINE_COMMENT) {
                 if (current == '\n') {
-                    if (lineHasComment && !lineHasCode) {
-                        commentLineCount++;
-                    }
-                    inLineComment = false;
+                    LineTotals totals = closeLine(lineHasCode, lineHasComment);
+                    commentLines += totals.commentLines();
+                    ncloc += totals.ncloc();
                     lineHasCode = false;
                     lineHasComment = false;
+                    state = ParseState.CODE;
+                    sanitized.append('\n');
                 } else {
                     lineHasComment = true;
                 }
                 continue;
             }
 
-            if (inBlockComment) {
+            if (state == ParseState.BLOCK_COMMENT) {
                 if (current == '*' && next == '/') {
                     lineHasComment = true;
-                    inBlockComment = false;
+                    state = ParseState.CODE;
+                    sanitized.append(' ');
                     i++;
                 } else if (current == '\n') {
-                    if (lineHasComment && !lineHasCode) {
-                        commentLineCount++;
-                    }
+                    LineTotals totals = closeLine(lineHasCode, lineHasComment);
+                    commentLines += totals.commentLines();
+                    ncloc += totals.ncloc();
                     lineHasCode = false;
                     lineHasComment = false;
+                    sanitized.append('\n');
                 } else {
                     lineHasComment = true;
                 }
                 continue;
             }
 
-            if (inSingleQuote) {
-                if (current == '\'' && next == '\'') {
-                    i++;
-                } else if (current == '\'') {
-                    inSingleQuote = false;
-                }
-                continue;
-            }
-
-            if (inDoubleQuote) {
-                if (current == '"' && next == '"') {
-                    i++;
-                } else if (current == '"') {
-                    inDoubleQuote = false;
-                }
-                continue;
-            }
-
-            if (current == '\n') {
-                if (lineHasComment && !lineHasCode) {
-                    commentLineCount++;
-                }
-                lineHasCode = false;
-                lineHasComment = false;
-                continue;
-            }
-
-            if (current == '-' && next == '-') {
-                lineHasComment = true;
-                inLineComment = true;
-                i++;
-                continue;
-            }
-
-            if (current == '/' && next == '*') {
-                lineHasComment = true;
-                inBlockComment = true;
-                i++;
-                continue;
-            }
-
-            if (current == '\'') {
-                inSingleQuote = true;
-                continue;
-            }
-
-            if (current == '"') {
-                inDoubleQuote = true;
-                continue;
-            }
-
-            if (!Character.isWhitespace(current)) {
-                lineHasCode = true;
-            }
-        }
-
-        if (lineHasComment && !lineHasCode && !inSingleQuote && !inDoubleQuote) {
-            commentLineCount++;
-        }
-
-        return commentLineCount;
-    }
-
-    private static int countNonCommentCodeLines(String sourceText) {
-        int ncloc = 0;
-        boolean inSingleQuote = false;
-        boolean inDoubleQuote = false;
-        boolean inLineComment = false;
-        boolean inBlockComment = false;
-        boolean lineHasCode = false;
-
-        for (int i = 0; i < sourceText.length(); i++) {
-            char current = sourceText.charAt(i);
-            char next = i + 1 < sourceText.length() ? sourceText.charAt(i + 1) : '\0';
-
-            if (inLineComment) {
+            if (state == ParseState.SINGLE_QUOTE) {
                 if (current == '\n') {
-                    if (lineHasCode) {
-                        ncloc++;
-                    }
-                    inLineComment = false;
+                    LineTotals totals = closeLine(lineHasCode, lineHasComment);
+                    commentLines += totals.commentLines();
+                    ncloc += totals.ncloc();
                     lineHasCode = false;
-                }
-                continue;
-            }
-
-            if (inBlockComment) {
-                if (current == '*' && next == '/') {
-                    inBlockComment = false;
-                    i++;
-                } else if (current == '\n') {
-                    if (lineHasCode) {
-                        ncloc++;
-                    }
-                    lineHasCode = false;
-                }
-                continue;
-            }
-
-            if (inSingleQuote) {
-                if (current == '\n') {
-                    if (lineHasCode) {
-                        ncloc++;
-                    }
-                    lineHasCode = false;
+                    lineHasComment = false;
+                    sanitized.append('\n');
                 } else if (current == '\'' && next == '\'') {
                     i++;
                 } else if (current == '\'') {
-                    inSingleQuote = false;
+                    state = ParseState.CODE;
                 }
                 continue;
             }
 
-            if (inDoubleQuote) {
+            if (state == ParseState.DOUBLE_QUOTE) {
                 if (current == '\n') {
-                    if (lineHasCode) {
-                        ncloc++;
-                    }
+                    LineTotals totals = closeLine(lineHasCode, lineHasComment);
+                    commentLines += totals.commentLines();
+                    ncloc += totals.ncloc();
                     lineHasCode = false;
+                    lineHasComment = false;
+                    sanitized.append('\n');
                 } else if (current == '"' && next == '"') {
                     i++;
                 } else if (current == '"') {
-                    inDoubleQuote = false;
+                    state = ParseState.CODE;
                 }
                 continue;
             }
 
             if (current == '\n') {
-                if (lineHasCode) {
-                    ncloc++;
-                }
+                LineTotals totals = closeLine(lineHasCode, lineHasComment);
+                commentLines += totals.commentLines();
+                ncloc += totals.ncloc();
                 lineHasCode = false;
+                lineHasComment = false;
+                sanitized.append('\n');
                 continue;
             }
 
             if (current == '-' && next == '-') {
-                inLineComment = true;
+                lineHasComment = true;
+                state = ParseState.LINE_COMMENT;
                 i++;
                 continue;
             }
 
             if (current == '/' && next == '*') {
-                inBlockComment = true;
+                lineHasComment = true;
+                state = ParseState.BLOCK_COMMENT;
                 i++;
                 continue;
             }
 
             if (current == '\'') {
-                inSingleQuote = true;
                 lineHasCode = true;
+                state = ParseState.SINGLE_QUOTE;
+                sanitized.append(' ');
                 continue;
             }
 
             if (current == '"') {
-                inDoubleQuote = true;
                 lineHasCode = true;
+                state = ParseState.DOUBLE_QUOTE;
+                sanitized.append(' ');
                 continue;
             }
 
             if (!Character.isWhitespace(current)) {
                 lineHasCode = true;
             }
+            sanitized.append(current);
         }
 
-        if (lineHasCode) {
-            ncloc++;
-        }
+        LineTotals totals = closeLine(lineHasCode, lineHasComment);
+        commentLines += totals.commentLines();
+        ncloc += totals.ncloc();
+        return new ScanResult(sanitized.toString(), commentLines, ncloc);
+    }
 
-        return ncloc;
+    private static LineTotals closeLine(boolean lineHasCode, boolean lineHasComment) {
+        int commentLines = lineHasComment && !lineHasCode ? 1 : 0;
+        int ncloc = lineHasCode ? 1 : 0;
+        return new LineTotals(commentLines, ncloc);
     }
 
     int lines() {
@@ -273,86 +190,6 @@ final class TSqlSourceMetrics {
         return complexity;
     }
 
-    private static String stripCommentsAndStringLiterals(String sourceText) {
-        StringBuilder result = new StringBuilder(sourceText.length());
-        boolean inSingleQuote = false;
-        boolean inDoubleQuote = false;
-        boolean inLineComment = false;
-        boolean inBlockComment = false;
-
-        for (int i = 0; i < sourceText.length(); i++) {
-            char current = sourceText.charAt(i);
-            char next = i + 1 < sourceText.length() ? sourceText.charAt(i + 1) : '\0';
-
-            if (inLineComment) {
-                if (current == '\n') {
-                    inLineComment = false;
-                    result.append(current);
-                }
-                continue;
-            }
-            if (inBlockComment) {
-                if (current == '*' && next == '/') {
-                    inBlockComment = false;
-                    result.append(' ');
-                    i++;
-                } else if (current == '\n') {
-                    result.append(current);
-                }
-                continue;
-            }
-            if (inSingleQuote) {
-                if (current == '\n') {
-                    result.append(current);
-                }
-                if (current == '\'' && next == '\'') {
-                    i++;
-                } else {
-                    if (current == '\'') {
-                        inSingleQuote = false;
-                    }
-                }
-                continue;
-            }
-            if (inDoubleQuote) {
-                if (current == '\n') {
-                    result.append(current);
-                }
-                if (current == '"' && next == '"') {
-                    i++;
-                } else {
-                    if (current == '"') {
-                        inDoubleQuote = false;
-                    }
-                }
-                continue;
-            }
-            if (current == '-' && next == '-') {
-                inLineComment = true;
-                i++;
-                continue;
-            }
-            if (current == '/' && next == '*') {
-                inBlockComment = true;
-                i++;
-                continue;
-            }
-            if (current == '\'') {
-                inSingleQuote = true;
-                result.append(' ');
-                continue;
-            }
-            if (current == '"') {
-                inDoubleQuote = true;
-                result.append(' ');
-                continue;
-            }
-            result.append(current);
-        }
-
-        return result.toString();
-    }
-
     private static int countMatches(String text, Pattern pattern) {
         Matcher matcher = pattern.matcher(text);
         int count = 0;
@@ -360,5 +197,19 @@ final class TSqlSourceMetrics {
             count++;
         }
         return count;
+    }
+
+    private enum ParseState {
+        CODE,
+        LINE_COMMENT,
+        BLOCK_COMMENT,
+        SINGLE_QUOTE,
+        DOUBLE_QUOTE
+    }
+
+    private record LineTotals(int commentLines, int ncloc) {
+    }
+
+    private record ScanResult(String sanitizedText, int commentLines, int ncloc) {
     }
 }
