@@ -72,24 +72,15 @@ class UnusedLocalVariableCheckTest {
     // TRACEABILITY_MAPPING: REQ-025
     @Test
     void testTraversesStatementAndAssignmentBranches() {
-        SetVariableStatement setVariableStatement = new SetVariableStatement();
-        setVariableStatement.Expression = new VariableReference();
-        setVariableStatement.Expression.Name = "@x";
-        setVariableStatement.Parameters = List.of(new VariableReference(), new VariableReference());
-        setVariableStatement.Parameters.get(0).Name = "@y";
-        setVariableStatement.Parameters.get(1).Name = "@z";
+        List<String> selectIssues = CheckTestUtils.scan(check,
+                "DECLARE @target INT; DECLARE @source INT = 1; SELECT @target = @source;");
+        assertThat(selectIssues).hasSize(1);
+        assertThat(selectIssues.get(0)).contains("@target");
 
-        AssignmentSetClause assignmentSetClause = new AssignmentSetClause();
-        assignmentSetClause.NewValue = new VariableReference();
-        assignmentSetClause.NewValue.Name = "@a";
-
-        SelectSetVariable selectSetVariable = new SelectSetVariable();
-        selectSetVariable.Expression = new VariableReference();
-        selectSetVariable.Expression.Name = "@b";
-
-        check.visit(setVariableStatement);
-        check.visit(assignmentSetClause);
-        check.visit(selectSetVariable);
+        List<String> updateIssues = CheckTestUtils.scan(check,
+                "DECLARE @target INT; DECLARE @source INT = 1; UPDATE dbo.Items SET @target = @source;");
+        assertThat(updateIssues).hasSize(1);
+        assertThat(updateIssues.get(0)).contains("@target");
     }
 
     // TRACEABILITY_MAPPING: REQ-025
