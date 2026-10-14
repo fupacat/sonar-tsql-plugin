@@ -340,53 +340,52 @@ public class TSqlSensor implements Sensor {
         }
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     private static TextRange rangeForOffsets(String content, int start, int end, InputFile file) {
         if (content == null || file == null || start < 0 || end < start || end > content.length()) {
             return null;
         }
-        int line = 1;
-        int column = 0;
-        int rangeStartLine = 1;
-        int rangeStartColumn = 0;
-        int rangeEndLine = 1;
-        int rangeEndColumn = 0;
-        boolean started = false;
-        for (int i = 0; i <= content.length(); i++) {
-            if (i == start) {
-                rangeStartLine = line;
-                rangeStartColumn = column;
-                started = true;
-            }
-            if (i == end) {
-                rangeEndLine = line;
-                rangeEndColumn = column;
-                break;
-            }
-            if (i >= content.length()) {
-                break;
-            }
+
+        int[] lineStarts = new int[Math.max(1, content.length() + 1)];
+        int lineCount = 1;
+        lineStarts[0] = 0;
+        for (int i = 0; i < content.length(); i++) {
             char ch = content.charAt(i);
             if (ch == '\r') {
                 if (i + 1 < content.length() && content.charAt(i + 1) == '\n') {
                     i++;
                 }
-                line++;
-                column = 0;
+                lineStarts[lineCount++] = i + 1;
             } else if (ch == '\n') {
-                line++;
-                column = 0;
-            } else {
-                column++;
+                lineStarts[lineCount++] = i + 1;
             }
         }
-        if (!started) {
-            return null;
-        }
+
+        int startLine = findLineForOffset(lineStarts, lineCount, start);
+        int startColumn = start - lineStarts[startLine - 1];
+        int endLine = findLineForOffset(lineStarts, lineCount, end);
+        int endColumn = end - lineStarts[endLine - 1];
+
         try {
-            return file.newRange(rangeStartLine, rangeStartColumn, rangeEndLine, rangeEndColumn);
+            return file.newRange(startLine, startColumn, endLine, endColumn);
         } catch (Exception ignored) {
             return null;
         }
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private static int findLineForOffset(int[] lineStarts, int lineCount, int offset) {
+        int low = 0;
+        int high = lineCount - 1;
+        while (low <= high) {
+            int mid = low + ((high - low) / 2);
+            if (lineStarts[mid] <= offset) {
+                low = mid + 1;
+            } else {
+                high = mid - 1;
+            }
+        }
+        return Math.max(1, low);
     }
 
     // TRACEABILITY_MAPPING: REQ-005
