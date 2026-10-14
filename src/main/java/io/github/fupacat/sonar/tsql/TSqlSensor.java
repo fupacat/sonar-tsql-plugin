@@ -114,7 +114,7 @@ public class TSqlSensor implements Sensor {
 
     // TRACEABILITY_MAPPING: REQ-005
     private void publishHighlighting(InputFile inputFile, SensorContext context, ParseResult<TSqlScript> result, String content) {
-        if (context == null || inputFile == null || content == null || result == null) {
+        if (context == null || inputFile == null || content == null) {
             return;
         }
 
@@ -124,9 +124,36 @@ public class TSqlSensor implements Sensor {
         }
         highlighting.onFile(inputFile);
 
-        publishHighlightingFromSourceText(inputFile, highlighting, content);
+        TSqlScript script = result != null ? result.fragment() : null;
+        if (script != null && script.ScriptTokenStream != null && !script.ScriptTokenStream.isEmpty()) {
+            publishHighlightingFromTokens(inputFile, highlighting, script.ScriptTokenStream);
+        } else {
+            publishHighlightingFromSourceText(inputFile, highlighting, content);
+        }
+        highlighting.save();
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
+    private void publishHighlightingFromTokens(InputFile inputFile, NewHighlighting highlighting, List<?> tokenStream) {
+        if (inputFile == null || highlighting == null || tokenStream == null || tokenStream.isEmpty()) {
+            return;
+        }
+        for (Object tokenObject : tokenStream) {
+            if (!(tokenObject instanceof TSqlParserToken token)) {
+                continue;
+            }
+            TypeOfText type = mapTokenToType(token);
+            if (type == null) {
+                continue;
+            }
+            TextRange range = rangeForToken(inputFile, token);
+            if (range != null) {
+                highlighting.highlight(range, type);
+            }
+        }
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
     private void publishHighlightingFromSourceText(InputFile inputFile, NewHighlighting highlighting, String content) {
         if (inputFile == null || highlighting == null || content == null || content.isEmpty()) {
             return;
@@ -225,18 +252,37 @@ public class TSqlSensor implements Sensor {
             }
             index++;
         }
-        highlighting.save();
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
+    private static TypeOfText mapTokenToType(TSqlParserToken token) {
+        if (token == null || token.tokenType == null) {
+            return null;
+        }
+        String tokenText = token.getText();
+        return switch (token.tokenType) {
+            case SingleLineComment, MultilineComment -> TypeOfText.COMMENT;
+            case AsciiStringLiteral, UnicodeStringLiteral -> TypeOfText.STRING;
+            case Identifier, QuotedIdentifier, Variable, AsciiStringOrQuotedIdentifier -> TypeOfText.KEYWORD_LIGHT;
+            default -> tokenText != null && isKeyword(tokenText) ? TypeOfText.KEYWORD : null;
+        };
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
     private static boolean isIdentifierStart(char ch) {
         return Character.isLetter(ch) || ch == '_' || ch == '@';
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     private static boolean isIdentifierPart(char ch) {
         return Character.isLetterOrDigit(ch) || ch == '_' || ch == '@' || ch == '$';
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     private static boolean isKeyword(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
         return switch (value.toUpperCase(java.util.Locale.ROOT)) {
             case "SELECT", "FROM", "WHERE", "INSERT", "UPDATE", "DELETE", "CREATE", "ALTER", "DROP",
                 "TABLE", "VIEW", "INDEX", "PROCEDURE", "FUNCTION", "TRIGGER", "DATABASE", "SCHEMA",
@@ -249,6 +295,7 @@ public class TSqlSensor implements Sensor {
         };
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     private static void highlightRange(InputFile inputFile, NewHighlighting highlighting, String content, int start, int end, TypeOfText type) {
         if (inputFile == null || highlighting == null || content == null || start < 0 || end < start || end > content.length()) {
             return;
@@ -256,6 +303,40 @@ public class TSqlSensor implements Sensor {
         TextRange range = rangeForOffsets(content, start, end, inputFile);
         if (range != null) {
             highlighting.highlight(range, type);
+        }
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private static TextRange rangeForToken(InputFile inputFile, TSqlParserToken token) {
+        if (inputFile == null || token == null || token.getText() == null || token.getText().isEmpty()) {
+            return null;
+        }
+        int startLine = token.getLine();
+        int startColumn = token.getColumn() - 1;
+        if (startLine < 1 || startColumn < 0 || startLine > inputFile.lines()) {
+            return null;
+        }
+        int endLine = startLine;
+        int endColumn = startColumn;
+        for (int i = 0; i < token.getText().length(); i++) {
+            char ch = token.getText().charAt(i);
+            if (ch == '\r') {
+                if (i + 1 < token.getText().length() && token.getText().charAt(i + 1) == '\n') {
+                    i++;
+                }
+                endLine++;
+                endColumn = 0;
+            } else if (ch == '\n') {
+                endLine++;
+                endColumn = 0;
+            } else {
+                endColumn++;
+            }
+        }
+        try {
+            return inputFile.newRange(startLine, startColumn, endLine, endColumn);
+        } catch (Exception ignored) {
+            return null;
         }
     }
 
