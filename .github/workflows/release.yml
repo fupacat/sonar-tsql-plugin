@@ -67,38 +67,20 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Verify project version matches tag
+      - name: Build Plugin JAR
+        run: mvn clean verify --batch-mode
+
+      - name: Validate release contract before publication
         env:
           TAG: ${{ steps.version.outputs.tag }}
           VERSION: ${{ steps.version.outputs.version }}
+          REPO_URL: https://github.com/${{ github.repository }}.git
         shell: bash
         run: |
           set -euo pipefail
           POM_VERSION="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"
-          if [[ "$POM_VERSION" != "$VERSION" ]]; then
-            echo "POM version '$POM_VERSION' does not match requested release tag '$TAG' (expected '$VERSION')."
-            echo "Update pom.xml and CHANGELOG.md before creating the release."
-            exit 1
-          fi
-
-      - name: Build Plugin JAR
-        run: mvn clean verify --batch-mode
-
-      - name: Verify packaged artifact name and metadata
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          set -euo pipefail
           ARTIFACT="target/sonar-tsql-plugin-${VERSION}.jar"
-          if [[ ! -f "$ARTIFACT" ]]; then
-            echo "Expected packaged artifact '$ARTIFACT' was not produced."
-            exit 1
-          fi
-          jar tf "$ARTIFACT" >/tmp/sonar-tsql-plugin-contents.txt
-          if ! grep -q 'io/github/fupacat/sonar/tsql/TSqlPlugin.class' /tmp/sonar-tsql-plugin-contents.txt; then
-            echo "Packaged JAR does not contain the plugin main class."
-            exit 1
-          fi
+          bash scripts/validate-release-contract.sh "$TAG" "$POM_VERSION" "$ARTIFACT" "$REPO_URL"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2

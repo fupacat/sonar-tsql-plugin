@@ -34,7 +34,8 @@ if [[ ! -f "$ARTIFACT" ]]; then
   exit 1
 fi
 
-if ! jar tf "$ARTIFACT" | grep -q "$PLUGIN_CLASS"; then
+JAR_CONTENTS="$(jar tf "$ARTIFACT")"
+if ! grep -Fxq "$PLUGIN_CLASS" <<< "$JAR_CONTENTS"; then
   echo "Packaged JAR does not contain the plugin main class."
   exit 1
 fi

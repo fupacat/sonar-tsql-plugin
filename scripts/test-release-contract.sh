@@ -11,6 +11,7 @@ REMOTE_REPO="$TMP_DIR/remote.git"
 WORK_REPO="$TMP_DIR/work"
 ARTIFACT_DIR="$TMP_DIR/artifact"
 ARTIFACT="$ARTIFACT_DIR/sonar-tsql-plugin-1.2.3.jar"
+INVALID_ARTIFACT="$TMP_DIR/missing-plugin-class.jar"
 
 git init --bare "$REMOTE_REPO" >/dev/null
 git init "$WORK_REPO" >/dev/null
@@ -31,6 +32,7 @@ printf 'placeholder' > "$ARTIFACT_DIR/io/github/fupacat/sonar/tsql/TSqlPlugin.cl
 (
   cd "$ARTIFACT_DIR"
   jar cf "$ARTIFACT" io >/dev/null
+  jar cf "$INVALID_ARTIFACT" -C "$WORK_REPO" README.txt >/dev/null
 )
 
 run_failure_case() {
@@ -47,5 +49,6 @@ run_failure_case "mismatched pom version" "v1.2.3" "1.2.4" "$ARTIFACT" "$REMOTE_
 run_failure_case "invalid tag format" "release-1.2.3" "1.2.3" "$ARTIFACT" "$REMOTE_REPO"
 run_failure_case "missing tag ref" "v9.9.9" "9.9.9" "$ARTIFACT" "$REMOTE_REPO"
 run_failure_case "missing artifact" "v1.2.3" "1.2.3" "$TMP_DIR/missing.jar" "$REMOTE_REPO"
+run_failure_case "missing plugin class" "v1.2.3" "1.2.3" "$INVALID_ARTIFACT" "$REMOTE_REPO"
 
 echo "Release contract validation scenarios passed."
