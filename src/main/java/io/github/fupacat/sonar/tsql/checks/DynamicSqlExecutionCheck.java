@@ -89,7 +89,6 @@ public class DynamicSqlExecutionCheck extends TSqlCheck {
             if (isBoundDataParameter(index, parameter)) {
                 continue;
             }
-
         }
         return false;
     }
