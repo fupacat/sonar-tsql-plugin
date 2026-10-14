@@ -182,12 +182,55 @@ class TSqlSensorTest {
         verify(cpdTokens).onFile(inputFile);
         verify(cpdTokens).addToken(1, 0, 1, 6, "SELECT");
         verify(cpdTokens).addToken(1, 7, 1, 16, "firstname");
+        verify(cpdTokens).addToken(1, 16, 1, 17, ",");
         verify(cpdTokens).addToken(1, 18, 1, 24, "<string>");
+        verify(cpdTokens).addToken(1, 24, 1, 25, ",");
         verify(cpdTokens).addToken(1, 26, 1, 28, "<number>");
         verify(cpdTokens).addToken(1, 29, 1, 33, "FROM");
         verify(cpdTokens).addToken(1, 34, 1, 37, "dbo");
+        verify(cpdTokens).addToken(1, 37, 1, 38, ".");
         verify(cpdTokens).addToken(1, 38, 1, 43, "users");
+        verify(cpdTokens).addToken(1, 43, 1, 44, ";");
         verify(cpdTokens).save();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void testPublishesNormalizedCpdTokensWithArithmeticAndQuotedIdentifiers() throws IOException {
+        SensorContext context = mock(SensorContext.class);
+        FileSystem fs = mock(FileSystem.class);
+        FilePredicates predicates = mock(FilePredicates.class);
+        FilePredicate predicate = mock(FilePredicate.class);
+        InputFile inputFile = mock(InputFile.class);
+        ActiveRules activeRules = mock(ActiveRules.class);
+        NewCpdTokens cpdTokens = mock(NewCpdTokens.class, org.mockito.Mockito.RETURNS_SELF);
+
+        when(context.fileSystem()).thenReturn(fs);
+        when(fs.predicates()).thenReturn(predicates);
+        when(predicates.hasLanguage(TSqlLanguage.KEY)).thenReturn(predicate);
+        when(fs.inputFiles(predicate)).thenReturn(List.of(inputFile));
+        when(context.activeRules()).thenReturn(activeRules);
+        when(context.newCpdTokens()).thenReturn(cpdTokens);
+        when(inputFile.uri()).thenReturn(URI.create("file:///cpd-arith.sql"));
+        when(inputFile.contents()).thenReturn("SELECT a+b, 1e2, [First Name], /*c*/ a-b FROM t;\n");
+        when(inputFile.lines()).thenReturn(1);
+
+        sensor.execute(context);
+
+        verify(cpdTokens).addToken(1, 0, 1, 6, "SELECT");
+        verify(cpdTokens).addToken(1, 7, 1, 8, "a");
+        verify(cpdTokens).addToken(1, 8, 1, 9, "+");
+        verify(cpdTokens).addToken(1, 9, 1, 10, "b");
+        verify(cpdTokens).addToken(1, 10, 1, 11, ",");
+        verify(cpdTokens).addToken(1, 12, 1, 15, "<number>");
+        verify(cpdTokens).addToken(1, 17, 1, 29, "first name");
+        verify(cpdTokens).addToken(1, 29, 1, 30, ",");
+        verify(cpdTokens).addToken(1, 37, 1, 38, "a");
+        verify(cpdTokens).addToken(1, 38, 1, 39, "-");
+        verify(cpdTokens).addToken(1, 39, 1, 40, "b");
+        verify(cpdTokens).addToken(1, 41, 1, 45, "FROM");
+        verify(cpdTokens).addToken(1, 46, 1, 47, "t");
+        verify(cpdTokens).addToken(1, 47, 1, 48, ";");
     }
 
     // TRACEABILITY_MAPPING: REQ-005

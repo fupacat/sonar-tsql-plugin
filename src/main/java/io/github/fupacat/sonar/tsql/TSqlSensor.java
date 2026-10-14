@@ -4,7 +4,6 @@ import io.github.fupacat.ParseError;
 import io.github.fupacat.ParseResult;
 import io.github.fupacat.TSqlParser;
 import io.github.fupacat.TSqlParserToken;
-import io.github.fupacat.TSqlTokenType;
 import io.github.fupacat.ast.TSqlFragment;
 import io.github.fupacat.ast.TSqlScript;
 import io.github.fupacat.sonar.tsql.catalog.ProjectSchemaCatalog;
@@ -28,7 +27,6 @@ import org.sonar.api.rule.RuleKey;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -194,8 +192,7 @@ public class TSqlSensor implements Sensor {
                     int start = index;
                     index = skipStringLiteral(sourceText, index + 1);
                     int end = index;
-                    tokens.add(new CpdToken(lineForOffset(sourceText, start), columnForOffset(sourceText, start),
-                            lineForOffset(sourceText, end), columnForOffset(sourceText, end), "<string>"));
+                    tokens.add(toToken(sourceText, start, end, "<string>"));
                     continue;
                 }
             }
@@ -203,16 +200,25 @@ public class TSqlSensor implements Sensor {
                 int start = index;
                 index = skipStringLiteral(sourceText, index);
                 int end = index;
-                tokens.add(new CpdToken(lineForOffset(sourceText, start), columnForOffset(sourceText, start),
-                        lineForOffset(sourceText, end), columnForOffset(sourceText, end), "<string>"));
+                tokens.add(toToken(sourceText, start, end, "<string>"));
                 continue;
             }
-            if (Character.isLetter(ch) || ch == '_' || ch == '@' || ch == '#') {
+            if (ch == '[') {
+                int start = index;
+                index = skipDelimitedIdentifier(sourceText, index);
+                int end = index;
+                String normalized = normalizeIdentifier(sourceText.substring(start, end));
+                if (normalized != null) {
+                    tokens.add(toToken(sourceText, start, end, normalized));
+                }
+                continue;
+            }
+            if (isIdentifierStart(ch)) {
                 int start = index;
                 index++;
                 while (index < sourceText.length()) {
                     char next = sourceText.charAt(index);
-                    if (Character.isLetterOrDigit(next) || next == '_' || next == '$') {
+                    if (isIdentifierPart(next)) {
                         index++;
                     } else {
                         break;
@@ -221,18 +227,21 @@ public class TSqlSensor implements Sensor {
                 String raw = sourceText.substring(start, index);
                 String normalized = normalizeIdentifier(raw);
                 if (normalized != null) {
-                    int end = index;
-                    tokens.add(new CpdToken(lineForOffset(sourceText, start), columnForOffset(sourceText, start),
-                            lineForOffset(sourceText, end), columnForOffset(sourceText, end), normalized));
+                    tokens.add(toToken(sourceText, start, index, normalized));
                 }
                 continue;
             }
             if (Character.isDigit(ch) || (ch == '.' && index + 1 < sourceText.length() && Character.isDigit(sourceText.charAt(index + 1)))) {
                 int start = index;
                 index = skipNumberLiteral(sourceText, index);
-                int end = index;
-                tokens.add(new CpdToken(lineForOffset(sourceText, start), columnForOffset(sourceText, start),
-                        lineForOffset(sourceText, end), columnForOffset(sourceText, end), "<number>"));
+                tokens.add(toToken(sourceText, start, index, "<number>"));
+                continue;
+            }
+            String operator = readOperator(sourceText, index);
+            if (operator != null) {
+                int start = index;
+                index += operator.length();
+                tokens.add(toToken(sourceText, start, index, operator));
                 continue;
             }
             index++;
@@ -248,10 +257,21 @@ public class TSqlSensor implements Sensor {
     }
 
     private int skipMultiLineComment(String sourceText, int index) {
+        int depth = 1;
         index += 2;
         while (index + 1 < sourceText.length()) {
+            if (sourceText.charAt(index) == '/' && sourceText.charAt(index + 1) == '*') {
+                depth++;
+                index += 2;
+                continue;
+            }
             if (sourceText.charAt(index) == '*' && sourceText.charAt(index + 1) == '/') {
-                return index + 2;
+                depth--;
+                index += 2;
+                if (depth == 0) {
+                    return index;
+                }
+                continue;
             }
             index++;
         }
@@ -274,28 +294,94 @@ public class TSqlSensor implements Sensor {
         return sourceText.length();
     }
 
-    private int skipNumberLiteral(String sourceText, int index) {
+    private int skipDelimitedIdentifier(String sourceText, int index) {
+        index++;
         while (index < sourceText.length()) {
             char ch = sourceText.charAt(index);
-            if (Character.isDigit(ch) || ch == '.' || ch == 'e' || ch == 'E' || ch == '+' || ch == '-') {
-                index++;
-            } else {
-                break;
+            if (ch == ']') {
+                if (index + 1 < sourceText.length() && sourceText.charAt(index + 1) == ']') {
+                    index += 2;
+                    continue;
+                }
+                return index + 1;
+            }
+            index++;
+        }
+        return sourceText.length();
+    }
+
+    private int skipNumberLiteral(String sourceText, int index) {
+        int i = index;
+        if (sourceText.charAt(i) == '.') {
+            i++;
+        }
+        while (i < sourceText.length() && Character.isDigit(sourceText.charAt(i))) {
+            i++;
+        }
+        if (i < sourceText.length() && sourceText.charAt(i) == '.'
+                && i + 1 < sourceText.length() && Character.isDigit(sourceText.charAt(i + 1))) {
+            i++;
+            while (i < sourceText.length() && Character.isDigit(sourceText.charAt(i))) {
+                i++;
             }
         }
-        return index;
+        if (i < sourceText.length() && (sourceText.charAt(i) == 'e' || sourceText.charAt(i) == 'E')) {
+            int expIndex = i + 1;
+            if (expIndex < sourceText.length() && (sourceText.charAt(expIndex) == '+' || sourceText.charAt(expIndex) == '-')) {
+                expIndex++;
+            }
+            if (expIndex < sourceText.length() && Character.isDigit(sourceText.charAt(expIndex))) {
+                i = expIndex;
+                while (i < sourceText.length() && Character.isDigit(sourceText.charAt(i))) {
+                    i++;
+                }
+            }
+        }
+        return i;
     }
 
     private String normalizeIdentifier(String raw) {
-        String trimmed = raw.trim();
+        String trimmed = raw == null ? "" : raw.trim();
         if (trimmed.isEmpty()) {
             return null;
+        }
+        if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+            trimmed = trimmed.substring(1, trimmed.length() - 1).replace("]]", "]");
         }
         String upper = trimmed.toUpperCase(Locale.ROOT);
         if (TSQL_KEYWORDS.contains(upper)) {
             return upper;
         }
         return trimmed.toLowerCase(Locale.ROOT);
+    }
+
+    private boolean isIdentifierStart(char ch) {
+        return Character.isLetter(ch) || ch == '_' || ch == '@' || ch == '#';
+    }
+
+    private boolean isIdentifierPart(char ch) {
+        return Character.isLetterOrDigit(ch) || ch == '_' || ch == '$';
+    }
+
+    private String readOperator(String sourceText, int index) {
+        if (index >= sourceText.length()) {
+            return null;
+        }
+        String[] operators = {
+                "<=", ">=", "<>", "!=", ":=", "||", "&&",
+                "+", "-", "*", "/", "%", "=", "<", ">", "|", "&", "^", ",", ".", "(", ")", ";", "[", "]", "{", "}", ":"
+        };
+        for (String operator : operators) {
+            if (sourceText.startsWith(operator, index)) {
+                return operator;
+            }
+        }
+        return null;
+    }
+
+    private CpdToken toToken(String sourceText, int start, int end, String normalized) {
+        return new CpdToken(lineForOffset(sourceText, start), columnForOffset(sourceText, start),
+                lineForOffset(sourceText, end), columnForOffset(sourceText, end), normalized);
     }
 
     private int lineForOffset(String text, int offset) {
