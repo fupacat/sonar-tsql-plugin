@@ -9,7 +9,6 @@ import io.github.fupacat.ast.CreateOrAlterProcedureStatement;
 import io.github.fupacat.ast.CreateProcedureStatement;
 import io.github.fupacat.ast.DeclareVariableElement;
 import io.github.fupacat.ast.DeclareVariableStatement;
-import io.github.fupacat.ast.ProcedureStatementBodyBase;
 import io.github.fupacat.ast.SelectSetVariable;
 import io.github.fupacat.ast.SetVariableStatement;
 import io.github.fupacat.ast.TSqlBatch;
@@ -155,14 +154,14 @@ public class UnusedLocalVariableCheck extends TSqlCheck {
     }
 
     @Override
-    public void visit(io.github.fupacat.ast.AssignmentSetClause node) {
+    public void visit(AssignmentSetClause node) {
         if (node.NewValue != null) {
             node.NewValue.accept(this);
         }
     }
 
     @Override
-    public void visit(io.github.fupacat.ast.SelectSetVariable node) {
+    public void visit(SelectSetVariable node) {
         if (node.Expression != null) {
             node.Expression.accept(this);
         }
