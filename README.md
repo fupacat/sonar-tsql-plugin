@@ -35,7 +35,7 @@ Powered by [**tsql-scriptdom-java**](https://github.com/fupacat/tsql-scriptdom-j
 
 ## Compatibility
 
-- **SonarQube Server:** 9.9.1 (minimum supported release) and 10.11.0.2468 (validated against the plugin API used in this build)
+- **SonarQube Server:** 9.9.1-community (minimum supported release) and 25.1.0.102122-community (current supported server version exercised by the packaged-plugin smoke test)
 - **Java Runtime:** Java 17 or higher
 - **SQL Server Versions:** SQL Server 2008 through SQL Server 2022, Azure SQL Database
 
@@ -77,8 +77,8 @@ The packaged plugin will be generated at `target/sonar-tsql-plugin-<version>.jar
 
 ```bash
 mvn -DskipTests package
-SQ_VERSION=9.9.1 ./scripts/sonarqube-smoke-test.sh
-SQ_VERSION=10.11.0.2468 ./scripts/sonarqube-smoke-test.sh
+SQ_VERSION=9.9.1-community ./scripts/sonarqube-smoke-test.sh
+SQ_VERSION=25.1.0.102122-community ./scripts/sonarqube-smoke-test.sh
 ```
 
 The smoke test starts a SonarQube container, installs the built JAR, scans the fixture project under `integration/smoke/fixture`, and validates that:

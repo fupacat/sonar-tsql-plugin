@@ -46,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sq-version: ['9.9.1', '10.11.0.2468']
+        sq-version: ['9.9.1-community', '25.1.0.102122-community']
 
     steps:
       - name: Checkout repository

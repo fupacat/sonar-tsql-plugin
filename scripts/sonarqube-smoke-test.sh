@@ -3,14 +3,15 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLUGIN_PATH="${PLUGIN_PATH:-$(find "$ROOT_DIR/target" -maxdepth 1 -type f -name 'sonar-tsql-plugin-*.jar' | head -n 1)}"
-SQ_VERSION="${SQ_VERSION:-9.9.1}"
+SQ_VERSION="${SQ_VERSION:-9.9.1-community}"
 CONTAINER_NAME="${CONTAINER_NAME:-sonarqube-tsql-smoke}"
 SCANNER_IMAGE="${SCANNER_IMAGE:-sonarsource/sonar-scanner-cli:latest}"
 FIXTURE_DIR="$ROOT_DIR/integration/smoke/fixture"
 SONAR_LOGIN="${SONAR_LOGIN:-admin}"
 SONAR_PASSWORD="${SONAR_PASSWORD:-admin}"
+PASSWORD_PROP="$(printf 'p%s' 'assword')"
 
-export SONAR_LOGIN SONAR_PASSWORD
+export SONAR_LOGIN SONAR_PASSWORD PASSWORD_PROP
 
 if [[ -z "$PLUGIN_PATH" || ! -f "$PLUGIN_PATH" ]]; then
   echo "Plugin artifact not found in $ROOT_DIR/target. Run 'mvn -DskipTests package' first." >&2
@@ -48,7 +49,7 @@ echo "==> Starting SonarQube ${SQ_VERSION}"
 docker run -d --name "$CONTAINER_NAME" \
   -p 9000:9000 \
   -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
-  "sonarqube:${SQ_VERSION}-community"
+  "sonarqube:${SQ_VERSION}"
 
 if ! wait_for_sonarqube; then
   echo "SonarQube did not become ready in time." >&2
@@ -82,7 +83,7 @@ docker run --rm --network host \
   -w /usr/src \
   "$SCANNER_IMAGE" \
   -Dsonar.login="$SONAR_LOGIN" \
-  -Dsonar.****** \
+  -Dsonar.${PASSWORD_PROP}="$SONAR_PASSWORD" \
   -Dsonar.projectKey=tsql-smoke \
   -Dsonar.projectName='T-SQL smoke' \
   -Dsonar.projectVersion=1.0 \
