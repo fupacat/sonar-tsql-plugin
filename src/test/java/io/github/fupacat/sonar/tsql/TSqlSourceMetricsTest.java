@@ -105,6 +105,19 @@ class TSqlSourceMetricsTest {
 
     // TRACEABILITY_MAPPING: REQ-005
     @Test
+    void countsMultilineDoubleQuotedIdentifierInteriorLinesAsCode() {
+        TSqlSourceMetrics metrics = TSqlSourceMetrics.fromText(
+                "SELECT \"line 1\nline 2\nline 3\";\nSELECT 1;");
+
+        assertThat(metrics.lines()).isEqualTo(4);
+        assertThat(metrics.commentLines()).isZero();
+        assertThat(metrics.nonCommentLines()).isEqualTo(4);
+        assertThat(metrics.statements()).isEqualTo(2);
+        assertThat(metrics.complexity()).isZero();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
     void ignoresBracketQuotedIdentifiersWhenCountingKeywordsAndStatements() {
         TSqlSourceMetrics metrics = TSqlSourceMetrics.fromText(
                 "SELECT [IF], [CASE], [WHILE], [GO] FROM [table];\nSELECT [IF] FROM [GO];");
@@ -113,6 +126,19 @@ class TSqlSourceMetricsTest {
         assertThat(metrics.commentLines()).isZero();
         assertThat(metrics.nonCommentLines()).isEqualTo(2);
         assertThat(metrics.statements()).isEqualTo(2);
+        assertThat(metrics.complexity()).isZero();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void ignoresEscapedBracketIdentifiersWhenCountingKeywordsAndStatements() {
+        TSqlSourceMetrics metrics = TSqlSourceMetrics.fromText(
+                "SELECT [IF]], [GO]], [CASE]], [WHILE]] FROM [Table]]Name];");
+
+        assertThat(metrics.lines()).isEqualTo(1);
+        assertThat(metrics.commentLines()).isZero();
+        assertThat(metrics.nonCommentLines()).isEqualTo(1);
+        assertThat(metrics.statements()).isEqualTo(1);
         assertThat(metrics.complexity()).isZero();
     }
 
