@@ -687,8 +687,8 @@ class TSqlSensorTest {
 
         assertThat(measureValues).containsEntry(CoreMetrics.NCLOC, 10);
         assertThat(measureValues).containsEntry(CoreMetrics.COMMENT_LINES, 1);
-        assertThat(measureValues).containsEntry(CoreMetrics.STATEMENTS, 5);
+        assertThat(measureValues).doesNotContainKey(CoreMetrics.STATEMENTS);
         assertThat(measureValues).containsEntry(CoreMetrics.COMPLEXITY, 3);
-        assertThat(measureValues).hasSize(4);
+        assertThat(measureValues).hasSize(3);
     }
 }

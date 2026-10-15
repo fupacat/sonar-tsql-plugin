@@ -14,7 +14,6 @@ class TSqlSourceMetricsTest {
         assertThat(metrics.lines()).isZero();
         assertThat(metrics.commentLines()).isZero();
         assertThat(metrics.nonCommentLines()).isZero();
-        assertThat(metrics.statements()).isZero();
         assertThat(metrics.complexity()).isZero();
     }
 
@@ -37,7 +36,6 @@ class TSqlSourceMetricsTest {
         assertThat(metrics.lines()).isEqualTo(3);
         assertThat(metrics.commentLines()).isEqualTo(0);
         assertThat(metrics.nonCommentLines()).isEqualTo(3);
-        assertThat(metrics.statements()).isEqualTo(2);
         assertThat(metrics.complexity()).isZero();
     }
 
@@ -47,8 +45,6 @@ class TSqlSourceMetricsTest {
         String sql = "IF @x > 0\nBEGIN\n  WHILE @y < 10\n  BEGIN\n    SET @y = @y + 1;\n  END;\nEND;\n\nSELECT CASE WHEN @x > 0 THEN 1 ELSE 2 END;\n\nBEGIN TRY\n  SELECT 1;\nEND TRY\nBEGIN CATCH\n  SELECT 2;\nEND CATCH;";
 
         TSqlSourceMetrics metrics = TSqlSourceMetrics.fromText(sql);
-
-        assertThat(metrics.statements()).isEqualTo(7);
         assertThat(metrics.complexity()).isEqualTo(5);
     }
 
@@ -61,7 +57,6 @@ class TSqlSourceMetricsTest {
         assertThat(metrics.lines()).isEqualTo(2);
         assertThat(metrics.commentLines()).isZero();
         assertThat(metrics.nonCommentLines()).isEqualTo(2);
-        assertThat(metrics.statements()).isEqualTo(2);
         assertThat(metrics.complexity()).isZero();
     }
 
@@ -74,7 +69,6 @@ class TSqlSourceMetricsTest {
         assertThat(metrics.lines()).isEqualTo(2);
         assertThat(metrics.commentLines()).isZero();
         assertThat(metrics.nonCommentLines()).isEqualTo(2);
-        assertThat(metrics.statements()).isEqualTo(2);
         assertThat(metrics.complexity()).isZero();
     }
 
@@ -86,7 +80,6 @@ class TSqlSourceMetricsTest {
         assertThat(metrics.lines()).isEqualTo(2);
         assertThat(metrics.commentLines()).isEqualTo(1);
         assertThat(metrics.nonCommentLines()).isEqualTo(1);
-        assertThat(metrics.statements()).isEqualTo(1);
         assertThat(metrics.complexity()).isZero();
     }
 
@@ -99,7 +92,6 @@ class TSqlSourceMetricsTest {
         assertThat(metrics.lines()).isEqualTo(4);
         assertThat(metrics.commentLines()).isZero();
         assertThat(metrics.nonCommentLines()).isEqualTo(4);
-        assertThat(metrics.statements()).isEqualTo(2);
         assertThat(metrics.complexity()).isZero();
     }
 
@@ -112,7 +104,6 @@ class TSqlSourceMetricsTest {
         assertThat(metrics.lines()).isEqualTo(4);
         assertThat(metrics.commentLines()).isZero();
         assertThat(metrics.nonCommentLines()).isEqualTo(4);
-        assertThat(metrics.statements()).isEqualTo(2);
         assertThat(metrics.complexity()).isZero();
     }
 
@@ -125,7 +116,6 @@ class TSqlSourceMetricsTest {
         assertThat(metrics.lines()).isEqualTo(2);
         assertThat(metrics.commentLines()).isZero();
         assertThat(metrics.nonCommentLines()).isEqualTo(2);
-        assertThat(metrics.statements()).isEqualTo(2);
         assertThat(metrics.complexity()).isZero();
     }
 
@@ -138,7 +128,6 @@ class TSqlSourceMetricsTest {
         assertThat(metrics.lines()).isEqualTo(1);
         assertThat(metrics.commentLines()).isZero();
         assertThat(metrics.nonCommentLines()).isEqualTo(1);
-        assertThat(metrics.statements()).isEqualTo(1);
         assertThat(metrics.complexity()).isZero();
     }
 
@@ -151,7 +140,6 @@ class TSqlSourceMetricsTest {
         assertThat(metrics.lines()).isEqualTo(4);
         assertThat(metrics.commentLines()).isEqualTo(2);
         assertThat(metrics.nonCommentLines()).isEqualTo(2);
-        assertThat(metrics.statements()).isEqualTo(2);
         assertThat(metrics.complexity()).isEqualTo(1);
     }
 }

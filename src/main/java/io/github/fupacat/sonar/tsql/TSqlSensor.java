@@ -182,7 +182,6 @@ public class TSqlSensor implements Sensor {
         TSqlSourceMetrics metrics = TSqlSourceMetrics.fromText(content);
         saveMeasure(context, inputFile, CoreMetrics.NCLOC, metrics.nonCommentLines());
         saveMeasure(context, inputFile, CoreMetrics.COMMENT_LINES, metrics.commentLines());
-        saveMeasure(context, inputFile, CoreMetrics.STATEMENTS, metrics.statements());
         saveMeasure(context, inputFile, CoreMetrics.COMPLEXITY, metrics.complexity());
     }
 

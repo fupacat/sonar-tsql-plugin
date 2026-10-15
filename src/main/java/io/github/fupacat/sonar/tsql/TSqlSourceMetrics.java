@@ -6,33 +6,29 @@ import java.util.regex.Pattern;
 
 final class TSqlSourceMetrics {
     private static final Pattern KEYWORD_PATTERN = Pattern.compile("(?i)(?:\\b(IF|WHILE|CASE)\\b|\\bBEGIN\\s+TRY\\b|\\bBEGIN\\s+CATCH\\b)");
-    private static final Pattern STATEMENT_SEPARATOR_PATTERN = Pattern.compile("(?i)(?:;|\\bGO\\b)");
 
     private final int lines;
     private final int commentLines;
     private final int nonCommentLines;
-    private final int statements;
     private final int complexity;
 
-    private TSqlSourceMetrics(int lines, int commentLines, int nonCommentLines, int statements, int complexity) {
+    private TSqlSourceMetrics(int lines, int commentLines, int nonCommentLines, int complexity) {
         this.lines = lines;
         this.commentLines = commentLines;
         this.nonCommentLines = nonCommentLines;
-        this.statements = statements;
         this.complexity = complexity;
     }
 
     static TSqlSourceMetrics fromText(String sourceText) {
         if (sourceText == null || sourceText.isEmpty()) {
-            return new TSqlSourceMetrics(0, 0, 0, 0, 0);
+            return new TSqlSourceMetrics(0, 0, 0, 0);
         }
 
         int lineCount = sourceText.lines().toList().size();
         ScanResult scanResult = scanSourceText(sourceText);
-        int statementCount = countMatches(scanResult.sanitizedText(), STATEMENT_SEPARATOR_PATTERN);
         int complexityCount = countMatches(scanResult.sanitizedText(), KEYWORD_PATTERN);
 
-        return new TSqlSourceMetrics(lineCount, scanResult.commentLines(), scanResult.ncloc(), statementCount, complexityCount);
+        return new TSqlSourceMetrics(lineCount, scanResult.commentLines(), scanResult.ncloc(), complexityCount);
     }
 
     private static ScanResult scanSourceText(String sourceText) {
@@ -202,10 +198,6 @@ final class TSqlSourceMetrics {
 
     int nonCommentLines() {
         return nonCommentLines;
-    }
-
-    int statements() {
-        return statements;
     }
 
     int complexity() {
