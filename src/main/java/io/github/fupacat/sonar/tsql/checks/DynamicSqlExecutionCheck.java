@@ -69,12 +69,25 @@ public class DynamicSqlExecutionCheck extends TSqlCheck {
         if (parameters == null) {
             return false;
         }
-        for (ExecuteParameter parameter : parameters) {
-            if (parameter != null && containsDangerousScalarExpression(parameter.ParameterValue)) {
+        for (int index = 0; index < parameters.size(); index++) {
+            ExecuteParameter parameter = parameters.get(index);
+            if (parameter != null && isStatementParameter(index, parameter)
+                    && containsDangerousScalarExpression(parameter.ParameterValue)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private boolean isStatementParameter(int index, ExecuteParameter parameter) {
+        if (parameter.Variable != null) {
+            return matchesNamedParameter(parameter.Variable.Name, "@stmt");
+        }
+        return index == 0;
+    }
+
+    private boolean matchesNamedParameter(String candidate, String expected) {
+        return candidate != null && expected.equalsIgnoreCase(candidate);
     }
 
     private boolean isSpExecuteSql(ExecutableProcedureReference procedureReference) {
