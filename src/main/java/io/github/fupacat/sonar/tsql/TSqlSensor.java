@@ -331,10 +331,19 @@ public class TSqlSensor implements Sensor {
         }
         if (content.charAt(start) == '/' && content.charAt(start + 1) == '*') {
             int end = start + 2;
-            while (end + 1 < content.length() && !(content.charAt(end) == '*' && content.charAt(end + 1) == '/')) {
-                end++;
+            int depth = 1;
+            while (end + 1 < content.length() && depth > 0) {
+                if (content.startsWith("/*", end)) {
+                    depth++;
+                    end += 2;
+                } else if (content.startsWith("*/", end)) {
+                    depth--;
+                    end += 2;
+                } else {
+                    end++;
+                }
             }
-            return (end + 1 < content.length()) ? end + 2 : content.length();
+            return depth == 0 ? end : content.length();
         }
         return start;
     }
@@ -574,16 +583,15 @@ public class TSqlSensor implements Sensor {
         int index = 0;
         while (index < sourceText.length()) {
             index = skipIgnoredContent(sourceText, index);
-            if (index >= sourceText.length()) {
-                break;
+            if (index < sourceText.length()) {
+                TokenMatch match = readNextToken(sourceText, lineStarts, index);
+                if (match == null) {
+                    index++;
+                } else {
+                    tokens.add(match.token);
+                    index = match.nextIndex;
+                }
             }
-            TokenMatch match = readNextToken(sourceText, lineStarts, index);
-            if (match == null) {
-                index++;
-                continue;
-            }
-            tokens.add(match.token);
-            index = match.nextIndex;
         }
         return tokens;
     }
@@ -594,17 +602,13 @@ public class TSqlSensor implements Sensor {
             char ch = sourceText.charAt(index);
             if (Character.isWhitespace(ch)) {
                 index++;
-                continue;
+            } else {
+                int end = scanComment(sourceText, index);
+                if (end == index) {
+                    return index;
+                }
+                index = end;
             }
-            if (ch == '-' && index + 1 < sourceText.length() && sourceText.charAt(index + 1) == '-') {
-                index = skipSingleLineComment(sourceText, index);
-                continue;
-            }
-            if (ch == '/' && index + 1 < sourceText.length() && sourceText.charAt(index + 1) == '*') {
-                index = skipMultiLineComment(sourceText, index);
-                continue;
-            }
-            break;
         }
         return index;
     }
@@ -644,7 +648,7 @@ public class TSqlSensor implements Sensor {
     // TRACEABILITY_MAPPING: REQ-005
     private TokenMatch consumeStringToken(String sourceText, int[] lineStarts, int index) {
         int start = index;
-        int end = skipStringLiteral(sourceText, index + (sourceText.charAt(index) == '\'' ? 0 : 1));
+        int end = scanStringLiteral(sourceText, index + (sourceText.charAt(index) == '\'' ? 0 : 1));
         return new TokenMatch(toToken(lineStarts, start, end, "<string>"), end);
     }
 
@@ -697,57 +701,8 @@ public class TSqlSensor implements Sensor {
         }
     }
 
-    // TRACEABILITY_MAPPING: REQ-005
-    private int skipSingleLineComment(String sourceText, int index) {
-        while (index < sourceText.length()) {
-            char ch = sourceText.charAt(index);
-            if (ch == '\n' || ch == '\r') {
-                break;
-            }
-            index++;
-        }
-        return index;
-    }
 
-    // TRACEABILITY_MAPPING: REQ-005
-    private int skipMultiLineComment(String sourceText, int index) {
-        int depth = 1;
-        index += 2;
-        while (index + 1 < sourceText.length()) {
-            if (sourceText.charAt(index) == '/' && sourceText.charAt(index + 1) == '*') {
-                depth++;
-                index += 2;
-                continue;
-            }
-            if (sourceText.charAt(index) == '*' && sourceText.charAt(index + 1) == '/') {
-                depth--;
-                index += 2;
-                if (depth == 0) {
-                    return index;
-                }
-                continue;
-            }
-            index++;
-        }
-        return sourceText.length();
-    }
 
-    // TRACEABILITY_MAPPING: REQ-005
-    private int skipStringLiteral(String sourceText, int index) {
-        index++;
-        while (index < sourceText.length()) {
-            char ch = sourceText.charAt(index);
-            if (ch == '\'') {
-                if (index + 1 < sourceText.length() && sourceText.charAt(index + 1) == '\'') {
-                    index += 2;
-                    continue;
-                }
-                return index + 1;
-            }
-            index++;
-        }
-        return sourceText.length();
-    }
 
     // TRACEABILITY_MAPPING: REQ-005
     private int skipDelimitedIdentifier(String sourceText, int index) {
@@ -768,36 +723,32 @@ public class TSqlSensor implements Sensor {
 
     // TRACEABILITY_MAPPING: REQ-005
     private int skipNumberLiteral(String sourceText, int index) {
-        int i = index;
-        boolean hasDigits = false;
-        if (sourceText.charAt(i) == '.') {
-            i++;
+        int end = skipDigits(sourceText, sourceText.charAt(index) == '.' ? index + 1 : index);
+        if (end + 1 < sourceText.length() && sourceText.charAt(end) == '.'
+                && Character.isDigit(sourceText.charAt(end + 1))) {
+            end = skipDigits(sourceText, end + 1);
         }
-        while (i < sourceText.length() && Character.isDigit(sourceText.charAt(i))) {
-            hasDigits = true;
-            i++;
+        return skipExponent(sourceText, end);
+    }
+
+    private int skipDigits(String text, int start) {
+        int end = start;
+        while (end < text.length() && Character.isDigit(text.charAt(end))) {
+            end++;
         }
-        if (i < sourceText.length() && sourceText.charAt(i) == '.'
-                && i + 1 < sourceText.length() && Character.isDigit(sourceText.charAt(i + 1))) {
-            i++;
-            while (i < sourceText.length() && Character.isDigit(sourceText.charAt(i))) {
-                hasDigits = true;
-                i++;
-            }
+        return end;
+    }
+
+    private int skipExponent(String text, int start) {
+        if (start >= text.length() || (text.charAt(start) != 'e' && text.charAt(start) != 'E')) {
+            return start;
         }
-        if (hasDigits && i < sourceText.length() && (sourceText.charAt(i) == 'e' || sourceText.charAt(i) == 'E')) {
-            int expIndex = i + 1;
-            if (expIndex < sourceText.length() && (sourceText.charAt(expIndex) == '+' || sourceText.charAt(expIndex) == '-')) {
-                expIndex++;
-            }
-            if (expIndex < sourceText.length() && Character.isDigit(sourceText.charAt(expIndex))) {
-                i = expIndex;
-                while (i < sourceText.length() && Character.isDigit(sourceText.charAt(i))) {
-                    i++;
-                }
-            }
+        int digits = start + 1;
+        if (digits < text.length() && (text.charAt(digits) == '+' || text.charAt(digits) == '-')) {
+            digits++;
         }
-        return i;
+        int end = skipDigits(text, digits);
+        return end > digits ? end : start;
     }
 
     // TRACEABILITY_MAPPING: REQ-005
