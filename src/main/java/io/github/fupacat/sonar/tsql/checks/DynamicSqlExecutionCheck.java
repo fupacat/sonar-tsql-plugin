@@ -71,23 +71,9 @@ public class DynamicSqlExecutionCheck extends TSqlCheck {
         }
         for (int index = 0; index < parameters.size(); index++) {
             ExecuteParameter parameter = parameters.get(index);
-            if (parameter == null) {
-                continue;
-            }
-
-            if (isStatementParameter(index, parameter)) {
-                if (containsDangerousScalarExpression(parameter.ParameterValue)) {
-                    return true;
-                }
-                continue;
-            }
-
-            if (isParameterDeclarationParameter(index, parameter)) {
-                continue;
-            }
-
-            if (isBoundDataParameter(index, parameter)) {
-                continue;
+            if (parameter != null && isStatementParameter(index, parameter)
+                    && containsDangerousScalarExpression(parameter.ParameterValue)) {
+                return true;
             }
         }
         return false;
@@ -97,23 +83,7 @@ public class DynamicSqlExecutionCheck extends TSqlCheck {
         if (parameter.Variable != null) {
             return matchesNamedParameter(parameter.Variable.Name, "@stmt");
         }
-        return index == 0 && parameter.Variable == null;
-    }
-
-    private boolean isParameterDeclarationParameter(int index, ExecuteParameter parameter) {
-        if (parameter.Variable != null) {
-            return matchesNamedParameter(parameter.Variable.Name, "@params");
-        }
-        return index == 1 && parameter.Variable == null;
-    }
-
-    private boolean isBoundDataParameter(int index, ExecuteParameter parameter) {
-        if (parameter.Variable != null) {
-            String variableName = parameter.Variable.Name;
-            return !matchesNamedParameter(variableName, "@stmt")
-                    && !matchesNamedParameter(variableName, "@params");
-        }
-        return index >= 2;
+        return index == 0;
     }
 
     private boolean matchesNamedParameter(String candidate, String expected) {
