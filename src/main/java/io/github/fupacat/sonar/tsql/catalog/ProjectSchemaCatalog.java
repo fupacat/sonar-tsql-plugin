@@ -2,7 +2,6 @@ package io.github.fupacat.sonar.tsql.catalog;
 
 import io.github.fupacat.ParseResult;
 import io.github.fupacat.TSqlParser;
-import io.github.fupacat.TSqlParserToken;
 import io.github.fupacat.ast.ColumnDefinition;
 import io.github.fupacat.ast.ColumnReferenceExpression;
 import io.github.fupacat.ast.ConstraintDefinition;
@@ -95,7 +94,7 @@ public final class ProjectSchemaCatalog {
         if (root == null) {
             return;
         }
-        root.accept(new CatalogIndexer(root.ScriptTokenStream));
+        root.accept(new CatalogIndexer());
     }
 
     public boolean hasTable(String tableName) {
@@ -355,33 +354,6 @@ public final class ProjectSchemaCatalog {
     }
 
     private final class CatalogIndexer extends TSqlConcreteFragmentVisitor {
-        private final List<?> tokens;
-
-        private CatalogIndexer(List<?> tokens) {
-            this.tokens = tokens == null ? List.of() : tokens;
-        }
-
-        private boolean hasExplicitNotNull(ColumnDefinition column) {
-            int depth = 0;
-            boolean previousNot = false;
-            int end = Math.min(column.lastTokenIndex, tokens.size() - 1);
-            for (int i = Math.max(0, column.firstTokenIndex); i <= end; i++) {
-                if (!(tokens.get(i) instanceof TSqlParserToken token) || token.getText() == null) {
-                    continue;
-                }
-                String text = token.getText();
-                if (text.isBlank() || text.startsWith("--") || text.startsWith("/*")) {
-                    continue;
-                }
-                if ("(".equals(text)) { depth++; }
-                if (")".equals(text)) { depth--; }
-                if (depth == 0 && previousNot && "NULL".equalsIgnoreCase(text)) {
-                    return true;
-                }
-                previousNot = depth == 0 && "NOT".equalsIgnoreCase(text);
-            }
-            return false;
-        }
         @Override
         public void visit(CreateTableStatement node) {
             if (node == null || node.SchemaObjectName == null) {
@@ -444,7 +416,7 @@ public final class ProjectSchemaCatalog {
                 String columnName = columnDefinition.ColumnIdentifier != null && columnDefinition.ColumnIdentifier.Value != null
                         ? columnDefinition.ColumnIdentifier.Value
                         : "";
-                boolean nullable = isNullable(columnDefinition.Constraints) && !hasExplicitNotNull(columnDefinition);
+                boolean nullable = isNullable(columnDefinition.Constraints);
                 String sqlType = extractSqlType(columnDefinition.DataType);
                 Integer length = extractLength(columnDefinition.DataType);
                 table.addColumn(new ColumnInfo(columnName, nullable, sqlType, length));
@@ -534,8 +506,8 @@ public final class ProjectSchemaCatalog {
                 return true;
             }
             for (ConstraintDefinition constraint : constraints) {
-                if (constraint instanceof NullableConstraintDefinition nullableConstraint && !nullableConstraint.Nullable) {
-                    return false;
+                if (constraint instanceof NullableConstraintDefinition nullableConstraint) {
+                    return nullableConstraint.Nullable;
                 }
                 if (constraint instanceof UniqueConstraintDefinition uniqueConstraint && uniqueConstraint.IsPrimaryKey) {
                     return false;
