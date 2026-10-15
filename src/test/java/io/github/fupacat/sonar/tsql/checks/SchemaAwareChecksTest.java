@@ -53,7 +53,7 @@ class SchemaAwareChecksTest {
     void testNullableColumnCoalesceWithNullableFallbackIsCompliant() {
         List<String> issues = CheckTestUtils.scan(nullableColumnCheck,
                 "CREATE TABLE dbo.Items (Code VARCHAR(3) NULL, AltCode VARCHAR(10) NULL); " +
-                        "SELECT COALESCE(Code, AltCode) FROM dbo.Items;");
+                        "SELECT COALESCE(Code, AltCode, 'fallback') FROM dbo.Items;");
         assertThat(issues).isEmpty();
     }
 
