@@ -167,76 +167,88 @@ public class TSqlSensor implements Sensor {
                 index++;
                 continue;
             }
-            if (ch == '-' && index + 1 < content.length() && content.charAt(index + 1) == '-') {
-                int end = index + 2;
-                while (end < content.length() && content.charAt(end) != '\n' && content.charAt(end) != '\r') {
-                    end++;
-                }
+            int end = scanComment(content, index);
+            if (end > index) {
                 highlightRange(inputFile, highlighting, content, index, end, TypeOfText.COMMENT, lineStarts);
                 index = end;
                 continue;
             }
-            if (ch == '/' && index + 1 < content.length() && content.charAt(index + 1) == '*') {
-                int end = index + 2;
-                while (end + 1 < content.length() && !(content.charAt(end) == '*' && content.charAt(end + 1) == '/')) {
-                    end++;
-                }
-                if (end + 1 < content.length()) {
-                    end += 2;
-                } else {
-                    end = content.length();
-                }
-                highlightRange(inputFile, highlighting, content, index, end, TypeOfText.COMMENT, lineStarts);
+            end = scanStringToken(content, index);
+            if (end > index) {
+                highlightRange(inputFile, highlighting, content, index, end, TypeOfText.STRING, lineStarts);
                 index = end;
                 continue;
-            }
-            if (ch == 'N' || ch == 'n' || ch == '\'') {
-                if ((ch == 'N' || ch == 'n') && index + 1 < content.length() && content.charAt(index + 1) == '\'') {
-                    int end = scanStringLiteral(content, index + 1);
-                    highlightRange(inputFile, highlighting, content, index, end, TypeOfText.STRING, lineStarts);
-                    index = end;
-                    continue;
-                }
-                if (ch == '\'') {
-                    int end = scanStringLiteral(content, index);
-                    highlightRange(inputFile, highlighting, content, index, end, TypeOfText.STRING, lineStarts);
-                    index = end;
-                    continue;
-                }
             }
             if (ch == '[') {
-                int end = index + 1;
-                while (end < content.length()) {
-                    if (content.charAt(end) == ']') {
-                        if (end + 1 < content.length() && content.charAt(end + 1) == ']') {
-                            end += 2;
+                int bracketEnd = index + 1;
+                while (bracketEnd < content.length()) {
+                    if (content.charAt(bracketEnd) == ']') {
+                        if (bracketEnd + 1 < content.length() && content.charAt(bracketEnd + 1) == ']') {
+                            bracketEnd += 2;
                             continue;
                         }
-                        end++;
+                        bracketEnd++;
                         break;
                     }
-                    end++;
+                    bracketEnd++;
                 }
-                if (end > content.length()) {
-                    end = content.length();
+                if (bracketEnd > content.length()) {
+                    bracketEnd = content.length();
                 }
-                highlightRange(inputFile, highlighting, content, index, end, TypeOfText.KEYWORD_LIGHT, lineStarts);
-                index = end;
+                highlightRange(inputFile, highlighting, content, index, bracketEnd, TypeOfText.KEYWORD_LIGHT, lineStarts);
+                index = bracketEnd;
                 continue;
             }
             if (isIdentifierStart(ch)) {
-                int end = index + 1;
-                while (end < content.length() && isIdentifierPart(content.charAt(end))) {
-                    end++;
+                int wordEnd = index + 1;
+                while (wordEnd < content.length() && isIdentifierPart(content.charAt(wordEnd))) {
+                    wordEnd++;
                 }
-                String word = content.substring(index, end);
+                String word = content.substring(index, wordEnd);
                 TypeOfText type = isKeyword(word) ? TypeOfText.KEYWORD : TypeOfText.KEYWORD_LIGHT;
-                highlightRange(inputFile, highlighting, content, index, end, type, lineStarts);
-                index = end;
+                highlightRange(inputFile, highlighting, content, index, wordEnd, type, lineStarts);
+                index = wordEnd;
                 continue;
             }
             index++;
         }
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private static int scanComment(String content, int start) {
+        if (content == null || start < 0 || start + 1 >= content.length()) {
+            return start;
+        }
+        if (content.charAt(start) == '-' && content.charAt(start + 1) == '-') {
+            int end = start + 2;
+            while (end < content.length() && content.charAt(end) != '\n' && content.charAt(end) != '\r') {
+                end++;
+            }
+            return end;
+        }
+        if (content.charAt(start) == '/' && content.charAt(start + 1) == '*') {
+            int end = start + 2;
+            while (end + 1 < content.length() && !(content.charAt(end) == '*' && content.charAt(end + 1) == '/')) {
+                end++;
+            }
+            return (end + 1 < content.length()) ? end + 2 : content.length();
+        }
+        return start;
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private static int scanStringToken(String content, int start) {
+        if (content == null || start < 0 || start >= content.length()) {
+            return start;
+        }
+        char ch = content.charAt(start);
+        if (ch == '\'') {
+            return scanStringLiteral(content, start);
+        }
+        if ((ch == 'N' || ch == 'n') && start + 1 < content.length() && content.charAt(start + 1) == '\'') {
+            return scanStringLiteral(content, start + 1);
+        }
+        return start;
     }
 
     // TRACEABILITY_MAPPING: REQ-005

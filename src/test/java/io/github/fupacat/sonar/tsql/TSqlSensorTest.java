@@ -308,6 +308,49 @@ class TSqlSensorTest {
 
     // TRACEABILITY_MAPPING: REQ-005
     @Test
+    void testTokenHighlightingSkipsInvalidTokensAndRanges() throws Exception {
+        InputFile inputFile = mock(InputFile.class);
+        NewHighlighting highlighting = mock(NewHighlighting.class, org.mockito.Mockito.RETURNS_SELF);
+        TextRange keywordRange = mock(TextRange.class);
+
+        when(inputFile.lines()).thenReturn(5);
+        when(inputFile.newRange(1, 0, 1, 6)).thenReturn(keywordRange);
+
+        TSqlParserToken validKeyword = new TSqlParserToken(TSqlTokenType.Select, 0, "SELECT", 1, 1);
+        TSqlParserToken outOfBoundsComment = new TSqlParserToken(TSqlTokenType.SingleLineComment, 0, "-- x", 99, 1);
+        TSqlParserToken nullType = new TSqlParserToken(null, 0, "foo", 1, 1);
+
+        invokePrivate("publishHighlightingFromTokens", new Class<?>[] {InputFile.class, NewHighlighting.class, List.class},
+                inputFile, highlighting, List.of("not-a-token", validKeyword, outOfBoundsComment, nullType));
+
+        verify(highlighting).highlight(keywordRange, TypeOfText.KEYWORD);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void testRangeForTokenAndScannersHandleMultilineAndPartialInputs() throws Exception {
+        InputFile inputFile = mock(InputFile.class);
+        TextRange tokenRange = mock(TextRange.class);
+
+        when(inputFile.lines()).thenReturn(10);
+        when(inputFile.newRange(2, 3, 3, 1)).thenReturn(tokenRange);
+
+        TSqlParserToken multilineToken = new TSqlParserToken(TSqlTokenType.UnicodeStringLiteral, 0, "ab\r\nc", 2, 4);
+        Object resolvedRange = invokePrivate("rangeForToken", new Class<?>[] {InputFile.class, TSqlParserToken.class}, inputFile, multilineToken);
+        assertThat(resolvedRange).isSameAs(tokenRange);
+
+        TSqlParserToken invalidToken = new TSqlParserToken(TSqlTokenType.UnicodeStringLiteral, 0, "x", 99, 1);
+        Object invalidRange = invokePrivate("rangeForToken", new Class<?>[] {InputFile.class, TSqlParserToken.class}, inputFile, invalidToken);
+        assertThat(invalidRange).isNull();
+
+        assertThat(invokePrivate("scanComment", new Class<?>[] {String.class, int.class}, "-- hi\r\n", 0)).isEqualTo(5);
+        assertThat(invokePrivate("scanComment", new Class<?>[] {String.class, int.class}, "/*open", 0)).isEqualTo(6);
+        assertThat(invokePrivate("scanStringToken", new Class<?>[] {String.class, int.class}, "N'ab'", 0)).isEqualTo(5);
+        assertThat(invokePrivate("scanStringToken", new Class<?>[] {String.class, int.class}, "'a''b'", 0)).isEqualTo(6);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
     void testFallbackHighlightingHandlesMultilineStringEscapedIdentifierAndPartialComment() throws IOException {
         SensorContext context = mock(SensorContext.class);
         FileSystem fs = mock(FileSystem.class);
