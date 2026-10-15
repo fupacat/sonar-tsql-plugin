@@ -145,6 +145,9 @@ for _ in range(60):
 assert issues, 'No issues were reported for the smoke fixture; scanner did not exercise the plugin.'
 assert any(issue.get('rule') == 'tsql:AvoidSelectAll' for issue in issues), issues
 assert any(issue.get('rule') == 'tsql:SyntaxError' for issue in issues), issues
+assert any(issue.get('rule') == 'tsql:SR0014'
+           and issue.get('component', '').endswith('routines/010_get_accounts.sql')
+           for issue in issues), 'No narrowing-cast issue used metadata from the separate DDL file'
 assert any(issue.get('component', '').endswith('ddl/001_schema.sql') for issue in issues), issues
 assert any(issue.get('component', '').endswith('routines/010_get_accounts.sql') for issue in issues), issues
 assert all(issue.get('line') is not None for issue in issues), issues

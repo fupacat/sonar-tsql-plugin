@@ -13,3 +13,7 @@ CREATE TABLE dbo.Accounts (
 );
 
 CREATE INDEX IX_Accounts_UserId ON dbo.Accounts (UserId);
+
+CREATE TABLE dbo.WideValues (
+    WideValue BIGINT NOT NULL PRIMARY KEY
+);

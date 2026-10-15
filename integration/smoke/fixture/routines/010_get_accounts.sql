@@ -19,3 +19,6 @@ RETURN
     WHERE Id = @UserId
 );
 GO
+
+-- The BIGINT source type is declared only in the separate DDL fixture.
+SELECT CAST(WideValue AS INT) FROM dbo.WideValues;
