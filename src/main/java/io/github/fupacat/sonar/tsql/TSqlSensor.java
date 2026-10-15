@@ -682,7 +682,11 @@ public class TSqlSensor implements Sensor {
 
     // TRACEABILITY_MAPPING: REQ-005
     private int skipSingleLineComment(String sourceText, int index) {
-        while (index < sourceText.length() && sourceText.charAt(index) != '\n') {
+        while (index < sourceText.length()) {
+            char ch = sourceText.charAt(index);
+            if (ch == '\n' || ch == '\r') {
+                break;
+            }
             index++;
         }
         return index;
