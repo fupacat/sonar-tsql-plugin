@@ -85,6 +85,9 @@ public final class ProjectSchemaCatalog {
         if (root == null) {
             return;
         }
+        queryScopeStack.clear();
+        queryScopes.clear();
+        expressionScopeByColumn.clear();
         root.accept(new CatalogIndexer());
     }
 
