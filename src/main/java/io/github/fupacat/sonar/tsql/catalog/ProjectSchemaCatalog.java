@@ -62,20 +62,39 @@ public final class ProjectSchemaCatalog {
     }
 
     public static ProjectSchemaCatalog fromInputFiles(Iterable<InputFile> inputFiles) {
-        ProjectSchemaCatalog catalog = new ProjectSchemaCatalog();
+        if (inputFiles == null) {
+            return empty();
+        }
+        List<ParseResult<TSqlScript>> parsedResults = new ArrayList<>();
         for (InputFile inputFile : inputFiles) {
-            if (inputFile != null) {
-                try {
-                    String content = inputFile.contents();
-                    ParseResult<TSqlScript> result = TSqlParser.parse(content);
-                    if (result != null && result.fragment() != null) {
-                        catalog.indexScript(result.fragment());
-                    }
-                } catch (IOException ignored) {
-                    // ignore unreadable file
-                } catch (RuntimeException e) {
-                    LOG.warn("Failed to index schema catalog for file: {}", inputFile.uri(), e);
-                }
+            if (inputFile == null) {
+                continue;
+            }
+            try {
+                String content = inputFile.contents();
+                parsedResults.add(TSqlParser.parse(content));
+            } catch (IOException ignored) {
+                // ignore unreadable file
+            } catch (RuntimeException e) {
+                LOG.warn("Failed to parse schema catalog input: {}", inputFile.uri(), e);
+            }
+        }
+        return fromParsedResults(parsedResults);
+    }
+
+    public static ProjectSchemaCatalog fromParsedResults(Iterable<ParseResult<TSqlScript>> parsedResults) {
+        ProjectSchemaCatalog catalog = new ProjectSchemaCatalog();
+        if (parsedResults == null) {
+            return catalog;
+        }
+        for (ParseResult<TSqlScript> result : parsedResults) {
+            if (result == null || result.fragment() == null) {
+                continue;
+            }
+            try {
+                catalog.indexScript(result.fragment());
+            } catch (Exception e) {
+                LOG.warn("Failed to index script while building project schema catalog", e);
             }
         }
         return catalog;
