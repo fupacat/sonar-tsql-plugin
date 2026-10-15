@@ -28,6 +28,8 @@ import org.sonar.api.batch.sensor.highlighting.NewHighlighting;
 import org.sonar.api.batch.sensor.highlighting.TypeOfText;
 import org.sonar.api.batch.sensor.issue.NewIssue;
 import org.sonar.api.batch.sensor.issue.NewIssueLocation;
+import org.sonar.api.batch.sensor.measure.NewMeasure;
+import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.rule.RuleKey;
 
 import java.io.IOException;
@@ -168,6 +170,7 @@ public class TSqlSensor implements Sensor {
         reportParseErrors(inputFile, context, parsedFile.result());
         publishHighlighting(inputFile, context, parsedFile.result(), parsedFile.content());
         publishCpdTokens(inputFile, context, parsedFile.content());
+        publishSourceMetrics(inputFile, context, parsedFile.content());
         if (parsedFile.result().fragment() == null) {
             return;
         }
@@ -175,6 +178,30 @@ public class TSqlSensor implements Sensor {
     }
 
     private record ParsedFile(String content, ParseResult<TSqlScript> result, IOException readException, Exception parseException) {
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private void publishSourceMetrics(InputFile inputFile, SensorContext context, String content) {
+        TSqlSourceMetrics metrics = TSqlSourceMetrics.fromText(content);
+        saveMeasure(context, inputFile, CoreMetrics.NCLOC, metrics.nonCommentLines());
+        saveMeasure(context, inputFile, CoreMetrics.COMMENT_LINES, metrics.commentLines());
+        saveMeasure(context, inputFile, CoreMetrics.COMPLEXITY, metrics.complexity());
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private void saveMeasure(SensorContext context, InputFile inputFile,
+            org.sonar.api.measures.Metric<Integer> metric, int value) {
+        if (metric == null || context == null) {
+            return;
+        }
+        NewMeasure<Integer> measure = context.newMeasure();
+        if (measure == null) {
+            return;
+        }
+        measure.on(inputFile)
+                .forMetric(metric)
+                .withValue(value)
+                .save();
     }
 
     // TRACEABILITY_MAPPING: REQ-005
