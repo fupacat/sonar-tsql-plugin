@@ -61,7 +61,25 @@ class SchemaAwareChecksTest {
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.MethodSource("isNullLengthCases")
     void testIsNullReplacementLength(String sql, int expectedIssues) {
-        assertThat(CheckTestUtils.scan(nullableColumnCheck, sql)).as(sql).hasSize(expectedIssues);
+        var parsed = TSqlParser.parse(sql).fragment();
+        var details = new StringBuilder(sql);
+        details.append(" rootTokens=").append(parsed.ScriptTokenStream);
+        parsed.accept(new TSqlConcreteFragmentVisitor() {
+            @Override
+            public void visit(io.github.fupacat.ast.ColumnDefinition column) {
+                details.append(" columnBounds=").append(column.firstTokenIndex).append(':')
+                        .append(column.lastTokenIndex).append(" constraints=").append(column.Constraints);
+                if (column.Constraints != null) {
+                    for (var constraint : column.Constraints) {
+                        if (constraint instanceof io.github.fupacat.ast.NullableConstraintDefinition nullable) {
+                            details.append(" nullable=").append(nullable.Nullable);
+                        }
+                    }
+                }
+                super.visit(column);
+            }
+        });
+        assertThat(CheckTestUtils.scan(nullableColumnCheck, sql)).as(details.toString()).hasSize(expectedIssues);
     }
 
     private static java.util.stream.Stream<org.junit.jupiter.params.provider.Arguments> isNullLengthCases() {
