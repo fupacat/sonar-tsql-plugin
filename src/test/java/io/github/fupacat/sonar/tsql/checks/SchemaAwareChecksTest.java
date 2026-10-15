@@ -61,7 +61,7 @@ class SchemaAwareChecksTest {
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.MethodSource("isNullLengthCases")
     void testIsNullReplacementLength(String sql, int expectedIssues) {
-        assertThat(CheckTestUtils.scan(nullableColumnCheck, sql)).hasSize(expectedIssues);
+        assertThat(CheckTestUtils.scan(nullableColumnCheck, sql)).as(sql).hasSize(expectedIssues);
     }
 
     private static java.util.stream.Stream<org.junit.jupiter.params.provider.Arguments> isNullLengthCases() {

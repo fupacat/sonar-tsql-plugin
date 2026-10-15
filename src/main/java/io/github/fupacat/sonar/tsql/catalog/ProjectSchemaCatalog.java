@@ -506,8 +506,8 @@ public final class ProjectSchemaCatalog {
                 return true;
             }
             for (ConstraintDefinition constraint : constraints) {
-                if (constraint instanceof NullableConstraintDefinition nullableConstraint) {
-                    return nullableConstraint.Nullable;
+                if (constraint instanceof NullableConstraintDefinition nullableConstraint && !nullableConstraint.Nullable) {
+                    return false;
                 }
                 if (constraint instanceof UniqueConstraintDefinition uniqueConstraint && uniqueConstraint.IsPrimaryKey) {
                     return false;
