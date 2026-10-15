@@ -89,4 +89,43 @@ class TSqlSourceMetricsTest {
         assertThat(metrics.statements()).isEqualTo(1);
         assertThat(metrics.complexity()).isZero();
     }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void countsMultilineStringInteriorLinesAsCode() {
+        TSqlSourceMetrics metrics = TSqlSourceMetrics.fromText(
+                "SET @sql = 'line 1\nline 2\nline 3';\nSELECT 1;");
+
+        assertThat(metrics.lines()).isEqualTo(4);
+        assertThat(metrics.commentLines()).isZero();
+        assertThat(metrics.nonCommentLines()).isEqualTo(4);
+        assertThat(metrics.statements()).isEqualTo(2);
+        assertThat(metrics.complexity()).isZero();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void ignoresBracketQuotedIdentifiersWhenCountingKeywordsAndStatements() {
+        TSqlSourceMetrics metrics = TSqlSourceMetrics.fromText(
+                "SELECT [IF], [CASE], [WHILE], [GO] FROM [table];\nSELECT [IF] FROM [GO];");
+
+        assertThat(metrics.lines()).isEqualTo(2);
+        assertThat(metrics.commentLines()).isZero();
+        assertThat(metrics.nonCommentLines()).isEqualTo(2);
+        assertThat(metrics.statements()).isEqualTo(2);
+        assertThat(metrics.complexity()).isZero();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void handlesNestedBlockCommentsWithoutLeakingControlFlow() {
+        TSqlSourceMetrics metrics = TSqlSourceMetrics.fromText(
+                "/* outer /* inner IF */ still comment */\nSELECT 1;\n/* outer IF /* inner WHILE */ still comment */\nSELECT CASE WHEN 1=1 THEN 2 ELSE 3 END;");
+
+        assertThat(metrics.lines()).isEqualTo(4);
+        assertThat(metrics.commentLines()).isEqualTo(2);
+        assertThat(metrics.nonCommentLines()).isEqualTo(2);
+        assertThat(metrics.statements()).isEqualTo(2);
+        assertThat(metrics.complexity()).isEqualTo(1);
+    }
 }

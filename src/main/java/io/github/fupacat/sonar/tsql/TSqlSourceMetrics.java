@@ -5,7 +5,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 final class TSqlSourceMetrics {
-    private static final Pattern KEYWORD_PATTERN = Pattern.compile("(?i)(\\b(IF|WHILE|CASE)\\b|\\bBEGIN\\s+(TRY|CATCH)\\b)");
+    private static final Pattern KEYWORD_PATTERN = Pattern.compile("(?i)(?:\\b(IF|WHILE|CASE)\\b|\\bBEGIN\\s+TRY\\b|\\bBEGIN\\s+CATCH\\b)");
     private static final Pattern STATEMENT_SEPARATOR_PATTERN = Pattern.compile("(?i)(?:;|\\bGO\\b)");
 
     private final int lines;
@@ -27,8 +27,7 @@ final class TSqlSourceMetrics {
             return new TSqlSourceMetrics(0, 0, 0, 0, 0);
         }
 
-        List<String> lines = sourceText.lines().toList();
-        int lineCount = lines.size();
+        int lineCount = sourceText.lines().toList().size();
         ScanResult scanResult = scanSourceText(sourceText);
         int statementCount = countMatches(scanResult.sanitizedText(), STATEMENT_SEPARATOR_PATTERN);
         int complexityCount = countMatches(scanResult.sanitizedText(), KEYWORD_PATTERN);
@@ -43,6 +42,7 @@ final class TSqlSourceMetrics {
         int ncloc = 0;
         boolean lineHasCode = false;
         boolean lineHasComment = false;
+        int blockCommentDepth = 0;
 
         for (int i = 0; i < sourceText.length(); i++) {
             char current = sourceText.charAt(i);
@@ -59,16 +59,26 @@ final class TSqlSourceMetrics {
                     sanitized.append('\n');
                 } else {
                     lineHasComment = true;
+                    sanitized.append(' ');
                 }
                 continue;
             }
 
             if (state == ParseState.BLOCK_COMMENT) {
-                if (current == '*' && next == '/') {
+                if (current == '/' && next == '*') {
+                    blockCommentDepth++;
                     lineHasComment = true;
-                    state = ParseState.CODE;
                     sanitized.append(' ');
                     i++;
+                } else if (current == '*' && next == '/') {
+                    lineHasComment = true;
+                    blockCommentDepth--;
+                    sanitized.append(' ');
+                    i++;
+                    if (blockCommentDepth <= 0) {
+                        blockCommentDepth = 0;
+                        state = ParseState.CODE;
+                    }
                 } else if (current == '\n') {
                     LineTotals totals = closeLine(lineHasCode, lineHasComment);
                     commentLines += totals.commentLines();
@@ -78,6 +88,7 @@ final class TSqlSourceMetrics {
                     sanitized.append('\n');
                 } else {
                     lineHasComment = true;
+                    sanitized.append(' ');
                 }
                 continue;
             }
@@ -90,10 +101,17 @@ final class TSqlSourceMetrics {
                     lineHasCode = false;
                     lineHasComment = false;
                     sanitized.append('\n');
-                } else if (current == '\'' && next == '\'') {
-                    i++;
-                } else if (current == '\'') {
-                    state = ParseState.CODE;
+                } else {
+                    lineHasCode = true;
+                    if (current == '\'' && next == '\'') {
+                        sanitized.append(' ');
+                        i++;
+                    } else if (current == '\'') {
+                        sanitized.append(' ');
+                        state = ParseState.CODE;
+                    } else {
+                        sanitized.append(' ');
+                    }
                 }
                 continue;
             }
@@ -106,10 +124,40 @@ final class TSqlSourceMetrics {
                     lineHasCode = false;
                     lineHasComment = false;
                     sanitized.append('\n');
-                } else if (current == '"' && next == '"') {
-                    i++;
-                } else if (current == '"') {
-                    state = ParseState.CODE;
+                } else {
+                    lineHasCode = true;
+                    if (current == '"' && next == '"') {
+                        sanitized.append(' ');
+                        i++;
+                    } else if (current == '"') {
+                        sanitized.append(' ');
+                        state = ParseState.CODE;
+                    } else {
+                        sanitized.append(' ');
+                    }
+                }
+                continue;
+            }
+
+            if (state == ParseState.BRACKET_IDENTIFIER) {
+                if (current == '\n') {
+                    LineTotals totals = closeLine(lineHasCode, lineHasComment);
+                    commentLines += totals.commentLines();
+                    ncloc += totals.ncloc();
+                    lineHasCode = false;
+                    lineHasComment = false;
+                    sanitized.append('\n');
+                } else {
+                    lineHasCode = true;
+                    if (current == ']' && next == ']') {
+                        sanitized.append(' ');
+                        i++;
+                    } else if (current == ']') {
+                        sanitized.append(' ');
+                        state = ParseState.CODE;
+                    } else {
+                        sanitized.append(' ');
+                    }
                 }
                 continue;
             }
@@ -127,13 +175,16 @@ final class TSqlSourceMetrics {
             if (current == '-' && next == '-') {
                 lineHasComment = true;
                 state = ParseState.LINE_COMMENT;
+                sanitized.append(' ');
                 i++;
                 continue;
             }
 
             if (current == '/' && next == '*') {
                 lineHasComment = true;
+                blockCommentDepth = 1;
                 state = ParseState.BLOCK_COMMENT;
+                sanitized.append(' ');
                 i++;
                 continue;
             }
@@ -152,6 +203,13 @@ final class TSqlSourceMetrics {
                 continue;
             }
 
+            if (current == '[') {
+                lineHasCode = true;
+                state = ParseState.BRACKET_IDENTIFIER;
+                sanitized.append(' ');
+                continue;
+            }
+
             if (!Character.isWhitespace(current)) {
                 lineHasCode = true;
             }
@@ -165,9 +223,10 @@ final class TSqlSourceMetrics {
     }
 
     private static LineTotals closeLine(boolean lineHasCode, boolean lineHasComment) {
-        int commentLines = lineHasComment && !lineHasCode ? 1 : 0;
-        int ncloc = lineHasCode ? 1 : 0;
-        return new LineTotals(commentLines, ncloc);
+        if (lineHasComment && !lineHasCode) {
+            return new LineTotals(1, 0);
+        }
+        return new LineTotals(0, lineHasCode ? 1 : 0);
     }
 
     int lines() {
@@ -204,7 +263,8 @@ final class TSqlSourceMetrics {
         LINE_COMMENT,
         BLOCK_COMMENT,
         SINGLE_QUOTE,
-        DOUBLE_QUOTE
+        DOUBLE_QUOTE,
+        BRACKET_IDENTIFIER
     }
 
     private record LineTotals(int commentLines, int ncloc) {
