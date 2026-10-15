@@ -108,9 +108,11 @@ Not currently implemented:
 
 ## Compatibility
 
-- **SonarQube Server:** 9.9 LTS and 10.x+
+- **SonarQube Server:** 9.9.1-community (minimum supported release) and 25.1.0.102122-community (current supported server version exercised by the packaged-plugin smoke test)
 - **Java Runtime:** Java 17 or higher
 - **SQL Server Versions:** SQL Server 2008 through SQL Server 2022, Azure SQL Database
+
+The packaged plugin is smoke-tested against the minimum supported SonarQube release and the current API target using the harness in `scripts/sonarqube-smoke-test.sh`.
 
 ---
 
@@ -163,6 +165,23 @@ Publish:
 ## Maintaining rule inventory consistency
 
 The consistency test in TSqlRulesDefinitionTest extracts every documented rule key from the category lists and compares the complete set against the registered RulesDefinition repository, rejecting missing, extra, or duplicate entries. It also checks the displayed rule count against the registry size and verifies the default profile and catalog documentation. This keeps the inventory aligned with the actual Sonar rule keys rather than implementation class names.
+
+## Packaged Plugin Smoke Test
+
+The smoke test requires JDK 17+, Maven 3.8+, and Docker.
+
+```bash
+mvn -DskipTests package
+SQ_VERSION=9.9.1-community ./scripts/sonarqube-smoke-test.sh
+SQ_VERSION=25.1.0.102122-community ./scripts/sonarqube-smoke-test.sh
+```
+
+The smoke test starts a SonarQube container, installs the built JAR, scans the fixture project under `integration/smoke/fixture`, and validates that:
+
+- the `tsql` language is registered;
+- the built-in rules and `Sonar way` profile are active;
+- the fixture produces issues under the plugin; and
+- cross-file schema/routine scan behavior works for separate DDL and routine files.
 
 ---
 
