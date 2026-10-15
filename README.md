@@ -28,7 +28,7 @@ Powered by [**tsql-scriptdom-java**](https://github.com/fupacat/tsql-scriptdom-j
 The sensor publishes the core file metrics SonarQube expects for T-SQL sources:
 
 - `ncloc`: non-comment lines of code
-- `comment_lines`: comment-only and inline comment lines
+- `comment_lines`: comment-only lines
 - `statements`: statement separators such as `;` and `GO`
 - `complexity`: complexity contributions from branching and exception-control constructs
 
