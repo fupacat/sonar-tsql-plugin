@@ -42,6 +42,39 @@ jobs:
           path: target/sonar-tsql-plugin-*.jar
           if-no-files-found: error
 
+  smoke-test:
+    name: SonarQube smoke test (${{ matrix.sq-version }})
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        sq-version: ['9.9.1-community', '25.1.0.102122-community']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Download verified plugin for smoke test
+        uses: actions/download-artifact@v4
+        with:
+          name: sonar-tsql-plugin
+          path: target/
+
+      - name: Validate packaged plugin against SonarQube ${{ matrix.sq-version }}
+        env:
+          SQ_VERSION: ${{ matrix.sq-version }}
+        run: ./scripts/sonarqube-smoke-test.sh
+
   update-prs:
     name: Update Open PR Branches on Main Push
     needs: build
