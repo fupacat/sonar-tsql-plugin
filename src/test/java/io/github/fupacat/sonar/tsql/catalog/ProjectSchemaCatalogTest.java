@@ -13,6 +13,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -67,6 +69,19 @@ class ProjectSchemaCatalogTest {
 
         assertThat(catalog.hasTable("Orders")).isTrue();
         assertThat(catalog.hasTable("Missing")).isFalse();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-016
+    @Test
+    void testFromParsedResultsIsolatesIndexerFailuresPerScript() {
+        ParseResult<TSqlScript> goodResult = TSqlParser.parse("CREATE TABLE dbo.Users (Id INT NOT NULL);");
+        TSqlScript badFragment = mock(TSqlScript.class);
+        doThrow(new RuntimeException("boom")).when(badFragment).accept(any());
+        ParseResult<TSqlScript> badResult = new ParseResult<>(badFragment, List.of());
+
+        ProjectSchemaCatalog catalog = ProjectSchemaCatalog.fromParsedResults(List.of(badResult, goodResult));
+
+        assertThat(catalog.hasTable("dbo.Users")).isTrue();
     }
 
     // TRACEABILITY_MAPPING: REQ-017
