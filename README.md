@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![ScriptDOM](https://img.shields.io/badge/Powered%20By-tsql--scriptdom--java-orange.svg)](https://github.com/fupacat/tsql-scriptdom-java)
 
-**SonarQube T-SQL Plugin** provides native static code analysis and AST-based linting for **Microsoft Transact-SQL (T-SQL)** in SonarQube and SonarCloud.
+**SonarQube T-SQL Plugin** provides native static analysis and AST-based linting for **Microsoft Transact-SQL (T-SQL)** in SonarQube and SonarCloud.
 
 Powered by [**tsql-scriptdom-java**](https://github.com/fupacat/tsql-scriptdom-java), this plugin parses T-SQL files using Microsoft's official ScriptDOM grammar directly on the JVM—without external native CLI dependencies or .NET bridges.
 
@@ -14,10 +14,11 @@ Powered by [**tsql-scriptdom-java**](https://github.com/fupacat/tsql-scriptdom-j
 
 ## Features
 
-- **Language Registration:** Recognizes `.sql` and `.tsql` files as first-class Transact-SQL source units.
-- **Deep AST Analysis:** Evaluates parsed Abstract Syntax Tree fragments with token streams and exact file coordinates.
-- **Syntax Error Detection:** Flags parsing and grammar violations with line and column precision.
-- **Built-in Quality Profile:** Pre-configured "Sonar way" quality profile activating all built-in rules out of the box.
+- **Language registration:** Recognizes `.sql` and `.tsql` files as first-class Transact-SQL sources.
+- **Deep AST analysis:** Evaluates parsed Abstract Syntax Tree fragments with token streams and exact file coordinates.
+- **Cross-file DDL catalog:** Builds a project schema catalog from `CREATE TABLE`, `CREATE INDEX`, and related DDL in analyzed files.
+- **Syntax error detection:** Flags parsing and grammar violations with line and column precision.
+- **Built-in quality profile:** The default `Sonar way` profile activates the full built-in rule set out of the box.
 - **Source Metrics:** Publishes standard SonarQube file measures for NCLOC, comment lines, statements, and cyclomatic complexity.
 
 ---
@@ -42,23 +43,96 @@ This means representative routines such as nested `IF` blocks, `CASE` expression
 
 ---
 
-## Built-In Rules
+## Current rule inventory
 
-| Rule Key | Rule Name | Severity | Type | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `AvoidSelectAll` | Avoid using `SELECT *` | Major | Code Smell | Discourages wildcard column selection. Enforces explicit column lists to minimize I/O and prevent schema coupling. |
-| `AvoidLeadingWildcardInLike` | Avoid leading wildcards in `LIKE` predicates | Critical | Bug | Prevents `LIKE '%...'` and `LIKE '_...'` expressions that defeat index seeks and cause full table/index scans. |
-| `AvoidNoLockHint` | Avoid `NOLOCK` and `READUNCOMMITTED` table hints | Major | Bug | Flags dirty reads, missing rows, and allocation scan inconsistencies caused by the `NOLOCK` hint. |
-| `AvoidDeprecatedTypes` | Avoid deprecated data types (`TEXT`, `NTEXT`, `IMAGE`) | Major | Code Smell | Detects legacy LOB types and recommends modern replacements (`VARCHAR(MAX)`, `NVARCHAR(MAX)`, `VARBINARY(MAX)`). |
-| `SyntaxError` | T-SQL syntax error | Blocker | Bug | Surfaces syntax errors directly reported by the Microsoft T-SQL ScriptDOM parser. |
+This repository currently registers 71 built-in T-SQL rules in the `tsql` repository and activates them in the default `Sonar way` profile (`TSqlRulesDefinition` + `TSqlQualityProfile`). The inventory below reflects the implementation at the current revision, not the initial five-rule baseline.
+
+### Default activation
+
+All implemented rules below are active by default in the built-in `Sonar way` quality profile. The default profile is created by `TSqlQualityProfile.define(...)` and marked as `setDefault(true)`.
+
+### Rule inventory by category
+
+The keys below are the actual rule keys registered by `TSqlRulesDefinition` and activated in the default `Sonar way` profile. Custom plugin rules use their implementation names (for example `AvoidSelectAll`), while standard Sonar keys use the corresponding Sonar identifier (for example `S1523`, `SR0014`, `S1614`).
+
+#### Core correctness and query safety (default active)
+
+`AvoidSelectAll`, `AvoidLeadingWildcardInLike`, `AvoidNoLockHint`, `AvoidDeprecatedTypes`, `S1590`, `S3641`, `S2527`, `S4054`, `S4094`, `S1523`, `S2070`, `S2068`, `S1614`, `S1745`, `S4078`, `S1735`, `S4801`, `S4102`, `S4149`, `SR0006`, `S4108`, `SR0009`, `SR0010`, `SR0011`, `S4413`, `S4196`, `SR0015`, `SR0016`, `S4819`, `S6498`, `S4154`, `S4155`, `S4103`, `S4104`, `S4109`, `S3643`, `S1742`, `SR0004`, `SR0007`, `SR0014`, `SyntaxError`
+
+#### Logic and control-flow checks (default active)
+
+`S1481`, `S1172`, `S1065`, `S1763`, `S1751`, `S1656`, `S2737`, `S3626`, `S1764`, `S1862`, `S1871`, `S2761`, `S3633`, `S121`, `S131`, `S907`, `S1066`
+
+#### Maintainability, formatting, and conventions (default active)
+
+`S103`, `S104`, `S105`, `S122`, `S125`, `S1134`, `S1135`, `NoSonar`, `S1451`, `S3972`, `S3973`, `S138`, `S1151`
+
+> The `Sonar way` profile is the default profile; it is not a partial or experimental subset. The plugin intentionally ships the complete rule set that is implemented in code and metadata.
+
+---
+
+## Cross-file DDL catalog scope and limitations
+
+The plugin builds a project-wide schema catalog from the T-SQL DDL it can parse in the analyzed codebase. This catalog is used by schema-aware checks such as:
+
+- `SR0004` (`InPredicateIndexedColumn`)
+- `SR0007` (`NullableColumnIsNull`)
+- `SR0014` (`NarrowingCast`)
+
+`S1614` (`PrimaryKeyRequired`) inspects `CREATE TABLE` statements directly and does not depend on the cross-file project catalog.
+
+### What the catalog covers
+
+- `CREATE TABLE` statements, including column definitions and basic nullability metadata
+- `CREATE INDEX` / indexed column discovery for the project scope
+- Cross-file resolution of table and column names within the analyzed project for those checks that explicitly read the project catalog
+- Case-insensitive table / column matching for SQL Server-style identifier behavior
+
+### What the catalog does not cover
+
+- Live database metadata or remote schema introspection
+- Dynamic DDL generation, runtime schema creation, or migration tools executed outside the analyzed files
+- Full dependency analysis across external libraries, generated scripts, or stored procedures not included in the project scan
+- Full SQL Server semantic coverage such as alias resolution beyond the simplest same-name lookups, advanced partitioning, constraint semantics, or runtime object metadata
+
+This catalog is intentionally best-effort: it is designed to support project-aware checks without requiring a remote database connection or a full SQL Server engine. Current limitations include dropping schema/database qualifiers when indexing tables, treating aliases as table names, and falling back to a matching column elsewhere in the project. These can produce incorrect findings when names collide or metadata is missing; scoped resolution is tracked in issue #37.
+
+---
+
+## Known semantic limitations
+
+The implemented rules are intentionally scoped to what the plugin can reason about reliably from the parsed T-SQL AST and the in-repo schema catalog.
+
+- **AST-only logic:** Many checks are syntax-aware but not full semantic execution analysis.
+- **Schema limitations:** Cross-file DDL metadata is derived from project files only and is not a live database schema.
+- **No runtime metrics:** The plugin does not infer live query plans, execution timing, or distribution metrics from a running SQL Server instance.
+- **No deep duplicate analysis:** The project does not currently implement repository-wide duplicate-code analysis or structural deduplication reporting.
+- **No highlighting layer:** Inline editor highlights, code lens annotations, and richer UX-only rendering are not part of the current plugin behavior.
+
+### Implemented vs. planned
+
+Implemented today:
+
+- AST parsing and rule execution for T-SQL files
+- Built-in Sonar rule registration and the default `Sonar way` quality profile
+- Schema-aware checks that rely on the best-effort project DDL catalog
+- Rule metadata, severities, tags, and repository registration
+
+Not currently implemented:
+
+- Syntax highlighting in the IDE or Sonar UI
+- CPD token-based duplication detection
+- Live SQL execution metrics, runtime query plans, or dashboards backed by a running SQL Server instance
 
 ---
 
 ## Compatibility
 
-- **SonarQube Server:** 9.9 LTS and 10.x+
+- **SonarQube Server:** 9.9.1-community (minimum supported release) and 25.1.0.102122-community (current supported server version exercised by the packaged-plugin smoke test)
 - **Java Runtime:** Java 17 or higher
 - **SQL Server Versions:** SQL Server 2008 through SQL Server 2022, Azure SQL Database
+
+The packaged plugin is smoke-tested against the minimum supported SonarQube release and the current API target using the harness in `scripts/sonarqube-smoke-test.sh`.
 
 ---
 
@@ -105,6 +179,29 @@ Publish:
 
 1. Create and push the matching Git tag, such as `v0.1.0`.
 2. Confirm the `Release` workflow succeeds for that tag.
+
+---
+
+## Maintaining rule inventory consistency
+
+The consistency test in TSqlRulesDefinitionTest extracts every documented rule key from the category lists and compares the complete set against the registered RulesDefinition repository, rejecting missing, extra, or duplicate entries. It also checks the displayed rule count against the registry size and verifies the default profile and catalog documentation. This keeps the inventory aligned with the actual Sonar rule keys rather than implementation class names.
+
+## Packaged Plugin Smoke Test
+
+The smoke test requires JDK 17+, Maven 3.8+, and Docker.
+
+```bash
+mvn -DskipTests package
+SQ_VERSION=9.9.1-community ./scripts/sonarqube-smoke-test.sh
+SQ_VERSION=25.1.0.102122-community ./scripts/sonarqube-smoke-test.sh
+```
+
+The smoke test starts a SonarQube container, installs the built JAR, scans the fixture project under `integration/smoke/fixture`, and validates that:
+
+- the `tsql` language is registered;
+- the built-in rules and `Sonar way` profile are active;
+- the fixture produces issues under the plugin; and
+- cross-file schema/routine scan behavior works for separate DDL and routine files.
 
 ---
 
