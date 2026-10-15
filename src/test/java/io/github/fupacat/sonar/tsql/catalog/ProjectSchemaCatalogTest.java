@@ -308,7 +308,7 @@ class ProjectSchemaCatalogTest {
                 "Code MyCustomType(25), INDEX IX_Products_Code (Code));");
         assertThat(inlineIndexCatalog.hasTable("Products")).isTrue();
         assertThat(inlineIndexCatalog.getTable("Products").orElseThrow().getColumn("Code")).isPresent();
-        assertThat(inlineIndexCatalog.getTable("Products").orElseThrow().getColumn("Code").orElseThrow().getSqlType()).isEqualToIgnoringCase("MyCustomType");
+        assertThat(inlineIndexCatalog.getTable("Products").orElseThrow().getColumn("Code").orElseThrow().getSqlType()).isEqualTo("MyCustomType");
         assertThat(inlineIndexCatalog.getTable("Products").orElseThrow().getColumn("Code").orElseThrow().getLength()).isEqualTo(25);
 
         // Column with inline UniqueConstraintDefinition

@@ -621,7 +621,7 @@ public final class ProjectSchemaCatalog {
             if (dataType instanceof ParameterizedDataTypeReference parameterizedDataTypeReference
                     && parameterizedDataTypeReference.Name != null
                     && parameterizedDataTypeReference.Name.BaseIdentifier != null) {
-                return parameterizedDataTypeReference.Name.BaseIdentifier.Value.toLowerCase(Locale.ROOT);
+                return parameterizedDataTypeReference.Name.BaseIdentifier.Value;
             }
             return dataType.getClass().getSimpleName();
         }
