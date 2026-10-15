@@ -23,6 +23,7 @@ import org.sonar.api.batch.fs.TextRange;
 import org.sonar.api.batch.sensor.Sensor;
 import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.batch.sensor.SensorDescriptor;
+import org.sonar.api.batch.sensor.cpd.NewCpdTokens;
 import org.sonar.api.batch.sensor.highlighting.NewHighlighting;
 import org.sonar.api.batch.sensor.highlighting.TypeOfText;
 import org.sonar.api.batch.sensor.issue.NewIssue;
@@ -35,6 +36,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -167,6 +169,7 @@ public class TSqlSensor implements Sensor {
         }
         reportParseErrors(inputFile, context, parsedFile.result());
         publishHighlighting(inputFile, context, parsedFile.result(), parsedFile.content());
+        publishCpdTokens(inputFile, context, parsedFile.content());
         publishSourceMetrics(inputFile, context, parsedFile.content());
         if (parsedFile.result().fragment() == null) {
             return;
@@ -328,10 +331,19 @@ public class TSqlSensor implements Sensor {
         }
         if (content.charAt(start) == '/' && content.charAt(start + 1) == '*') {
             int end = start + 2;
-            while (end + 1 < content.length() && !(content.charAt(end) == '*' && content.charAt(end + 1) == '/')) {
-                end++;
+            int depth = 1;
+            while (end + 1 < content.length() && depth > 0) {
+                if (content.startsWith("/*", end)) {
+                    depth++;
+                    end += 2;
+                } else if (content.startsWith("*/", end)) {
+                    depth--;
+                    end += 2;
+                } else {
+                    end++;
+                }
             }
-            return (end + 1 < content.length()) ? end + 2 : content.length();
+            return depth == 0 ? end : content.length();
         }
         return start;
     }
@@ -540,6 +552,265 @@ public class TSqlSensor implements Sensor {
                 LOG.error("Error running check " + check.getRuleKey() + " on file " + inputFile.uri(), e);
             }
         }
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private void publishCpdTokens(InputFile inputFile, SensorContext context, String sourceText) {
+        if (sourceText == null || sourceText.isBlank()) {
+            return;
+        }
+        NewCpdTokens cpdTokens = context.newCpdTokens();
+        if (cpdTokens == null) {
+            return;
+        }
+        cpdTokens.onFile(inputFile);
+        for (CpdToken token : generateCpdTokens(sourceText)) {
+            cpdTokens.addToken(token.startLine, token.startColumn, token.endLine, token.endColumn, token.normalized);
+        }
+        cpdTokens.save();
+    }
+
+    private static final class CpdToken {
+        private final int startLine;
+        private final int startColumn;
+        private final int endLine;
+        private final int endColumn;
+        private final String normalized;
+
+        private CpdToken(int startLine, int startColumn, int endLine, int endColumn, String normalized) {
+            this.startLine = startLine;
+            this.startColumn = startColumn;
+            this.endLine = endLine;
+            this.endColumn = endColumn;
+            this.normalized = normalized;
+        }
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private List<CpdToken> generateCpdTokens(String sourceText) {
+        List<CpdToken> tokens = new ArrayList<>();
+        int[] lineStarts = buildLineStarts(sourceText);
+        int index = 0;
+        while (index < sourceText.length()) {
+            index = skipIgnoredContent(sourceText, index);
+            if (index < sourceText.length()) {
+                TokenMatch match = readNextToken(sourceText, lineStarts, index);
+                if (match == null) {
+                    index++;
+                } else {
+                    tokens.add(match.token);
+                    index = match.nextIndex;
+                }
+            }
+        }
+        return tokens;
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private int skipIgnoredContent(String sourceText, int index) {
+        while (index < sourceText.length()) {
+            char ch = sourceText.charAt(index);
+            if (Character.isWhitespace(ch)) {
+                index++;
+            } else {
+                int end = scanComment(sourceText, index);
+                if (end == index) {
+                    return index;
+                }
+                index = end;
+            }
+        }
+        return index;
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private TokenMatch readNextToken(String sourceText, int[] lineStarts, int index) {
+        char ch = sourceText.charAt(index);
+        if (isStringTokenStart(sourceText, index)) {
+            return consumeStringToken(sourceText, lineStarts, index);
+        }
+        if (ch == '[') {
+            return consumeDelimitedIdentifierToken(sourceText, lineStarts, index);
+        }
+        if (isCpdIdentifierStart(ch)) {
+            return consumeIdentifierToken(sourceText, lineStarts, index);
+        }
+        if (isNumberStart(sourceText, index)) {
+            return consumeNumberToken(sourceText, lineStarts, index);
+        }
+        String operator = readOperator(sourceText, index);
+        if (operator != null) {
+            int end = index + operator.length();
+            return new TokenMatch(toToken(lineStarts, index, end, operator), end);
+        }
+        return null;
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private boolean isStringTokenStart(String sourceText, int index) {
+        char ch = sourceText.charAt(index);
+        if (ch == '\'') {
+            return true;
+        }
+        return (ch == 'N' || ch == 'n') && index + 1 < sourceText.length() && sourceText.charAt(index + 1) == '\'';
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private TokenMatch consumeStringToken(String sourceText, int[] lineStarts, int index) {
+        int start = index;
+        int end = scanStringLiteral(sourceText, index + (sourceText.charAt(index) == '\'' ? 0 : 1));
+        return new TokenMatch(toToken(lineStarts, start, end, "<string>"), end);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private TokenMatch consumeDelimitedIdentifierToken(String sourceText, int[] lineStarts, int index) {
+        int start = index;
+        int end = skipDelimitedIdentifier(sourceText, index);
+        String normalized = normalizeIdentifier(sourceText.substring(start, end));
+        if (normalized == null) {
+            return null;
+        }
+        return new TokenMatch(toToken(lineStarts, start, end, normalized), end);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private TokenMatch consumeIdentifierToken(String sourceText, int[] lineStarts, int index) {
+        int start = index;
+        int end = index + 1;
+        while (end < sourceText.length() && isCpdIdentifierPart(sourceText.charAt(end))) {
+            end++;
+        }
+        String normalized = normalizeIdentifier(sourceText.substring(start, end));
+        if (normalized == null) {
+            return null;
+        }
+        return new TokenMatch(toToken(lineStarts, start, end, normalized), end);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private boolean isNumberStart(String sourceText, int index) {
+        char ch = sourceText.charAt(index);
+        return Character.isDigit(ch) || (ch == '.' && index + 1 < sourceText.length() && Character.isDigit(sourceText.charAt(index + 1)));
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private TokenMatch consumeNumberToken(String sourceText, int[] lineStarts, int index) {
+        int start = index;
+        int end = skipNumberLiteral(sourceText, index);
+        return new TokenMatch(toToken(lineStarts, start, end, "<number>"), end);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private static final class TokenMatch {
+        private final CpdToken token;
+        private final int nextIndex;
+
+        private TokenMatch(CpdToken token, int nextIndex) {
+            this.token = token;
+            this.nextIndex = nextIndex;
+        }
+    }
+
+
+
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private int skipDelimitedIdentifier(String sourceText, int index) {
+        index++;
+        while (index < sourceText.length()) {
+            char ch = sourceText.charAt(index);
+            if (ch == ']') {
+                if (index + 1 < sourceText.length() && sourceText.charAt(index + 1) == ']') {
+                    index += 2;
+                    continue;
+                }
+                return index + 1;
+            }
+            index++;
+        }
+        return sourceText.length();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private int skipNumberLiteral(String sourceText, int index) {
+        int end = skipDigits(sourceText, sourceText.charAt(index) == '.' ? index + 1 : index);
+        if (end + 1 < sourceText.length() && sourceText.charAt(end) == '.'
+                && Character.isDigit(sourceText.charAt(end + 1))) {
+            end = skipDigits(sourceText, end + 1);
+        }
+        return skipExponent(sourceText, end);
+    }
+
+    private int skipDigits(String text, int start) {
+        int end = start;
+        while (end < text.length() && Character.isDigit(text.charAt(end))) {
+            end++;
+        }
+        return end;
+    }
+
+    private int skipExponent(String text, int start) {
+        if (start >= text.length() || (text.charAt(start) != 'e' && text.charAt(start) != 'E')) {
+            return start;
+        }
+        int digits = start + 1;
+        if (digits < text.length() && (text.charAt(digits) == '+' || text.charAt(digits) == '-')) {
+            digits++;
+        }
+        int end = skipDigits(text, digits);
+        return end > digits ? end : start;
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private String normalizeIdentifier(String raw) {
+        String trimmed = raw == null ? "" : raw.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+            trimmed = trimmed.substring(1, trimmed.length() - 1).replace("]]", "]");
+        }
+        if (isKeyword(trimmed) || "GO".equalsIgnoreCase(trimmed)) {
+            return trimmed.toUpperCase(Locale.ROOT);
+        }
+        return trimmed.toLowerCase(Locale.ROOT);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private boolean isCpdIdentifierStart(char ch) {
+        return isIdentifierStart(ch) || ch == '#';
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private boolean isCpdIdentifierPart(char ch) {
+        return isIdentifierPart(ch) || ch == '#';
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private String readOperator(String sourceText, int index) {
+        if (index >= sourceText.length()) {
+            return null;
+        }
+        String[] operators = {
+                "<=", ">=", "<>", "!=", ":=", "||", "&&",
+                "+", "-", "*", "/", "%", "=", "<", ">", "|", "&", "^", ",", ".", "(", ")", ";", "[", "]", "{", "}", ":"
+        };
+        for (String operator : operators) {
+            if (sourceText.startsWith(operator, index)) {
+                return operator;
+            }
+        }
+        return null;
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private CpdToken toToken(int[] lineStarts, int start, int end, String normalized) {
+        int lineCount = lineStarts.length;
+        int startLine = findLineForOffset(lineStarts, lineCount, start);
+        int endLine = findLineForOffset(lineStarts, lineCount, end);
+        int startColumn = start - lineStarts[startLine - 1];
+        int endColumn = end - lineStarts[endLine - 1];
+        return new CpdToken(startLine, startColumn, endLine, endColumn, normalized);
     }
 
     // TRACEABILITY_MAPPING: REQ-005

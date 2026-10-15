@@ -28,6 +28,7 @@ import org.sonar.api.batch.rule.ActiveRule;
 import org.sonar.api.batch.rule.ActiveRules;
 import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.batch.sensor.SensorDescriptor;
+import org.sonar.api.batch.sensor.cpd.NewCpdTokens;
 import org.sonar.api.batch.sensor.highlighting.NewHighlighting;
 import org.sonar.api.batch.sensor.highlighting.TypeOfText;
 import org.sonar.api.batch.sensor.issue.NewIssue;
@@ -343,44 +344,144 @@ class TSqlSensorTest {
 
     // TRACEABILITY_MAPPING: REQ-005
     @Test
-    void testCatalogParserRuntimeFailureIsolatedPerFile() throws IOException {
-        RuleKey selectAllRuleKey = RuleKey.of(TSqlRulesDefinition.REPOSITORY_KEY, AvoidSelectAllCheck.RULE_KEY);
-        RuleKey syntaxRuleKey = RuleKey.of(TSqlRulesDefinition.REPOSITORY_KEY, CheckList.SYNTAX_ERROR_RULE_KEY);
-
+    void testPublishesNormalizedCpdTokens() throws IOException {
         SensorContext context = mock(SensorContext.class);
         FileSystem fs = mock(FileSystem.class);
         FilePredicates predicates = mock(FilePredicates.class);
         FilePredicate predicate = mock(FilePredicate.class);
-        InputFile badFile = mock(InputFile.class);
-        InputFile goodFile = mock(InputFile.class);
+        InputFile inputFile = mock(InputFile.class);
         ActiveRules activeRules = mock(ActiveRules.class);
-        ActiveRule selectAllRule = mock(ActiveRule.class);
-        ActiveRule syntaxRule = mock(ActiveRule.class);
+        NewCpdTokens cpdTokens = mock(NewCpdTokens.class, org.mockito.Mockito.RETURNS_SELF);
 
         when(context.fileSystem()).thenReturn(fs);
         when(fs.predicates()).thenReturn(predicates);
         when(predicates.hasLanguage(TSqlLanguage.KEY)).thenReturn(predicate);
-        when(fs.inputFiles(predicate)).thenReturn(List.of(badFile, goodFile));
-
-        when(badFile.uri()).thenReturn(URI.create("file:///catalog-runtime-failure.sql"));
-        when(badFile.contents()).thenReturn(null);
-        when(goodFile.uri()).thenReturn(URI.create("file:///valid.sql"));
-        when(goodFile.contents()).thenReturn("SELECT * FROM Customers;\n");
-        when(goodFile.lines()).thenReturn(1);
-
+        when(fs.inputFiles(predicate)).thenReturn(List.of(inputFile));
         when(context.activeRules()).thenReturn(activeRules);
-        when(activeRules.find(selectAllRuleKey)).thenReturn(selectAllRule);
-        when(activeRules.find(syntaxRuleKey)).thenReturn(syntaxRule);
+        when(context.newCpdTokens()).thenReturn(cpdTokens);
 
-        NewIssue issue = mock(NewIssue.class, org.mockito.Mockito.RETURNS_SELF);
-        NewIssueLocation location = mock(NewIssueLocation.class, org.mockito.Mockito.RETURNS_SELF);
-        when(context.newIssue()).thenReturn(issue);
-        when(issue.newLocation()).thenReturn(location);
+        when(inputFile.uri()).thenReturn(URI.create("file:///cpd.sql"));
+        when(inputFile.contents()).thenReturn("SELECT firstName, N'Bob', 42 FROM dbo.Users;\n");
+        when(inputFile.lines()).thenReturn(1);
 
         sensor.execute(context);
 
-        verify(issue, atLeastOnce()).forRule(selectAllRuleKey);
-        verify(issue, atLeastOnce()).forRule(syntaxRuleKey);
+        verify(cpdTokens).onFile(inputFile);
+        verify(cpdTokens).addToken(1, 0, 1, 6, "SELECT");
+        verify(cpdTokens).addToken(1, 7, 1, 16, "firstname");
+        verify(cpdTokens).addToken(1, 16, 1, 17, ",");
+        verify(cpdTokens).addToken(1, 18, 1, 24, "<string>");
+        verify(cpdTokens).addToken(1, 24, 1, 25, ",");
+        verify(cpdTokens).addToken(1, 26, 1, 28, "<number>");
+        verify(cpdTokens).addToken(1, 29, 1, 33, "FROM");
+        verify(cpdTokens).addToken(1, 34, 1, 37, "dbo");
+        verify(cpdTokens).addToken(1, 37, 1, 38, ".");
+        verify(cpdTokens).addToken(1, 38, 1, 43, "users");
+        verify(cpdTokens).addToken(1, 43, 1, 44, ";");
+        verify(cpdTokens).save();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void testPublishesNormalizedCpdTokensWithArithmeticAndQuotedIdentifiers() throws IOException {
+        SensorContext context = mock(SensorContext.class);
+        FileSystem fs = mock(FileSystem.class);
+        FilePredicates predicates = mock(FilePredicates.class);
+        FilePredicate predicate = mock(FilePredicate.class);
+        InputFile inputFile = mock(InputFile.class);
+        ActiveRules activeRules = mock(ActiveRules.class);
+        NewCpdTokens cpdTokens = mock(NewCpdTokens.class, org.mockito.Mockito.RETURNS_SELF);
+
+        when(context.fileSystem()).thenReturn(fs);
+        when(fs.predicates()).thenReturn(predicates);
+        when(predicates.hasLanguage(TSqlLanguage.KEY)).thenReturn(predicate);
+        when(fs.inputFiles(predicate)).thenReturn(List.of(inputFile));
+        when(context.activeRules()).thenReturn(activeRules);
+        when(context.newCpdTokens()).thenReturn(cpdTokens);
+        when(inputFile.uri()).thenReturn(URI.create("file:///cpd-arith.sql"));
+        when(inputFile.contents()).thenReturn("SELECT a+b, 1e2, [First Name], /*c*/ a-b FROM t;\n");
+        when(inputFile.lines()).thenReturn(1);
+
+        sensor.execute(context);
+
+        verify(cpdTokens).addToken(1, 0, 1, 6, "SELECT");
+        verify(cpdTokens).addToken(1, 7, 1, 8, "a");
+        verify(cpdTokens).addToken(1, 8, 1, 9, "+");
+        verify(cpdTokens).addToken(1, 9, 1, 10, "b");
+        verify(cpdTokens).addToken(1, 10, 1, 11, ",");
+        verify(cpdTokens).addToken(1, 12, 1, 15, "<number>");
+        verify(cpdTokens).addToken(1, 17, 1, 29, "first name");
+        verify(cpdTokens).addToken(1, 29, 1, 30, ",");
+        verify(cpdTokens).addToken(1, 37, 1, 38, "a");
+        verify(cpdTokens).addToken(1, 38, 1, 39, "-");
+        verify(cpdTokens).addToken(1, 39, 1, 40, "b");
+        verify(cpdTokens).addToken(1, 41, 1, 45, "FROM");
+        verify(cpdTokens).addToken(1, 46, 1, 47, "t");
+        verify(cpdTokens).addToken(1, 47, 1, 48, ";");
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void testPublishesMultilineCpdTokensWithStableRanges() throws IOException {
+        SensorContext context = mock(SensorContext.class);
+        FileSystem fs = mock(FileSystem.class);
+        FilePredicates predicates = mock(FilePredicates.class);
+        FilePredicate predicate = mock(FilePredicate.class);
+        InputFile inputFile = mock(InputFile.class);
+        ActiveRules activeRules = mock(ActiveRules.class);
+        NewCpdTokens cpdTokens = mock(NewCpdTokens.class, org.mockito.Mockito.RETURNS_SELF);
+
+        when(context.fileSystem()).thenReturn(fs);
+        when(fs.predicates()).thenReturn(predicates);
+        when(predicates.hasLanguage(TSqlLanguage.KEY)).thenReturn(predicate);
+        when(fs.inputFiles(predicate)).thenReturn(List.of(inputFile));
+        when(context.activeRules()).thenReturn(activeRules);
+        when(context.newCpdTokens()).thenReturn(cpdTokens);
+        when(inputFile.uri()).thenReturn(URI.create("file:///cpd-multiline.sql"));
+        when(inputFile.contents()).thenReturn("SELECT 1 +\n  2 FROM t;\n");
+        when(inputFile.lines()).thenReturn(2);
+
+        sensor.execute(context);
+
+        verify(cpdTokens).addToken(1, 0, 1, 6, "SELECT");
+        verify(cpdTokens).addToken(1, 7, 1, 8, "<number>");
+        verify(cpdTokens).addToken(1, 9, 1, 10, "+");
+        verify(cpdTokens).addToken(2, 2, 2, 3, "<number>");
+        verify(cpdTokens).addToken(2, 4, 2, 8, "FROM");
+        verify(cpdTokens).addToken(2, 9, 2, 10, "t");
+        verify(cpdTokens).addToken(2, 10, 2, 11, ";");
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void testPublishesCpdTokensWithAtSignAndHashIdentifiersAndCrLfRanges() throws IOException {
+        SensorContext context = mock(SensorContext.class);
+        FileSystem fs = mock(FileSystem.class);
+        FilePredicates predicates = mock(FilePredicates.class);
+        FilePredicate predicate = mock(FilePredicate.class);
+        InputFile inputFile = mock(InputFile.class);
+        ActiveRules activeRules = mock(ActiveRules.class);
+        NewCpdTokens cpdTokens = mock(NewCpdTokens.class, org.mockito.Mockito.RETURNS_SELF);
+
+        when(context.fileSystem()).thenReturn(fs);
+        when(fs.predicates()).thenReturn(predicates);
+        when(predicates.hasLanguage(TSqlLanguage.KEY)).thenReturn(predicate);
+        when(fs.inputFiles(predicate)).thenReturn(List.of(inputFile));
+        when(context.activeRules()).thenReturn(activeRules);
+        when(context.newCpdTokens()).thenReturn(cpdTokens);
+        when(inputFile.uri()).thenReturn(URI.create("file:///cpd-identifier.sql"));
+        when(inputFile.contents()).thenReturn("SELECT @@ROWCOUNT +\r\n  #Temp FROM t;\n");
+        when(inputFile.lines()).thenReturn(2);
+
+        sensor.execute(context);
+
+        verify(cpdTokens).addToken(1, 0, 1, 6, "SELECT");
+        verify(cpdTokens).addToken(1, 7, 1, 17, "@@rowcount");
+        verify(cpdTokens).addToken(1, 18, 1, 19, "+");
+        verify(cpdTokens).addToken(2, 2, 2, 7, "#temp");
+        verify(cpdTokens).addToken(2, 8, 2, 12, "FROM");
+        verify(cpdTokens).addToken(2, 13, 2, 14, "t");
+        verify(cpdTokens).addToken(2, 14, 2, 15, ";");
     }
 
     // TRACEABILITY_MAPPING: REQ-005
@@ -678,6 +779,48 @@ class TSqlSensorTest {
         Method method = TSqlSensor.class.getDeclaredMethod(methodName, parameterTypes);
         method.setAccessible(true);
         return method.invoke(sensor, args);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void testCatalogParserRuntimeFailureIsolatedPerFile() throws IOException {
+        RuleKey selectAllRuleKey = RuleKey.of(TSqlRulesDefinition.REPOSITORY_KEY, AvoidSelectAllCheck.RULE_KEY);
+        RuleKey syntaxRuleKey = RuleKey.of(TSqlRulesDefinition.REPOSITORY_KEY, CheckList.SYNTAX_ERROR_RULE_KEY);
+
+        SensorContext context = mock(SensorContext.class);
+        FileSystem fs = mock(FileSystem.class);
+        FilePredicates predicates = mock(FilePredicates.class);
+        FilePredicate predicate = mock(FilePredicate.class);
+        InputFile badFile = mock(InputFile.class);
+        InputFile goodFile = mock(InputFile.class);
+        ActiveRules activeRules = mock(ActiveRules.class);
+        ActiveRule selectAllRule = mock(ActiveRule.class);
+        ActiveRule syntaxRule = mock(ActiveRule.class);
+
+        when(context.fileSystem()).thenReturn(fs);
+        when(fs.predicates()).thenReturn(predicates);
+        when(predicates.hasLanguage(TSqlLanguage.KEY)).thenReturn(predicate);
+        when(fs.inputFiles(predicate)).thenReturn(List.of(badFile, goodFile));
+
+        when(badFile.uri()).thenReturn(URI.create("file:///catalog-runtime-failure.sql"));
+        when(badFile.contents()).thenReturn(null);
+        when(goodFile.uri()).thenReturn(URI.create("file:///valid.sql"));
+        when(goodFile.contents()).thenReturn("SELECT * FROM Customers;\n");
+        when(goodFile.lines()).thenReturn(1);
+
+        when(context.activeRules()).thenReturn(activeRules);
+        when(activeRules.find(selectAllRuleKey)).thenReturn(selectAllRule);
+        when(activeRules.find(syntaxRuleKey)).thenReturn(syntaxRule);
+
+        NewIssue issue = mock(NewIssue.class, org.mockito.Mockito.RETURNS_SELF);
+        NewIssueLocation location = mock(NewIssueLocation.class, org.mockito.Mockito.RETURNS_SELF);
+        when(context.newIssue()).thenReturn(issue);
+        when(issue.newLocation()).thenReturn(location);
+
+        sensor.execute(context);
+
+        verify(issue, atLeastOnce()).forRule(selectAllRuleKey);
+        verify(issue, atLeastOnce()).forRule(syntaxRuleKey);
     }
 
     // TRACEABILITY_MAPPING: REQ-005
