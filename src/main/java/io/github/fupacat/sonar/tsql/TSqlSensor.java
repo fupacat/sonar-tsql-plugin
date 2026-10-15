@@ -524,16 +524,6 @@ public class TSqlSensor implements Sensor {
         cpdTokens.save();
     }
 
-    private static final Set<String> TSQL_KEYWORDS = Set.of(
-            "SELECT", "FROM", "WHERE", "INSERT", "UPDATE", "DELETE",
-            "CREATE", "ALTER", "DROP", "TABLE", "VIEW", "INDEX", "PROCEDURE", "FUNCTION",
-            "TRIGGER", "DATABASE", "SCHEMA", "AS", "ON", "IN", "INTO", "VALUES", "SET",
-            "BY", "GROUP", "ORDER", "HAVING", "JOIN", "INNER", "LEFT", "RIGHT", "FULL",
-            "OUTER", "CROSS", "UNION", "ALL", "DISTINCT", "TOP", "WITH", "EXEC", "EXECUTE",
-            "BEGIN", "END", "IF", "ELSE", "WHILE", "RETURN", "DECLARE", "CASE", "WHEN",
-            "THEN", "AND", "OR", "NOT", "IS", "NULL", "LIKE", "BETWEEN", "EXISTS", "GO"
-    );
-
     private static final class CpdToken {
         private final int startLine;
         private final int startColumn;
@@ -553,7 +543,7 @@ public class TSqlSensor implements Sensor {
     // TRACEABILITY_MAPPING: REQ-005
     private List<CpdToken> generateCpdTokens(String sourceText) {
         List<CpdToken> tokens = new ArrayList<>();
-        List<Integer> lineStarts = computeLineStarts(sourceText);
+        int[] lineStarts = buildLineStarts(sourceText);
         int index = 0;
         while (index < sourceText.length()) {
             index = skipIgnoredContent(sourceText, index);
@@ -593,7 +583,7 @@ public class TSqlSensor implements Sensor {
     }
 
     // TRACEABILITY_MAPPING: REQ-005
-    private TokenMatch readNextToken(String sourceText, List<Integer> lineStarts, int index) {
+    private TokenMatch readNextToken(String sourceText, int[] lineStarts, int index) {
         char ch = sourceText.charAt(index);
         if (isStringTokenStart(sourceText, index)) {
             return consumeStringToken(sourceText, lineStarts, index);
@@ -625,14 +615,14 @@ public class TSqlSensor implements Sensor {
     }
 
     // TRACEABILITY_MAPPING: REQ-005
-    private TokenMatch consumeStringToken(String sourceText, List<Integer> lineStarts, int index) {
+    private TokenMatch consumeStringToken(String sourceText, int[] lineStarts, int index) {
         int start = index;
         int end = skipStringLiteral(sourceText, index + (sourceText.charAt(index) == '\'' ? 0 : 1));
         return new TokenMatch(toToken(lineStarts, start, end, "<string>"), end);
     }
 
     // TRACEABILITY_MAPPING: REQ-005
-    private TokenMatch consumeDelimitedIdentifierToken(String sourceText, List<Integer> lineStarts, int index) {
+    private TokenMatch consumeDelimitedIdentifierToken(String sourceText, int[] lineStarts, int index) {
         int start = index;
         int end = skipDelimitedIdentifier(sourceText, index);
         String normalized = normalizeIdentifier(sourceText.substring(start, end));
@@ -643,7 +633,7 @@ public class TSqlSensor implements Sensor {
     }
 
     // TRACEABILITY_MAPPING: REQ-005
-    private TokenMatch consumeIdentifierToken(String sourceText, List<Integer> lineStarts, int index) {
+    private TokenMatch consumeIdentifierToken(String sourceText, int[] lineStarts, int index) {
         int start = index;
         int end = index + 1;
         while (end < sourceText.length() && isCpdIdentifierPart(sourceText.charAt(end))) {
@@ -663,7 +653,7 @@ public class TSqlSensor implements Sensor {
     }
 
     // TRACEABILITY_MAPPING: REQ-005
-    private TokenMatch consumeNumberToken(String sourceText, List<Integer> lineStarts, int index) {
+    private TokenMatch consumeNumberToken(String sourceText, int[] lineStarts, int index) {
         int start = index;
         int end = skipNumberLiteral(sourceText, index);
         return new TokenMatch(toToken(lineStarts, start, end, "<number>"), end);
@@ -792,21 +782,20 @@ public class TSqlSensor implements Sensor {
         if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
             trimmed = trimmed.substring(1, trimmed.length() - 1).replace("]]", "]");
         }
-        String upper = trimmed.toUpperCase(Locale.ROOT);
-        if (TSQL_KEYWORDS.contains(upper)) {
-            return upper;
+        if (isKeyword(trimmed) || "GO".equalsIgnoreCase(trimmed)) {
+            return trimmed.toUpperCase(Locale.ROOT);
         }
         return trimmed.toLowerCase(Locale.ROOT);
     }
 
     // TRACEABILITY_MAPPING: REQ-005
     private boolean isCpdIdentifierStart(char ch) {
-        return Character.isLetter(ch) || ch == '_' || ch == '@' || ch == '#';
+        return isIdentifierStart(ch) || ch == '#';
     }
 
     // TRACEABILITY_MAPPING: REQ-005
     private boolean isCpdIdentifierPart(char ch) {
-        return Character.isLetterOrDigit(ch) || ch == '_' || ch == '$' || ch == '@' || ch == '#';
+        return isIdentifierPart(ch) || ch == '#';
     }
 
     // TRACEABILITY_MAPPING: REQ-005
@@ -827,48 +816,13 @@ public class TSqlSensor implements Sensor {
     }
 
     // TRACEABILITY_MAPPING: REQ-005
-    private CpdToken toToken(List<Integer> lineStarts, int start, int end, String normalized) {
-        int startLine = lineNumberForOffset(lineStarts, start);
-        int endLine = lineNumberForOffset(lineStarts, end);
-        int startColumn = start - lineStarts.get(startLine - 1);
-        int endColumn = end - lineStarts.get(endLine - 1);
+    private CpdToken toToken(int[] lineStarts, int start, int end, String normalized) {
+        int lineCount = lineStarts.length;
+        int startLine = findLineForOffset(lineStarts, lineCount, start);
+        int endLine = findLineForOffset(lineStarts, lineCount, end);
+        int startColumn = start - lineStarts[startLine - 1];
+        int endColumn = end - lineStarts[endLine - 1];
         return new CpdToken(startLine, startColumn, endLine, endColumn, normalized);
-    }
-
-    // TRACEABILITY_MAPPING: REQ-005
-    private List<Integer> computeLineStarts(String text) {
-        if (text == null || text.isEmpty()) {
-            return List.of(0);
-        }
-        List<Integer> lineStarts = new ArrayList<>();
-        lineStarts.add(0);
-        for (int i = 0; i < text.length(); i++) {
-            char ch = text.charAt(i);
-            if (ch == '\r') {
-                if (i + 1 < text.length() && text.charAt(i + 1) == '\n') {
-                    i++;
-                }
-                lineStarts.add(i + 1);
-            } else if (ch == '\n') {
-                lineStarts.add(i + 1);
-            }
-        }
-        return lineStarts;
-    }
-
-    // TRACEABILITY_MAPPING: REQ-005
-    private int lineNumberForOffset(List<Integer> lineStarts, int offset) {
-        int low = 0;
-        int high = lineStarts.size() - 1;
-        while (low <= high) {
-            int mid = (low + high) >>> 1;
-            if (lineStarts.get(mid) <= offset) {
-                low = mid + 1;
-            } else {
-                high = mid - 1;
-            }
-        }
-        return Math.max(1, low);
     }
 
     // TRACEABILITY_MAPPING: REQ-005
