@@ -65,8 +65,8 @@ public final class ProjectSchemaCatalog {
                 parsedResults.add(TSqlParser.parse(content));
             } catch (IOException ignored) {
                 // ignore unreadable file
-            } catch (Exception ignored) {
-                // ignore parser failures while building the cross-file catalog
+            } catch (RuntimeException e) {
+                LOG.warn("Failed to parse schema catalog input: {}", inputFile.uri(), e);
             }
         }
         return fromParsedResults(parsedResults);
