@@ -69,6 +69,15 @@ class SchemaAwareChecksTest {
 
     // TRACEABILITY_MAPPING: REQ-017
     @Test
+    void testMultiArgumentCoalesceWithoutNullableColumnIsCompliant() {
+        List<String> issues = CheckTestUtils.scan(nullableColumnCheck,
+                "CREATE TABLE dbo.Items (Code VARCHAR(3) NOT NULL); " +
+                        "SELECT COALESCE('fallback', 'another', 'final') FROM dbo.Items;");
+        assertThat(issues).isEmpty();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-017
+    @Test
     void testNullableColumnAlreadyUsingIsNullIsCompliant() {
         List<String> issues = CheckTestUtils.scan(nullableColumnCheck,
                 "CREATE TABLE Users (Id INT NOT NULL, LastLogin DATETIME NULL); " +
