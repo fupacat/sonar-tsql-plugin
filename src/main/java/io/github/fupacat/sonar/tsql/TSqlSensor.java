@@ -159,6 +159,7 @@ public class TSqlSensor implements Sensor {
             return;
         }
 
+        int[] lineStarts = buildLineStarts(content);
         int index = 0;
         while (index < content.length()) {
             char ch = content.charAt(index);
@@ -171,7 +172,7 @@ public class TSqlSensor implements Sensor {
                 while (end < content.length() && content.charAt(end) != '\n' && content.charAt(end) != '\r') {
                     end++;
                 }
-                highlightRange(inputFile, highlighting, content, index, end, TypeOfText.COMMENT);
+                highlightRange(inputFile, highlighting, content, index, end, TypeOfText.COMMENT, lineStarts);
                 index = end;
                 continue;
             }
@@ -185,57 +186,41 @@ public class TSqlSensor implements Sensor {
                 } else {
                     end = content.length();
                 }
-                highlightRange(inputFile, highlighting, content, index, end, TypeOfText.COMMENT);
+                highlightRange(inputFile, highlighting, content, index, end, TypeOfText.COMMENT, lineStarts);
                 index = end;
                 continue;
             }
             if (ch == 'N' || ch == 'n' || ch == '\'') {
                 if ((ch == 'N' || ch == 'n') && index + 1 < content.length() && content.charAt(index + 1) == '\'') {
-                    int end = index + 2;
-                    while (end < content.length()) {
-                        if (content.charAt(end) == '\'') {
-                            if (end + 1 < content.length() && content.charAt(end + 1) == '\'') {
-                                end += 2;
-                                continue;
-                            }
-                            end++;
-                            break;
-                        }
-                        end++;
-                    }
-                    highlightRange(inputFile, highlighting, content, index, end, TypeOfText.STRING);
+                    int end = scanStringLiteral(content, index + 1);
+                    highlightRange(inputFile, highlighting, content, index, end, TypeOfText.STRING, lineStarts);
                     index = end;
                     continue;
                 }
                 if (ch == '\'') {
-                    int end = index + 1;
-                    while (end < content.length()) {
-                        if (content.charAt(end) == '\'') {
-                            if (end + 1 < content.length() && content.charAt(end + 1) == '\'') {
-                                end += 2;
-                                continue;
-                            }
-                            end++;
-                            break;
-                        }
-                        end++;
-                    }
-                    highlightRange(inputFile, highlighting, content, index, end, TypeOfText.STRING);
+                    int end = scanStringLiteral(content, index);
+                    highlightRange(inputFile, highlighting, content, index, end, TypeOfText.STRING, lineStarts);
                     index = end;
                     continue;
                 }
             }
             if (ch == '[') {
                 int end = index + 1;
-                while (end < content.length() && content.charAt(end) != ']') {
+                while (end < content.length()) {
+                    if (content.charAt(end) == ']') {
+                        if (end + 1 < content.length() && content.charAt(end + 1) == ']') {
+                            end += 2;
+                            continue;
+                        }
+                        end++;
+                        break;
+                    }
                     end++;
                 }
-                if (end < content.length()) {
-                    end++;
-                } else {
+                if (end > content.length()) {
                     end = content.length();
                 }
-                highlightRange(inputFile, highlighting, content, index, end, TypeOfText.KEYWORD_LIGHT);
+                highlightRange(inputFile, highlighting, content, index, end, TypeOfText.KEYWORD_LIGHT, lineStarts);
                 index = end;
                 continue;
             }
@@ -246,7 +231,7 @@ public class TSqlSensor implements Sensor {
                 }
                 String word = content.substring(index, end);
                 TypeOfText type = isKeyword(word) ? TypeOfText.KEYWORD : TypeOfText.KEYWORD_LIGHT;
-                highlightRange(inputFile, highlighting, content, index, end, type);
+                highlightRange(inputFile, highlighting, content, index, end, type, lineStarts);
                 index = end;
                 continue;
             }
@@ -296,11 +281,12 @@ public class TSqlSensor implements Sensor {
     }
 
     // TRACEABILITY_MAPPING: REQ-005
-    private static void highlightRange(InputFile inputFile, NewHighlighting highlighting, String content, int start, int end, TypeOfText type) {
+    private static void highlightRange(InputFile inputFile, NewHighlighting highlighting, String content, int start, int end,
+            TypeOfText type, int[] lineStarts) {
         if (inputFile == null || highlighting == null || content == null || start < 0 || end < start || end > content.length()) {
             return;
         }
-        TextRange range = rangeForOffsets(content, start, end, inputFile);
+        TextRange range = rangeForOffsets(start, end, inputFile, lineStarts);
         if (range != null) {
             highlighting.highlight(range, type);
         }
@@ -341,25 +327,11 @@ public class TSqlSensor implements Sensor {
     }
 
     // TRACEABILITY_MAPPING: REQ-005
-    private static TextRange rangeForOffsets(String content, int start, int end, InputFile file) {
-        if (content == null || file == null || start < 0 || end < start || end > content.length()) {
+    private static TextRange rangeForOffsets(int start, int end, InputFile file, int[] lineStarts) {
+        if (file == null || lineStarts == null || lineStarts.length == 0 || start < 0 || end < start) {
             return null;
         }
-
-        int[] lineStarts = new int[Math.max(1, content.length() + 1)];
-        int lineCount = 1;
-        lineStarts[0] = 0;
-        for (int i = 0; i < content.length(); i++) {
-            char ch = content.charAt(i);
-            if (ch == '\r') {
-                if (i + 1 < content.length() && content.charAt(i + 1) == '\n') {
-                    i++;
-                }
-                lineStarts[lineCount++] = i + 1;
-            } else if (ch == '\n') {
-                lineStarts[lineCount++] = i + 1;
-            }
-        }
+        int lineCount = lineStarts.length;
 
         int startLine = findLineForOffset(lineStarts, lineCount, start);
         int startColumn = start - lineStarts[startLine - 1];
@@ -371,6 +343,50 @@ public class TSqlSensor implements Sensor {
         } catch (Exception ignored) {
             return null;
         }
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private static int scanStringLiteral(String content, int quoteIndex) {
+        if (content == null || quoteIndex < 0 || quoteIndex >= content.length() || content.charAt(quoteIndex) != '\'') {
+            return quoteIndex;
+        }
+        int end = quoteIndex + 1;
+        while (end < content.length()) {
+            if (content.charAt(end) == '\'') {
+                if (end + 1 < content.length() && content.charAt(end + 1) == '\'') {
+                    end += 2;
+                    continue;
+                }
+                return end + 1;
+            }
+            end++;
+        }
+        return content.length();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private static int[] buildLineStarts(String content) {
+        if (content == null || content.isEmpty()) {
+            return new int[] {0};
+        }
+        List<Integer> starts = new ArrayList<>();
+        starts.add(0);
+        for (int i = 0; i < content.length(); i++) {
+            char ch = content.charAt(i);
+            if (ch == '\r') {
+                if (i + 1 < content.length() && content.charAt(i + 1) == '\n') {
+                    i++;
+                }
+                starts.add(i + 1);
+            } else if (ch == '\n') {
+                starts.add(i + 1);
+            }
+        }
+        int[] lineStarts = new int[starts.size()];
+        for (int i = 0; i < starts.size(); i++) {
+            lineStarts[i] = starts.get(i);
+        }
+        return lineStarts;
     }
 
     // TRACEABILITY_MAPPING: REQ-005
