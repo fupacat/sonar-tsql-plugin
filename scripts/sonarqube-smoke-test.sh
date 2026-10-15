@@ -75,7 +75,7 @@ docker run --rm --network host \
   -Dsonar.login="$SONAR_LOGIN" \
   -Dsonar.password="$SONAR_PASSWORD" >"$SCAN_LOG" 2>&1 || { cat "$SCAN_LOG"; exit 1; }
 
-TASK_ID="$(grep -o 'api/ce/task?id=[A-Za-z0-9_-]*' "$SCAN_LOG" | sed 's#.*id=##' | tail -n 1)"
+TASK_ID="$(grep -o 'api/ce/task?id=[A-Za-z0-9_-]*' "$SCAN_LOG" | sed 's#.*id=##' | tail -n 1 || true)"
 if [[ -z "$TASK_ID" ]]; then
   echo "Could not determine SonarQube task id from scanner output." >&2
   cat "$SCAN_LOG" >&2

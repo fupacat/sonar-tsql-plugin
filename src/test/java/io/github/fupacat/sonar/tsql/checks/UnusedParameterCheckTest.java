@@ -23,6 +23,7 @@ class UnusedParameterCheckTest {
         }
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     @Test
     void testFlagsUnusedParameter() {
         String sql = "CREATE PROCEDURE dbo.GetOrders (@customerId INT, @unused INT) AS BEGIN SELECT @customerId; END;";
