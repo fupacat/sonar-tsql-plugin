@@ -752,20 +752,23 @@ public class TSqlSensor implements Sensor {
     // TRACEABILITY_MAPPING: REQ-005
     private int skipNumberLiteral(String sourceText, int index) {
         int i = index;
+        boolean hasDigits = false;
         if (sourceText.charAt(i) == '.') {
             i++;
         }
         while (i < sourceText.length() && Character.isDigit(sourceText.charAt(i))) {
+            hasDigits = true;
             i++;
         }
         if (i < sourceText.length() && sourceText.charAt(i) == '.'
                 && i + 1 < sourceText.length() && Character.isDigit(sourceText.charAt(i + 1))) {
             i++;
             while (i < sourceText.length() && Character.isDigit(sourceText.charAt(i))) {
+                hasDigits = true;
                 i++;
             }
         }
-        if (i < sourceText.length() && (sourceText.charAt(i) == 'e' || sourceText.charAt(i) == 'E')) {
+        if (hasDigits && i < sourceText.length() && (sourceText.charAt(i) == 'e' || sourceText.charAt(i) == 'E')) {
             int expIndex = i + 1;
             if (expIndex < sourceText.length() && (sourceText.charAt(expIndex) == '+' || sourceText.charAt(expIndex) == '-')) {
                 expIndex++;
@@ -803,7 +806,7 @@ public class TSqlSensor implements Sensor {
 
     // TRACEABILITY_MAPPING: REQ-005
     private boolean isCpdIdentifierPart(char ch) {
-        return Character.isLetterOrDigit(ch) || ch == '_' || ch == '$';
+        return Character.isLetterOrDigit(ch) || ch == '_' || ch == '$' || ch == '@' || ch == '#';
     }
 
     // TRACEABILITY_MAPPING: REQ-005
@@ -834,10 +837,19 @@ public class TSqlSensor implements Sensor {
 
     // TRACEABILITY_MAPPING: REQ-005
     private List<Integer> computeLineStarts(String text) {
+        if (text == null || text.isEmpty()) {
+            return List.of(0);
+        }
         List<Integer> lineStarts = new ArrayList<>();
         lineStarts.add(0);
         for (int i = 0; i < text.length(); i++) {
-            if (text.charAt(i) == '\n') {
+            char ch = text.charAt(i);
+            if (ch == '\r') {
+                if (i + 1 < text.length() && text.charAt(i + 1) == '\n') {
+                    i++;
+                }
+                lineStarts.add(i + 1);
+            } else if (ch == '\n') {
                 lineStarts.add(i + 1);
             }
         }

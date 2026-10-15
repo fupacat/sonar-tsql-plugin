@@ -446,6 +446,38 @@ class TSqlSensorTest {
 
     // TRACEABILITY_MAPPING: REQ-005
     @Test
+    void testPublishesCpdTokensWithAtSignAndHashIdentifiersAndCrLfRanges() throws IOException {
+        SensorContext context = mock(SensorContext.class);
+        FileSystem fs = mock(FileSystem.class);
+        FilePredicates predicates = mock(FilePredicates.class);
+        FilePredicate predicate = mock(FilePredicate.class);
+        InputFile inputFile = mock(InputFile.class);
+        ActiveRules activeRules = mock(ActiveRules.class);
+        NewCpdTokens cpdTokens = mock(NewCpdTokens.class, org.mockito.Mockito.RETURNS_SELF);
+
+        when(context.fileSystem()).thenReturn(fs);
+        when(fs.predicates()).thenReturn(predicates);
+        when(predicates.hasLanguage(TSqlLanguage.KEY)).thenReturn(predicate);
+        when(fs.inputFiles(predicate)).thenReturn(List.of(inputFile));
+        when(context.activeRules()).thenReturn(activeRules);
+        when(context.newCpdTokens()).thenReturn(cpdTokens);
+        when(inputFile.uri()).thenReturn(URI.create("file:///cpd-identifier.sql"));
+        when(inputFile.contents()).thenReturn("SELECT @@ROWCOUNT +\r\n  #Temp FROM t;\n");
+        when(inputFile.lines()).thenReturn(2);
+
+        sensor.execute(context);
+
+        verify(cpdTokens).addToken(1, 0, 1, 6, "SELECT");
+        verify(cpdTokens).addToken(1, 7, 1, 17, "@@rowcount");
+        verify(cpdTokens).addToken(1, 18, 1, 19, "+");
+        verify(cpdTokens).addToken(2, 2, 2, 7, "#temp");
+        verify(cpdTokens).addToken(2, 8, 2, 12, "FROM");
+        verify(cpdTokens).addToken(2, 13, 2, 14, "t");
+        verify(cpdTokens).addToken(2, 14, 2, 15, ";");
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
     void testSensorCheckContextTokenRangeAndFallback() {
         InputFile inputFile = mock(InputFile.class);
         SensorContext sensorContext = mock(SensorContext.class);
