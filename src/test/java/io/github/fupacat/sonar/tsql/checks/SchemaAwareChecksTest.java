@@ -50,15 +50,6 @@ class SchemaAwareChecksTest {
 
     // TRACEABILITY_MAPPING: REQ-017
     @Test
-    void testNullableColumnCoalesceWithNullableFallbackIsCompliant() {
-        List<String> issues = CheckTestUtils.scan(nullableColumnCheck,
-                "CREATE TABLE dbo.Items (Code VARCHAR(3) NULL, AltCode VARCHAR(10) NULL); " +
-                        "SELECT COALESCE(Code, AltCode, 'fallback') FROM dbo.Items;");
-        assertThat(issues).isEmpty();
-    }
-
-    // TRACEABILITY_MAPPING: REQ-017
-    @Test
     void testNullableColumnCoalesceMultipleArgumentsFlagged() {
         List<String> issues = CheckTestUtils.scan(nullableColumnCheck,
                 "CREATE TABLE dbo.Items (Code VARCHAR(3) NULL); " +

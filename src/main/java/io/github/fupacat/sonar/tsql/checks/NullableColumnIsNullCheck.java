@@ -2,7 +2,6 @@ package io.github.fupacat.sonar.tsql.checks;
 
 import io.github.fupacat.ast.CoalesceExpression;
 import io.github.fupacat.ast.ColumnReferenceExpression;
-import io.github.fupacat.ast.ScalarExpression;
 import io.github.fupacat.sonar.tsql.catalog.ProjectSchemaCatalog;
 
 public class NullableColumnIsNullCheck extends TSqlCheck {
@@ -28,14 +27,6 @@ public class NullableColumnIsNullCheck extends TSqlCheck {
                 || !catalog.isNullable(firstColumnReferenceExpression)) {
             super.visit(node);
             return;
-        }
-
-        for (int i = 1; i < node.Expressions.size(); i++) {
-            ScalarExpression expression = node.Expressions.get(i);
-            if (expression instanceof ColumnReferenceExpression columnReferenceExpression && catalog.isNullable(columnReferenceExpression)) {
-                super.visit(node);
-                return;
-            }
         }
 
         reportIssue(node,
