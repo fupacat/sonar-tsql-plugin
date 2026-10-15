@@ -192,9 +192,6 @@ public class TSqlSensor implements Sensor {
                     }
                     bracketEnd++;
                 }
-                if (bracketEnd > content.length()) {
-                    bracketEnd = content.length();
-                }
                 highlightRange(inputFile, highlighting, content, index, bracketEnd, TypeOfText.KEYWORD_LIGHT, lineStarts);
                 index = bracketEnd;
                 continue;
@@ -331,11 +328,7 @@ public class TSqlSensor implements Sensor {
                 endColumn++;
             }
         }
-        try {
-            return inputFile.newRange(startLine, startColumn, endLine, endColumn);
-        } catch (Exception ignored) {
-            return null;
-        }
+        return safeNewRange(inputFile, startLine, startColumn, endLine, endColumn);
     }
 
     // TRACEABILITY_MAPPING: REQ-005
@@ -350,11 +343,7 @@ public class TSqlSensor implements Sensor {
         int endLine = findLineForOffset(lineStarts, lineCount, end);
         int endColumn = end - lineStarts[endLine - 1];
 
-        try {
-            return file.newRange(startLine, startColumn, endLine, endColumn);
-        } catch (Exception ignored) {
-            return null;
-        }
+        return safeNewRange(file, startLine, startColumn, endLine, endColumn);
     }
 
     // TRACEABILITY_MAPPING: REQ-005
@@ -414,6 +403,15 @@ public class TSqlSensor implements Sensor {
             }
         }
         return Math.max(1, low);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private static TextRange safeNewRange(InputFile file, int startLine, int startColumn, int endLine, int endColumn) {
+        try {
+            return file.newRange(startLine, startColumn, endLine, endColumn);
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     // TRACEABILITY_MAPPING: REQ-005

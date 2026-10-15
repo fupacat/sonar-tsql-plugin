@@ -1,5 +1,6 @@
 package io.github.fupacat.sonar.tsql;
 
+import io.github.fupacat.ParseResult;
 import io.github.fupacat.TSqlParserToken;
 import io.github.fupacat.TSqlTokenType;
 import io.github.fupacat.ast.TSqlScript;
@@ -384,6 +385,63 @@ class TSqlSensorTest {
         verify(highlighting, atLeastOnce()).highlight(escapedIdentifierRange, TypeOfText.KEYWORD_LIGHT);
         verify(highlighting, atLeastOnce()).highlight(commentRange, TypeOfText.COMMENT);
         verify(highlighting, atLeastOnce()).save();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void testHighlightingHelperGuardsAndErrorPaths() throws Exception {
+        InputFile inputFile = mock(InputFile.class);
+        NewHighlighting highlighting = mock(NewHighlighting.class, org.mockito.Mockito.RETURNS_SELF);
+        SensorContext sensorContext = mock(SensorContext.class);
+        TextRange validRange = mock(TextRange.class);
+
+        when(sensorContext.newHighlighting()).thenReturn(highlighting);
+        when(inputFile.lines()).thenReturn(4);
+        when(inputFile.newRange(1, 0, 1, 6)).thenReturn(validRange);
+
+        // publishHighlighting should use token stream when available.
+        ParseResult<TSqlScript> tokenResult = mock(ParseResult.class);
+        TSqlScript script = new TSqlScript();
+        script.ScriptTokenStream = List.of(new TSqlParserToken(TSqlTokenType.Select, 0, "SELECT", 1, 1));
+        when(tokenResult.fragment()).thenReturn(script);
+
+        invokePrivate("publishHighlighting", new Class<?>[] {InputFile.class, SensorContext.class, ParseResult.class, String.class},
+                inputFile, sensorContext, tokenResult, "ignored");
+        verify(highlighting).highlight(validRange, TypeOfText.KEYWORD);
+
+        // mapTokenToType null guards.
+        assertThat(invokePrivate("mapTokenToType", new Class<?>[] {TSqlParserToken.class}, new Object[] {null})).isNull();
+        assertThat(invokePrivate("mapTokenToType", new Class<?>[] {TSqlParserToken.class},
+                new TSqlParserToken(null, 0, "x", 1, 1))).isNull();
+
+        // rangeForToken invalid/exception path.
+        assertThat(invokePrivate("rangeForToken", new Class<?>[] {InputFile.class, TSqlParserToken.class}, inputFile, null)).isNull();
+        InputFile throwingFile = mock(InputFile.class);
+        when(throwingFile.lines()).thenReturn(4);
+        when(throwingFile.newRange(any(Integer.class), any(Integer.class), any(Integer.class), any(Integer.class)))
+                .thenThrow(new IllegalArgumentException("bad range"));
+        assertThat(invokePrivate("rangeForToken", new Class<?>[] {InputFile.class, TSqlParserToken.class},
+                throwingFile, new TSqlParserToken(TSqlTokenType.Select, 0, "SELECT", 1, 1))).isNull();
+
+        // rangeForOffsets invalid/exception path.
+        assertThat(invokePrivate("rangeForOffsets", new Class<?>[] {int.class, int.class, InputFile.class, int[].class},
+                -1, 0, inputFile, new int[] {0})).isNull();
+        assertThat(invokePrivate("rangeForOffsets", new Class<?>[] {int.class, int.class, InputFile.class, int[].class},
+                0, 6, throwingFile, new int[] {0})).isNull();
+
+        // scanner guards and CRLF support.
+        assertThat(invokePrivate("scanComment", new Class<?>[] {String.class, int.class}, null, 0)).isEqualTo(0);
+        assertThat(invokePrivate("scanStringToken", new Class<?>[] {String.class, int.class}, "x", 1)).isEqualTo(1);
+        assertThat(invokePrivate("scanStringLiteral", new Class<?>[] {String.class, int.class}, "x", 0)).isEqualTo(0);
+        assertThat(invokePrivate("buildLineStarts", new Class<?>[] {String.class}, "")).isEqualTo(new int[] {0});
+        assertThat(invokePrivate("buildLineStarts", new Class<?>[] {String.class}, "a\r\nb")).isEqualTo(new int[] {0, 3});
+
+        // keyword guard path.
+        assertThat(invokePrivate("isKeyword", new Class<?>[] {String.class}, " ")).isEqualTo(false);
+
+        // highlightRange invalid guard path.
+        invokePrivate("highlightRange", new Class<?>[] {InputFile.class, NewHighlighting.class, String.class, int.class, int.class, TypeOfText.class, int[].class},
+                inputFile, highlighting, "abc", 3, 1, TypeOfText.KEYWORD, new int[] {0});
     }
 
     // TRACEABILITY_MAPPING: REQ-005
