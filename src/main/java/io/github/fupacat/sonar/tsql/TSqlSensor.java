@@ -176,6 +176,24 @@ public class TSqlSensor implements Sensor {
         List<Integer> lineStarts = computeLineStarts(sourceText);
         int index = 0;
         while (index < sourceText.length()) {
+            index = skipIgnoredContent(sourceText, index);
+            if (index >= sourceText.length()) {
+                break;
+            }
+            TokenMatch match = readNextToken(sourceText, lineStarts, index);
+            if (match == null) {
+                index++;
+                continue;
+            }
+            tokens.add(match.token);
+            index = match.nextIndex;
+        }
+        return tokens;
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private int skipIgnoredContent(String sourceText, int index) {
+        while (index < sourceText.length()) {
             char ch = sourceText.charAt(index);
             if (Character.isWhitespace(ch)) {
                 index++;
@@ -189,63 +207,97 @@ public class TSqlSensor implements Sensor {
                 index = skipMultiLineComment(sourceText, index);
                 continue;
             }
-            if (ch == 'N' || ch == 'n') {
-                if (index + 1 < sourceText.length() && sourceText.charAt(index + 1) == '\'') {
-                    int start = index;
-                    index = skipStringLiteral(sourceText, index + 1);
-                    tokens.add(toToken(lineStarts, start, index, "<string>"));
-                    continue;
-                }
-            }
-            if (ch == '\'') {
-                int start = index;
-                index = skipStringLiteral(sourceText, index);
-                tokens.add(toToken(lineStarts, start, index, "<string>"));
-                continue;
-            }
-            if (ch == '[') {
-                int start = index;
-                index = skipDelimitedIdentifier(sourceText, index);
-                String normalized = normalizeIdentifier(sourceText.substring(start, index));
-                if (normalized != null) {
-                    tokens.add(toToken(lineStarts, start, index, normalized));
-                }
-                continue;
-            }
-            if (isIdentifierStart(ch)) {
-                int start = index;
-                index++;
-                while (index < sourceText.length()) {
-                    char next = sourceText.charAt(index);
-                    if (isIdentifierPart(next)) {
-                        index++;
-                    } else {
-                        break;
-                    }
-                }
-                String raw = sourceText.substring(start, index);
-                String normalized = normalizeIdentifier(raw);
-                if (normalized != null) {
-                    tokens.add(toToken(lineStarts, start, index, normalized));
-                }
-                continue;
-            }
-            if (Character.isDigit(ch) || (ch == '.' && index + 1 < sourceText.length() && Character.isDigit(sourceText.charAt(index + 1)))) {
-                int start = index;
-                index = skipNumberLiteral(sourceText, index);
-                tokens.add(toToken(lineStarts, start, index, "<number>"));
-                continue;
-            }
-            String operator = readOperator(sourceText, index);
-            if (operator != null) {
-                int start = index;
-                index += operator.length();
-                tokens.add(toToken(lineStarts, start, index, operator));
-                continue;
-            }
-            index++;
+            break;
         }
-        return tokens;
+        return index;
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private TokenMatch readNextToken(String sourceText, List<Integer> lineStarts, int index) {
+        char ch = sourceText.charAt(index);
+        if (isStringTokenStart(sourceText, index)) {
+            return consumeStringToken(sourceText, lineStarts, index);
+        }
+        if (ch == '[') {
+            return consumeDelimitedIdentifierToken(sourceText, lineStarts, index);
+        }
+        if (isIdentifierStart(ch)) {
+            return consumeIdentifierToken(sourceText, lineStarts, index);
+        }
+        if (isNumberStart(sourceText, index)) {
+            return consumeNumberToken(sourceText, lineStarts, index);
+        }
+        String operator = readOperator(sourceText, index);
+        if (operator != null) {
+            int end = index + operator.length();
+            return new TokenMatch(toToken(lineStarts, index, end, operator), end);
+        }
+        return null;
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private boolean isStringTokenStart(String sourceText, int index) {
+        char ch = sourceText.charAt(index);
+        if (ch == '\'') {
+            return true;
+        }
+        return (ch == 'N' || ch == 'n') && index + 1 < sourceText.length() && sourceText.charAt(index + 1) == '\'';
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private TokenMatch consumeStringToken(String sourceText, List<Integer> lineStarts, int index) {
+        int start = index;
+        int end = skipStringLiteral(sourceText, index + (sourceText.charAt(index) == '\'' ? 0 : 1));
+        return new TokenMatch(toToken(lineStarts, start, end, "<string>"), end);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private TokenMatch consumeDelimitedIdentifierToken(String sourceText, List<Integer> lineStarts, int index) {
+        int start = index;
+        int end = skipDelimitedIdentifier(sourceText, index);
+        String normalized = normalizeIdentifier(sourceText.substring(start, end));
+        if (normalized == null) {
+            return null;
+        }
+        return new TokenMatch(toToken(lineStarts, start, end, normalized), end);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private TokenMatch consumeIdentifierToken(String sourceText, List<Integer> lineStarts, int index) {
+        int start = index;
+        int end = index + 1;
+        while (end < sourceText.length() && isIdentifierPart(sourceText.charAt(end))) {
+            end++;
+        }
+        String normalized = normalizeIdentifier(sourceText.substring(start, end));
+        if (normalized == null) {
+            return null;
+        }
+        return new TokenMatch(toToken(lineStarts, start, end, normalized), end);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private boolean isNumberStart(String sourceText, int index) {
+        char ch = sourceText.charAt(index);
+        return Character.isDigit(ch) || (ch == '.' && index + 1 < sourceText.length() && Character.isDigit(sourceText.charAt(index + 1)));
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private TokenMatch consumeNumberToken(String sourceText, List<Integer> lineStarts, int index) {
+        int start = index;
+        int end = skipNumberLiteral(sourceText, index);
+        return new TokenMatch(toToken(lineStarts, start, end, "<number>"), end);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    private static final class TokenMatch {
+        private final CpdToken token;
+        private final int nextIndex;
+
+        private TokenMatch(CpdToken token, int nextIndex) {
+            this.token = token;
+            this.nextIndex = nextIndex;
+        }
     }
 
     // TRACEABILITY_MAPPING: REQ-005
