@@ -237,21 +237,6 @@ public final class ProjectSchemaCatalog {
         return best;
     }
 
-    private List<TableSchema> findUnqualifiedColumnMatchesInQueryScopes(String columnName) {
-        if (columnName == null || columnName.isBlank()) {
-            return List.of();
-        }
-        List<TableSchema> matches = new ArrayList<>();
-        for (QueryScope scope : queryScopes) {
-            for (TableSchema table : scope.tablesInScope) {
-                if (table.getColumn(columnName).isPresent()) {
-                    matches.add(table);
-                }
-            }
-        }
-        return matches;
-    }
-
     private TableSchema resolveTableReference(String qualifier, QueryScope scope) {
         if (qualifier == null || qualifier.isBlank()) {
             return null;
@@ -261,9 +246,8 @@ public final class ProjectSchemaCatalog {
             String aliasTarget = scope.aliasLookup.get(normalized);
             return aliasTarget == null ? null : getTable(aliasTarget).orElse(null);
         }
-        String exact = normalizeTableName(qualifier);
-        if (tables.containsKey(exact)) {
-            return tables.get(exact);
+        if (tables.containsKey(normalized)) {
+            return tables.get(normalized);
         }
         if (normalized.contains(".")) {
             return null;
