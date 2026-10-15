@@ -138,7 +138,7 @@ class ProjectSchemaCatalogTest {
                 + "CREATE TABLE dbo.B (Code SMALLINT);"
                 + "CREATE TABLE sales.Items (Code BIGINT);"
                 + "CREATE TABLE archive.Items (Code SMALLINT);"
-                + "CREATE TABLE dbo.Orders (Id INT PRIMARY KEY);"
+                + "CREATE TABLE dbo.Orders (Id INT, CONSTRAINT PK_Orders PRIMARY KEY (Id));"
                 + "SELECT CAST(Code AS INT) FROM dbo.B;"
                 + "SELECT CAST(Code AS INT) FROM archive.Items;"
                 + "SELECT o.Id FROM dbo.Orders AS o WHERE o.Id IN (1, 2);";
@@ -352,6 +352,9 @@ class ProjectSchemaCatalogTest {
         script.accept(new TSqlConcreteFragmentVisitor() {
             @Override
             public void visit(ColumnReferenceExpression node) {
+                if (found[0] != null) {
+                    return;
+                }
                 if (node != null && node.MultiPartIdentifier != null && node.MultiPartIdentifier.Identifiers != null) {
                     for (var identifier : node.MultiPartIdentifier.Identifiers) {
                         if (identifier != null && targetColumnName.equalsIgnoreCase(identifier.Value)) {
