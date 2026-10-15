@@ -1,5 +1,11 @@
 package io.github.fupacat.sonar.tsql;
 
+import org.sonar.api.batch.sensor.measure.NewMeasure;
+import org.sonar.api.measures.CoreMetrics;
+import org.sonar.api.measures.Metric;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import static org.mockito.Mockito.doAnswer;
 import io.github.fupacat.ParseResult;
 import io.github.fupacat.TSqlParserToken;
 import io.github.fupacat.TSqlTokenType;
@@ -633,5 +639,56 @@ class TSqlSensorTest {
         Method method = TSqlSensor.class.getDeclaredMethod(methodName, parameterTypes);
         method.setAccessible(true);
         return method.invoke(sensor, args);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void testPublishesSourceMetrics() throws IOException {
+        SensorContext context = mock(SensorContext.class);
+        FileSystem fs = mock(FileSystem.class);
+        FilePredicates predicates = mock(FilePredicates.class);
+        FilePredicate predicate = mock(FilePredicate.class);
+        InputFile inputFile = mock(InputFile.class);
+        ActiveRules activeRules = mock(ActiveRules.class);
+        Map<Metric<?>, Integer> measureValues = new LinkedHashMap<>();
+
+        when(context.fileSystem()).thenReturn(fs);
+        when(fs.predicates()).thenReturn(predicates);
+        when(predicates.hasLanguage(TSqlLanguage.KEY)).thenReturn(predicate);
+        when(fs.inputFiles(predicate)).thenReturn(List.of(inputFile));
+        when(context.activeRules()).thenReturn(activeRules);
+        when(context.newMeasure()).thenAnswer(invocation -> {
+            @SuppressWarnings("unchecked")
+            NewMeasure<Integer> measure = mock(NewMeasure.class, org.mockito.Mockito.RETURNS_SELF);
+            @SuppressWarnings("unchecked")
+            Metric<Integer>[] metricHolder = new Metric[1];
+            int[] valueHolder = new int[1];
+
+            doAnswer(metricInvocation -> {
+                metricHolder[0] = metricInvocation.getArgument(0);
+                return measure;
+            }).when(measure).forMetric(org.mockito.ArgumentMatchers.<Metric<Integer>>any());
+            doAnswer(valueInvocation -> {
+                valueHolder[0] = valueInvocation.getArgument(0);
+                return measure;
+            }).when(measure).withValue(org.mockito.ArgumentMatchers.anyInt());
+            doAnswer(saveInvocation -> {
+                measureValues.put(metricHolder[0], valueHolder[0]);
+                return null;
+            }).when(measure).save();
+
+            return measure;
+        });
+        when(inputFile.uri()).thenReturn(URI.create("file:///metrics.sql"));
+        when(inputFile.contents()).thenReturn("-- comment\nBEGIN\n  IF 1 = 1\n    SELECT 1;\n  END;\n\nBEGIN TRY\n  SELECT 1;\nEND TRY\nBEGIN CATCH\n  SELECT 2;\nEND CATCH;\n");
+        when(inputFile.lines()).thenReturn(12);
+
+        sensor.execute(context);
+
+        assertThat(measureValues).containsEntry(CoreMetrics.NCLOC, 10);
+        assertThat(measureValues).containsEntry(CoreMetrics.COMMENT_LINES, 1);
+        assertThat(measureValues).doesNotContainKey(CoreMetrics.STATEMENTS);
+        assertThat(measureValues).containsEntry(CoreMetrics.COMPLEXITY, 3);
+        assertThat(measureValues).hasSize(3);
     }
 }

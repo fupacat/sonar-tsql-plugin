@@ -19,6 +19,28 @@ Powered by [**tsql-scriptdom-java**](https://github.com/fupacat/tsql-scriptdom-j
 - **Cross-file DDL catalog:** Builds a project schema catalog from `CREATE TABLE`, `CREATE INDEX`, and related DDL in analyzed files.
 - **Syntax error detection:** Flags parsing and grammar violations with line and column precision.
 - **Built-in quality profile:** The default `Sonar way` profile activates the full built-in rule set out of the box.
+- **Source Metrics:** Publishes file measures for NCLOC, comment lines, and keyword-based complexity.
+
+---
+
+## Source Metrics
+
+The sensor publishes the core file metrics SonarQube expects for T-SQL sources:
+
+- `ncloc`: non-comment lines of code
+- `comment_lines`: comment-only lines
+- `complexity`: complexity contributions from branching and exception-control constructs
+
+Statement counts are not published. Semicolons and `GO` delimiters do not reliably count T-SQL statements; this measure requires a future implementation using the cached AST.
+
+For complexity, the parser counts the primary T-SQL control-flow keywords that increase branching. In practice:
+
+- `IF` adds a branch point for each conditional block
+- `WHILE` adds loop complexity for iterative control flow
+- `CASE` adds an alternate branch for each conditional expression or search expression
+- `TRY` / `CATCH` adds an exception flow path and structured error-handling branch
+
+This means representative routines such as nested `IF` blocks, `CASE` expressions, looped `WHILE` statements, and `TRY/CATCH` blocks are reflected in the published `complexity` measure.
 
 ---
 
@@ -101,7 +123,6 @@ Not currently implemented:
 
 - Syntax highlighting in the IDE or Sonar UI
 - CPD token-based duplication detection
-- Source code measures such as lines-of-code, complexity metrics, or code churn dashboards
 - Live SQL execution metrics, runtime query plans, or dashboards backed by a running SQL Server instance
 
 ---
