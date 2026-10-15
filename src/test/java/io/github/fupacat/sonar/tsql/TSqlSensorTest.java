@@ -649,9 +649,27 @@ class TSqlSensorTest {
 
         invokePrivate("executeChecks",
                 new Class<?>[] {InputFile.class, SensorContext.class, io.github.fupacat.ast.TSqlFragment.class,
-                        String.class, List.class, ProjectSchemaCatalog.class},
-                inputFile, context, root, "SELECT 1;", List.of(check), projectSchema);
+                        String.class, List.class, ProjectSchemaCatalog.class, boolean.class},
+                inputFile, context, root, "SELECT 1;", List.of(check), projectSchema, true);
 
+        verify(check, times(1)).scan(eq(root), any(TSqlCheckContext.class));
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void testExecuteChecksSkipsPerFileSchemaIndexingWhenSchemaRulesInactive() throws Exception {
+        InputFile inputFile = mock(InputFile.class);
+        SensorContext context = mock(SensorContext.class);
+        TSqlScript root = new TSqlScript();
+        TSqlCheck check = mock(TSqlCheck.class);
+        ProjectSchemaCatalog projectSchema = mock(ProjectSchemaCatalog.class);
+
+        invokePrivate("executeChecks",
+                new Class<?>[] {InputFile.class, SensorContext.class, io.github.fupacat.ast.TSqlFragment.class,
+                        String.class, List.class, ProjectSchemaCatalog.class, boolean.class},
+                inputFile, context, root, "SELECT 1;", List.of(check), projectSchema, false);
+
+        verify(projectSchema, never()).indexScript(any());
         verify(check, times(1)).scan(eq(root), any(TSqlCheckContext.class));
     }
 

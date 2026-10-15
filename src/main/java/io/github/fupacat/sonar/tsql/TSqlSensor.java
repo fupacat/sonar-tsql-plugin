@@ -88,7 +88,7 @@ public class TSqlSensor implements Sensor {
         for (InputFile inputFile : inputFiles) {
             ParsedFile parsedFile = parsedFiles.remove(inputFile);
             if (parsedFile != null) {
-                analyzeFile(inputFile, context, activeChecks, parsedFile, projectSchema);
+                analyzeFile(inputFile, context, activeChecks, parsedFile, projectSchema, needsSchema);
             }
         }
     }
@@ -150,7 +150,7 @@ public class TSqlSensor implements Sensor {
     }
 
     // TRACEABILITY_MAPPING: REQ-005
-    private void analyzeFile(InputFile inputFile, SensorContext context, List<TSqlCheck> activeChecks, ParsedFile parsedFile, ProjectSchemaCatalog projectSchema) {
+    private void analyzeFile(InputFile inputFile, SensorContext context, List<TSqlCheck> activeChecks, ParsedFile parsedFile, ProjectSchemaCatalog projectSchema, boolean needsSchema) {
         LOG.debug("Analyzing T-SQL file: {}", inputFile.uri());
         if (parsedFile == null) {
             return;
@@ -171,7 +171,7 @@ public class TSqlSensor implements Sensor {
         if (parsedFile.result().fragment() == null) {
             return;
         }
-        executeChecks(inputFile, context, parsedFile.result().fragment(), parsedFile.content(), activeChecks, projectSchema);
+        executeChecks(inputFile, context, parsedFile.result().fragment(), parsedFile.content(), activeChecks, projectSchema, needsSchema);
     }
 
     private record ParsedFile(String content, ParseResult<TSqlScript> result, IOException readException, Exception parseException) {
@@ -518,17 +518,19 @@ public class TSqlSensor implements Sensor {
     }
 
     // TRACEABILITY_MAPPING: REQ-005
-    private void executeChecks(InputFile inputFile, SensorContext context, TSqlFragment rootFragment, String sourceText, List<TSqlCheck> activeChecks, ProjectSchemaCatalog projectSchema) {
+    private void executeChecks(InputFile inputFile, SensorContext context, TSqlFragment rootFragment, String sourceText, List<TSqlCheck> activeChecks, ProjectSchemaCatalog projectSchema, boolean needsSchema) {
         if (rootFragment == null || activeChecks.isEmpty()) {
             return;
         }
         ProjectSchemaCatalog schemaForChecks = projectSchema;
-        try {
-            projectSchema.indexScript(rootFragment);
-        } catch (Exception e) {
-            LOG.warn("Failed to index per-file schema scope for {}; continuing without schema metadata for this file",
-                    inputFile != null ? inputFile.uri() : "<unknown>", e);
-            schemaForChecks = ProjectSchemaCatalog.empty();
+        if (needsSchema) {
+            try {
+                projectSchema.indexScript(rootFragment);
+            } catch (Exception e) {
+                LOG.warn("Failed to index per-file schema scope for {}; continuing without schema metadata for this file",
+                        inputFile != null ? inputFile.uri() : "<unknown>", e);
+                schemaForChecks = ProjectSchemaCatalog.empty();
+            }
         }
         TSqlCheckContext checkContext = new SensorCheckContext(inputFile, context, rootFragment, sourceText, schemaForChecks);
         for (TSqlCheck check : activeChecks) {
