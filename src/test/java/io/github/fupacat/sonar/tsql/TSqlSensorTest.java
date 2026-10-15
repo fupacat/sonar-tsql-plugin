@@ -235,6 +235,38 @@ class TSqlSensorTest {
 
     // TRACEABILITY_MAPPING: REQ-005
     @Test
+    void testPublishesMultilineCpdTokensWithStableRanges() throws IOException {
+        SensorContext context = mock(SensorContext.class);
+        FileSystem fs = mock(FileSystem.class);
+        FilePredicates predicates = mock(FilePredicates.class);
+        FilePredicate predicate = mock(FilePredicate.class);
+        InputFile inputFile = mock(InputFile.class);
+        ActiveRules activeRules = mock(ActiveRules.class);
+        NewCpdTokens cpdTokens = mock(NewCpdTokens.class, org.mockito.Mockito.RETURNS_SELF);
+
+        when(context.fileSystem()).thenReturn(fs);
+        when(fs.predicates()).thenReturn(predicates);
+        when(predicates.hasLanguage(TSqlLanguage.KEY)).thenReturn(predicate);
+        when(fs.inputFiles(predicate)).thenReturn(List.of(inputFile));
+        when(context.activeRules()).thenReturn(activeRules);
+        when(context.newCpdTokens()).thenReturn(cpdTokens);
+        when(inputFile.uri()).thenReturn(URI.create("file:///cpd-multiline.sql"));
+        when(inputFile.contents()).thenReturn("SELECT 1 +\n  2 FROM t;\n");
+        when(inputFile.lines()).thenReturn(2);
+
+        sensor.execute(context);
+
+        verify(cpdTokens).addToken(1, 0, 1, 6, "SELECT");
+        verify(cpdTokens).addToken(1, 7, 1, 8, "<number>");
+        verify(cpdTokens).addToken(1, 9, 1, 10, "+");
+        verify(cpdTokens).addToken(2, 2, 2, 3, "<number>");
+        verify(cpdTokens).addToken(2, 4, 2, 8, "FROM");
+        verify(cpdTokens).addToken(2, 9, 2, 10, "t");
+        verify(cpdTokens).addToken(2, 10, 2, 11, ";");
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
     void testSensorCheckContextTokenRangeAndFallback() {
         InputFile inputFile = mock(InputFile.class);
         SensorContext sensorContext = mock(SensorContext.class);

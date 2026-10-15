@@ -95,7 +95,7 @@ public class TSqlSensor implements Sensor {
         }
 
         reportParseErrors(inputFile, context, result);
-        publishCpdTokens(inputFile, context, result.fragment(), content);
+        publishCpdTokens(inputFile, context, content);
         executeChecks(inputFile, context, result.fragment(), content, activeChecks, projectSchema);
     }
 
@@ -129,7 +129,7 @@ public class TSqlSensor implements Sensor {
     }
 
     // TRACEABILITY_MAPPING: REQ-005
-    private void publishCpdTokens(InputFile inputFile, SensorContext context, TSqlFragment rootFragment, String sourceText) {
+    private void publishCpdTokens(InputFile inputFile, SensorContext context, String sourceText) {
         if (sourceText == null || sourceText.isBlank()) {
             return;
         }
@@ -170,8 +170,10 @@ public class TSqlSensor implements Sensor {
         }
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     private List<CpdToken> generateCpdTokens(String sourceText) {
         List<CpdToken> tokens = new ArrayList<>();
+        List<Integer> lineStarts = computeLineStarts(sourceText);
         int index = 0;
         while (index < sourceText.length()) {
             char ch = sourceText.charAt(index);
@@ -191,25 +193,22 @@ public class TSqlSensor implements Sensor {
                 if (index + 1 < sourceText.length() && sourceText.charAt(index + 1) == '\'') {
                     int start = index;
                     index = skipStringLiteral(sourceText, index + 1);
-                    int end = index;
-                    tokens.add(toToken(sourceText, start, end, "<string>"));
+                    tokens.add(toToken(lineStarts, start, index, "<string>"));
                     continue;
                 }
             }
             if (ch == '\'') {
                 int start = index;
                 index = skipStringLiteral(sourceText, index);
-                int end = index;
-                tokens.add(toToken(sourceText, start, end, "<string>"));
+                tokens.add(toToken(lineStarts, start, index, "<string>"));
                 continue;
             }
             if (ch == '[') {
                 int start = index;
                 index = skipDelimitedIdentifier(sourceText, index);
-                int end = index;
-                String normalized = normalizeIdentifier(sourceText.substring(start, end));
+                String normalized = normalizeIdentifier(sourceText.substring(start, index));
                 if (normalized != null) {
-                    tokens.add(toToken(sourceText, start, end, normalized));
+                    tokens.add(toToken(lineStarts, start, index, normalized));
                 }
                 continue;
             }
@@ -227,21 +226,21 @@ public class TSqlSensor implements Sensor {
                 String raw = sourceText.substring(start, index);
                 String normalized = normalizeIdentifier(raw);
                 if (normalized != null) {
-                    tokens.add(toToken(sourceText, start, index, normalized));
+                    tokens.add(toToken(lineStarts, start, index, normalized));
                 }
                 continue;
             }
             if (Character.isDigit(ch) || (ch == '.' && index + 1 < sourceText.length() && Character.isDigit(sourceText.charAt(index + 1)))) {
                 int start = index;
                 index = skipNumberLiteral(sourceText, index);
-                tokens.add(toToken(sourceText, start, index, "<number>"));
+                tokens.add(toToken(lineStarts, start, index, "<number>"));
                 continue;
             }
             String operator = readOperator(sourceText, index);
             if (operator != null) {
                 int start = index;
                 index += operator.length();
-                tokens.add(toToken(sourceText, start, index, operator));
+                tokens.add(toToken(lineStarts, start, index, operator));
                 continue;
             }
             index++;
@@ -249,6 +248,7 @@ public class TSqlSensor implements Sensor {
         return tokens;
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     private int skipSingleLineComment(String sourceText, int index) {
         while (index < sourceText.length() && sourceText.charAt(index) != '\n') {
             index++;
@@ -256,6 +256,7 @@ public class TSqlSensor implements Sensor {
         return index;
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     private int skipMultiLineComment(String sourceText, int index) {
         int depth = 1;
         index += 2;
@@ -278,6 +279,7 @@ public class TSqlSensor implements Sensor {
         return sourceText.length();
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     private int skipStringLiteral(String sourceText, int index) {
         index++;
         while (index < sourceText.length()) {
@@ -294,6 +296,7 @@ public class TSqlSensor implements Sensor {
         return sourceText.length();
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     private int skipDelimitedIdentifier(String sourceText, int index) {
         index++;
         while (index < sourceText.length()) {
@@ -310,6 +313,7 @@ public class TSqlSensor implements Sensor {
         return sourceText.length();
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     private int skipNumberLiteral(String sourceText, int index) {
         int i = index;
         if (sourceText.charAt(i) == '.') {
@@ -340,6 +344,7 @@ public class TSqlSensor implements Sensor {
         return i;
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     private String normalizeIdentifier(String raw) {
         String trimmed = raw == null ? "" : raw.trim();
         if (trimmed.isEmpty()) {
@@ -355,14 +360,17 @@ public class TSqlSensor implements Sensor {
         return trimmed.toLowerCase(Locale.ROOT);
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     private boolean isIdentifierStart(char ch) {
         return Character.isLetter(ch) || ch == '_' || ch == '@' || ch == '#';
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     private boolean isIdentifierPart(char ch) {
         return Character.isLetterOrDigit(ch) || ch == '_' || ch == '$';
     }
 
+    // TRACEABILITY_MAPPING: REQ-005
     private String readOperator(String sourceText, int index) {
         if (index >= sourceText.length()) {
             return null;
@@ -379,31 +387,40 @@ public class TSqlSensor implements Sensor {
         return null;
     }
 
-    private CpdToken toToken(String sourceText, int start, int end, String normalized) {
-        return new CpdToken(lineForOffset(sourceText, start), columnForOffset(sourceText, start),
-                lineForOffset(sourceText, end), columnForOffset(sourceText, end), normalized);
+    // TRACEABILITY_MAPPING: REQ-005
+    private CpdToken toToken(List<Integer> lineStarts, int start, int end, String normalized) {
+        int startLine = lineNumberForOffset(lineStarts, start);
+        int endLine = lineNumberForOffset(lineStarts, end);
+        int startColumn = start - lineStarts.get(startLine - 1);
+        int endColumn = end - lineStarts.get(endLine - 1);
+        return new CpdToken(startLine, startColumn, endLine, endColumn, normalized);
     }
 
-    private int lineForOffset(String text, int offset) {
-        int line = 1;
-        for (int i = 0; i < offset; i++) {
+    // TRACEABILITY_MAPPING: REQ-005
+    private List<Integer> computeLineStarts(String text) {
+        List<Integer> lineStarts = new ArrayList<>();
+        lineStarts.add(0);
+        for (int i = 0; i < text.length(); i++) {
             if (text.charAt(i) == '\n') {
-                line++;
+                lineStarts.add(i + 1);
             }
         }
-        return line;
+        return lineStarts;
     }
 
-    private int columnForOffset(String text, int offset) {
-        int column = 0;
-        for (int i = 0; i < offset; i++) {
-            if (text.charAt(i) == '\n') {
-                column = 0;
+    // TRACEABILITY_MAPPING: REQ-005
+    private int lineNumberForOffset(List<Integer> lineStarts, int offset) {
+        int low = 0;
+        int high = lineStarts.size() - 1;
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            if (lineStarts.get(mid) <= offset) {
+                low = mid + 1;
             } else {
-                column++;
+                high = mid - 1;
             }
         }
-        return column;
+        return Math.max(1, low);
     }
 
     // TRACEABILITY_MAPPING: REQ-005
