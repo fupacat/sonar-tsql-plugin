@@ -2,6 +2,7 @@ package io.github.fupacat.sonar.tsql.catalog;
 
 import io.github.fupacat.ParseResult;
 import io.github.fupacat.TSqlParser;
+import io.github.fupacat.TSqlParserToken;
 import io.github.fupacat.ast.ColumnDefinition;
 import io.github.fupacat.ast.ColumnReferenceExpression;
 import io.github.fupacat.ast.ConstraintDefinition;
@@ -91,10 +92,14 @@ public final class ProjectSchemaCatalog {
     }
 
     public void indexScript(TSqlFragment root) {
+        indexScript(root, root == null ? null : root.Value);
+    }
+
+    public void indexScript(TSqlFragment root, String sourceText) {
         if (root == null) {
             return;
         }
-        root.accept(new CatalogIndexer());
+        root.accept(new CatalogIndexer(root.ScriptTokenStream, sourceText));
     }
 
     public boolean hasTable(String tableName) {
@@ -354,6 +359,69 @@ public final class ProjectSchemaCatalog {
     }
 
     private final class CatalogIndexer extends TSqlConcreteFragmentVisitor {
+        private final List<?> tokens;
+        private final String sourceText;
+
+        private CatalogIndexer(List<?> tokens, String sourceText) {
+            this.tokens = tokens == null ? List.of() : tokens;
+            this.sourceText = sourceText;
+        }
+
+        private boolean hasExplicitNotNull(ColumnDefinition column) {
+            if (column == null) {
+                return false;
+            }
+            if (!tokens.isEmpty()) {
+                int depth = 0;
+                boolean previousNot = false;
+                int end = Math.min(column.lastTokenIndex, tokens.size() - 1);
+                for (int i = Math.max(0, column.firstTokenIndex); i <= end; i++) {
+                    if (!(tokens.get(i) instanceof TSqlParserToken token) || token.getText() == null) {
+                        continue;
+                    }
+                    String text = token.getText();
+                    if (text.isBlank() || text.startsWith("--") || text.startsWith("/*")) {
+                        continue;
+                    }
+                    if ("(".equals(text)) { depth++; }
+                    if (")".equals(text)) { depth--; }
+                    if (depth == 0 && previousNot && "NULL".equalsIgnoreCase(text)) {
+                        return true;
+                    }
+                    previousNot = depth == 0 && "NOT".equalsIgnoreCase(text);
+                }
+            }
+            if (sourceText == null || sourceText.isBlank()) {
+                return false;
+            }
+            String columnName = column.ColumnIdentifier != null ? stripDelimiters(column.ColumnIdentifier.Value) : null;
+            if (columnName == null || columnName.isBlank()) {
+                return false;
+            }
+            String upperText = sourceText.toUpperCase(Locale.ROOT);
+            String upperName = columnName.toUpperCase(Locale.ROOT);
+            int searchFrom = 0;
+            while (searchFrom < upperText.length()) {
+                int start = upperText.indexOf(upperName, searchFrom);
+                if (start < 0) {
+                    return false;
+                }
+                boolean leftBoundary = start == 0 || !Character.isLetterOrDigit(sourceText.charAt(start - 1));
+                boolean rightBoundary = start + columnName.length() >= sourceText.length()
+                        || !Character.isLetterOrDigit(sourceText.charAt(start + columnName.length()));
+                if (leftBoundary && rightBoundary) {
+                    int tailStart = start + columnName.length();
+                    int tailEnd = Math.min(sourceText.length(), tailStart + 64);
+                    String trailingText = sourceText.substring(tailStart, tailEnd).toUpperCase(Locale.ROOT);
+                    if (trailingText.contains("NOT NULL") || trailingText.contains("NOT\nNULL") || trailingText.contains("NOT\r\nNULL")) {
+                        return true;
+                    }
+                }
+                searchFrom = start + columnName.length();
+            }
+            return false;
+        }
+
         @Override
         public void visit(CreateTableStatement node) {
             if (node == null || node.SchemaObjectName == null) {
@@ -416,7 +484,7 @@ public final class ProjectSchemaCatalog {
                 String columnName = columnDefinition.ColumnIdentifier != null && columnDefinition.ColumnIdentifier.Value != null
                         ? columnDefinition.ColumnIdentifier.Value
                         : "";
-                boolean nullable = isNullable(columnDefinition.Constraints);
+                boolean nullable = isNullable(columnDefinition.Constraints) && !hasExplicitNotNull(columnDefinition);
                 String sqlType = extractSqlType(columnDefinition.DataType);
                 Integer length = extractLength(columnDefinition.DataType);
                 table.addColumn(new ColumnInfo(columnName, nullable, sqlType, length));
