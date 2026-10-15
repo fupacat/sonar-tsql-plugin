@@ -495,8 +495,15 @@ public class TSqlSensor implements Sensor {
         if (rootFragment == null || activeChecks.isEmpty()) {
             return;
         }
-        projectSchema.indexScript(rootFragment);
-        TSqlCheckContext checkContext = new SensorCheckContext(inputFile, context, rootFragment, sourceText, projectSchema);
+        ProjectSchemaCatalog schemaForChecks = projectSchema;
+        try {
+            projectSchema.indexScript(rootFragment);
+        } catch (Exception e) {
+            LOG.warn("Failed to index per-file schema scope for {}; continuing without schema metadata for this file",
+                    inputFile != null ? inputFile.uri() : "<unknown>", e);
+            schemaForChecks = ProjectSchemaCatalog.empty();
+        }
+        TSqlCheckContext checkContext = new SensorCheckContext(inputFile, context, rootFragment, sourceText, schemaForChecks);
         for (TSqlCheck check : activeChecks) {
             try {
                 check.scan(rootFragment, checkContext);
