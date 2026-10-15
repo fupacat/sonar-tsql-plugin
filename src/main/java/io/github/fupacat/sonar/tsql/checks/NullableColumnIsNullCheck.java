@@ -24,14 +24,22 @@ public class NullableColumnIsNullCheck extends TSqlCheck {
         }
 
         ProjectSchemaCatalog catalog = getProjectSchema();
-        for (ScalarExpression expression : node.Expressions) {
+        if (!(node.Expressions.get(0) instanceof ColumnReferenceExpression firstColumnReferenceExpression)
+                || !catalog.isNullable(firstColumnReferenceExpression)) {
+            super.visit(node);
+            return;
+        }
+
+        for (int i = 1; i < node.Expressions.size(); i++) {
+            ScalarExpression expression = node.Expressions.get(i);
             if (expression instanceof ColumnReferenceExpression columnReferenceExpression && catalog.isNullable(columnReferenceExpression)) {
-                reportIssue(node,
-                        "COALESCE with more than two arguments cannot be rewritten to ISNULL without changing semantics; ISNULL is binary and COALESCE evaluates each argument in order, including type and length precedence.");
-                break;
+                super.visit(node);
+                return;
             }
         }
 
+        reportIssue(node,
+                "COALESCE with more than two arguments cannot be rewritten to ISNULL without changing semantics; ISNULL is binary and COALESCE evaluates each argument in order, including type and length precedence.");
         super.visit(node);
     }
 }
