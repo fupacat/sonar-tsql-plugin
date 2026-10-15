@@ -330,6 +330,48 @@ class TSqlSensorTest {
 
     // TRACEABILITY_MAPPING: REQ-005
     @Test
+    void testCatalogParserRuntimeFailureIsolatedPerFile() throws IOException {
+        RuleKey selectAllRuleKey = RuleKey.of(TSqlRulesDefinition.REPOSITORY_KEY, AvoidSelectAllCheck.RULE_KEY);
+        RuleKey syntaxRuleKey = RuleKey.of(TSqlRulesDefinition.REPOSITORY_KEY, CheckList.SYNTAX_ERROR_RULE_KEY);
+
+        SensorContext context = mock(SensorContext.class);
+        FileSystem fs = mock(FileSystem.class);
+        FilePredicates predicates = mock(FilePredicates.class);
+        FilePredicate predicate = mock(FilePredicate.class);
+        InputFile badFile = mock(InputFile.class);
+        InputFile goodFile = mock(InputFile.class);
+        ActiveRules activeRules = mock(ActiveRules.class);
+        ActiveRule selectAllRule = mock(ActiveRule.class);
+        ActiveRule syntaxRule = mock(ActiveRule.class);
+
+        when(context.fileSystem()).thenReturn(fs);
+        when(fs.predicates()).thenReturn(predicates);
+        when(predicates.hasLanguage(TSqlLanguage.KEY)).thenReturn(predicate);
+        when(fs.inputFiles(predicate)).thenReturn(List.of(badFile, goodFile));
+
+        when(badFile.uri()).thenReturn(URI.create("file:///catalog-runtime-failure.sql"));
+        when(badFile.contents()).thenReturn(null);
+        when(goodFile.uri()).thenReturn(URI.create("file:///valid.sql"));
+        when(goodFile.contents()).thenReturn("SELECT * FROM Customers;\n");
+        when(goodFile.lines()).thenReturn(1);
+
+        when(context.activeRules()).thenReturn(activeRules);
+        when(activeRules.find(selectAllRuleKey)).thenReturn(selectAllRule);
+        when(activeRules.find(syntaxRuleKey)).thenReturn(syntaxRule);
+
+        NewIssue issue = mock(NewIssue.class, org.mockito.Mockito.RETURNS_SELF);
+        NewIssueLocation location = mock(NewIssueLocation.class, org.mockito.Mockito.RETURNS_SELF);
+        when(context.newIssue()).thenReturn(issue);
+        when(issue.newLocation()).thenReturn(location);
+
+        sensor.execute(context);
+
+        verify(issue, atLeastOnce()).forRule(selectAllRuleKey);
+        verify(issue, atLeastOnce()).forRule(syntaxRuleKey);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
     void testSensorCheckContextTokenRangeAndFallback() {
         InputFile inputFile = mock(InputFile.class);
         SensorContext sensorContext = mock(SensorContext.class);
