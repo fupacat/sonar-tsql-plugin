@@ -10,6 +10,20 @@ class UnusedParameterCheckTest {
 
     private final UnusedParameterCheck check = new UnusedParameterCheck();
 
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void testParameterlessRoutineVariantsDoNotCrash() {
+        for (String definition : List.of("CREATE", "CREATE OR ALTER", "ALTER")) {
+            assertThat(CheckTestUtils.scan(check,
+                    definition + " PROCEDURE dbo.NoParameters AS BEGIN SELECT 1; END;"))
+                    .isEmpty();
+            assertThat(CheckTestUtils.scan(check,
+                    definition + " FUNCTION dbo.NoParameters() RETURNS INT AS BEGIN RETURN 1; END;"))
+                    .isEmpty();
+        }
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
     @Test
     void testFlagsUnusedParameter() {
         String sql = "CREATE PROCEDURE dbo.GetOrders (@customerId INT, @unused INT) AS BEGIN SELECT @customerId; END;";
@@ -55,6 +69,14 @@ class UnusedParameterCheckTest {
     @Test
     void testTreatsParameterUsageAsCaseInsensitive() {
         String sql = "CREATE PROCEDURE dbo.GetOrders (@CustomerId INT) AS BEGIN SELECT @customerid; END;";
+        List<String> issues = CheckTestUtils.scan(check, sql);
+        assertThat(issues).isEmpty();
+    }
+
+    @Test
+    void testHandlesMultipleProceduresWithoutStackUnderflow() {
+        String sql = "CREATE PROCEDURE dbo.FirstProc (@a INT) AS BEGIN SELECT @a; END; " +
+                "CREATE FUNCTION dbo.SecondFunc (@b INT) RETURNS INT AS BEGIN RETURN @b; END;";
         List<String> issues = CheckTestUtils.scan(check, sql);
         assertThat(issues).isEmpty();
     }
