@@ -65,23 +65,31 @@ public final class ProjectSchemaCatalog {
             return empty();
         }
         List<ParseResult<TSqlScript>> parsedResults = new ArrayList<>();
+        Map<TSqlFragment, String> sources = new IdentityHashMap<>();
         for (InputFile inputFile : inputFiles) {
             if (inputFile == null) {
                 continue;
             }
             try {
                 String content = inputFile.contents();
-                parsedResults.add(TSqlParser.parse(content));
+                var parsed = TSqlParser.parse(content);
+                if (parsed.fragment() != null) { sources.put(parsed.fragment(), content); }
+                parsedResults.add(parsed);
             } catch (IOException ignored) {
                 // ignore unreadable file
             } catch (RuntimeException e) {
                 LOG.warn("Failed to parse schema catalog input: {}", inputFile.uri(), e);
             }
         }
-        return fromParsedResults(parsedResults);
+        return fromParsedResults(parsedResults, sources);
     }
 
     public static ProjectSchemaCatalog fromParsedResults(Iterable<ParseResult<TSqlScript>> parsedResults) {
+        return fromParsedResults(parsedResults, Map.of());
+    }
+
+    public static ProjectSchemaCatalog fromParsedResults(Iterable<ParseResult<TSqlScript>> parsedResults,
+            Map<? extends TSqlFragment, String> sources) {
         ProjectSchemaCatalog catalog = new ProjectSchemaCatalog();
         if (parsedResults == null) {
             return catalog;
@@ -91,7 +99,7 @@ public final class ProjectSchemaCatalog {
                 continue;
             }
             try {
-                catalog.indexScript(result.fragment());
+                catalog.indexScript(result.fragment(), sources.getOrDefault(result.fragment(), result.fragment().Value));
             } catch (Exception e) {
                 LOG.warn("Failed to index script while building project schema catalog", e);
             }
@@ -100,12 +108,16 @@ public final class ProjectSchemaCatalog {
     }
 
     public void indexScript(TSqlFragment root) {
+        indexScript(root, root == null ? null : root.Value);
+    }
+
+    public void indexScript(TSqlFragment root, String sourceText) {
         if (root == null) {
             return;
         }
         queryScopeStack.clear();
         // Scopes belong to cached AST nodes and must survive indexing subsequent files.
-        root.accept(new CatalogIndexer());
+        root.accept(new CatalogIndexer(new SourceNullability(sourceText)));
     }
 
     public boolean hasTable(String tableName) {
@@ -349,7 +361,10 @@ public final class ProjectSchemaCatalog {
             tables.put(normalized, table);
         } else {
             for (Map.Entry<String, ColumnInfo> entry : table.columns.entrySet()) {
-                existing.columns.putIfAbsent(entry.getKey(), entry.getValue());
+                existing.columns.merge(entry.getKey(), entry.getValue(), (previous, next) ->
+                        new ColumnInfo(previous.name(), previous.nullable(), previous.sqlType(), previous.length(),
+                                previous.nullabilityKnown() && next.nullabilityKnown()
+                                        && previous.nullable() == next.nullable()));
             }
             return;
         }
@@ -427,6 +442,11 @@ public final class ProjectSchemaCatalog {
     }
 
     private final class CatalogIndexer extends TSqlConcreteFragmentVisitor {
+        private final SourceNullability sourceNullability;
+
+        private CatalogIndexer(SourceNullability sourceNullability) {
+            this.sourceNullability = sourceNullability;
+        }
         @Override
         public void visit(CreateTableStatement node) {
             if (node == null || node.SchemaObjectName == null) {
@@ -490,9 +510,16 @@ public final class ProjectSchemaCatalog {
                         ? columnDefinition.ColumnIdentifier.Value
                         : "";
                 boolean nullable = isNullable(columnDefinition.Constraints);
+                Optional<Boolean> declaredNullable = sourceNullability.nullable(table.tableName, columnName);
+                boolean known = !nullable || (columnDefinition.Constraints != null && columnDefinition.Constraints.stream()
+                        .anyMatch(NullableConstraintDefinition.class::isInstance));
+                if (!known && declaredNullable.isPresent()) {
+                    nullable = declaredNullable.get();
+                    known = true;
+                }
                 String sqlType = extractSqlType(columnDefinition.DataType);
                 Integer length = extractLength(columnDefinition.DataType);
-                table.addColumn(new ColumnInfo(columnName, nullable, sqlType, length));
+                table.addColumn(new ColumnInfo(columnName, nullable, sqlType, length, known));
                 if (columnDefinition.Index != null) {
                     registerIndex(table.tableName, extractIndexColumns(columnDefinition.Index.Columns));
                 }
@@ -645,7 +672,10 @@ public final class ProjectSchemaCatalog {
         }
     }
 
-    public record ColumnInfo(String name, boolean nullable, String sqlType, Integer length) {
+    public record ColumnInfo(String name, boolean nullable, String sqlType, Integer length, boolean nullabilityKnown) {
+        public ColumnInfo(String name, boolean nullable, String sqlType, Integer length) {
+            this(name, nullable, sqlType, length, true);
+        }
         public String getName() {
             return name;
         }

@@ -226,15 +226,15 @@
 }
 ```
 
-[REQ-017] NullableColumnIsNullCheck SHALL flag COALESCE expressions that take a nullable column as the first argument.
+[REQ-017] NullableColumnIsNullCheck SHALL flag an ASCII literal ISNULL replacement longer than a known bounded nullable character column. Valid COALESCE expressions, unknown metadata and lengths, non-character columns, and non-literal replacements SHALL remain compliant.
 
 ```json
 {
   "requirement": "REQ-017",
   "kind": "categorical",
-  "precondition": "COALESCE expression over a nullable table column parsed",
+  "precondition": "ISNULL expression over a known nullable character column and ASCII literal replacement parsed",
   "action": "invoke NullableColumnIsNullCheck scan",
-  "expected": "issue reported for nullable-column COALESCE patterns",
+  "expected": "issue reported only when the literal replacement exceeds the declared column length",
   "method": "junit",
   "expected_output": "void"
 }

@@ -39,33 +39,79 @@ class SchemaAwareChecksTest {
         assertThat(issues).isEmpty();
     }
 
-    // TRACEABILITY_MAPPING: REQ-009
+    // TRACEABILITY_MAPPING: REQ-017
     @Test
-    void testNullableColumnUsesIsNull() {
+    void testNullableColumnCoalesceTwoArgumentFallbackIsCompliant() {
         List<String> issues = CheckTestUtils.scan(nullableColumnCheck,
-                "CREATE TABLE Users (Id INT NOT NULL, LastLogin DATETIME NULL); " +
-                        "SELECT COALESCE(LastLogin, '1970-01-01') FROM Users;");
-        assertThat(issues).hasSize(1);
-        assertThat(issues.get(0)).contains("Use ISNULL");
+                "CREATE TABLE dbo.Items (Code VARCHAR(3) NULL); " +
+                        "SELECT COALESCE(Code, 'fallback') FROM dbo.Items;");
+        assertThat(issues).isEmpty();
     }
 
-    // TRACEABILITY_MAPPING: REQ-009
+    // TRACEABILITY_MAPPING: REQ-017
+    @Test
+    void testNullableColumnCoalesceMultipleArgumentsAreCompliant() {
+        List<String> issues = CheckTestUtils.scan(nullableColumnCheck,
+                "CREATE TABLE dbo.Items (Code VARCHAR(3) NULL); " +
+                        "SELECT COALESCE(Code, 'fallback', 'another') FROM dbo.Items;");
+        assertThat(issues).isEmpty();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-017
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.MethodSource("isNullLengthCases")
+    void testIsNullReplacementLength(String sql, int expectedIssues) {
+        assertThat(CheckTestUtils.scan(nullableColumnCheck, sql)).as(sql).hasSize(expectedIssues);
+    }
+
+    private static java.util.stream.Stream<org.junit.jupiter.params.provider.Arguments> isNullLengthCases() {
+        return java.util.stream.Stream.of(
+                org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code VARCHAR(3) NULL); SELECT ISNULL(Code, 'fallback') FROM Items;", 1),
+                org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code NVARCHAR(3) NULL); SELECT ISNULL(Code, N'fallback') FROM Items;", 1),
+                org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code VARCHAR(3) NULL); SELECT ISNULL(Code, 'abc') FROM Items;", 0),
+                org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code VARCHAR(3) NULL); SELECT ISNULL(Code, 'a''b') FROM Items;", 0),
+                org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code VARCHAR(3) NOT NULL); SELECT ISNULL(Code, 'fallback') FROM Items;", 0),
+                org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code VARCHAR(3) NULL, Id INT NOT NULL); SELECT ISNULL(Code, 'fallback') FROM Items;", 1),
+                org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code VARCHAR(3) NOT    NULL); SELECT ISNULL(Code, 'fallback') FROM Items;", 0),
+                org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code VARCHAR(3)); SELECT ISNULL(Code, 'fallback') FROM Items;", 0),
+                org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code VARCHAR(3) NOT /* gap */ NULL); SELECT ISNULL(Code, 'fallback') FROM Items;", 0),
+                org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code VARCHAR(3) NULL /* NOT NULL is only a comment */); SELECT ISNULL(Code, 'fallback') FROM Items;", 1),
+                org.junit.jupiter.params.provider.Arguments.of("SELECT ISNULL(Code, 'fallback') FROM UnknownTable;", 0),
+                org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code VARCHAR(MAX) NULL); SELECT ISNULL(Code, 'fallback') FROM Items;", 0),
+                org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code INT NULL); SELECT ISNULL(Code, 0) FROM Items;", 0),
+                org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code VARCHAR(3) NULL); SELECT ISNULL(Code, @fallback) FROM Items;", 0));
+    }
+
+    // TRACEABILITY_MAPPING: REQ-017
+    @Test
+    void testIsNullWithSeparateDdlAndQueryFiles() throws java.io.IOException {
+        var ddl = org.mockito.Mockito.mock(org.sonar.api.batch.fs.InputFile.class);
+        org.mockito.Mockito.when(ddl.contents()).thenReturn("CREATE TABLE dbo.Items(Code VARCHAR(3) NULL);");
+        var catalog = ProjectSchemaCatalog.fromInputFiles(List.of(ddl));
+        var parsed = TSqlParser.parse("SELECT ISNULL(i.Code, 'fallback') FROM dbo.Items i;");
+        catalog.indexScript(parsed.fragment());
+        var context = new CheckTestUtils.CollectingContext("SELECT ISNULL(i.Code, 'fallback') FROM dbo.Items i;");
+        context.setProjectSchema(catalog);
+        nullableColumnCheck.scan(parsed.fragment(), context);
+        assertThat(context.issues).hasSize(1);
+    }
+
+    // TRACEABILITY_MAPPING: REQ-017
+    @Test
+    void testMultiArgumentCoalesceWithoutNullableColumnIsCompliant() {
+        List<String> issues = CheckTestUtils.scan(nullableColumnCheck,
+                "CREATE TABLE dbo.Items (Code VARCHAR(3) NOT NULL); " +
+                        "SELECT COALESCE('fallback', 'another', 'final') FROM dbo.Items;");
+        assertThat(issues).isEmpty();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-017
     @Test
     void testNullableColumnAlreadyUsingIsNullIsCompliant() {
         List<String> issues = CheckTestUtils.scan(nullableColumnCheck,
                 "CREATE TABLE Users (Id INT NOT NULL, LastLogin DATETIME NULL); " +
                         "SELECT ISNULL(LastLogin, '1970-01-01') FROM Users;");
         assertThat(issues).isEmpty();
-    }
-
-    // TRACEABILITY_MAPPING: REQ-009
-    @Test
-    void testPrimaryKeyColumnIsNotTreatedAsNullable() {
-        List<String> issues = CheckTestUtils.scan(nullableColumnCheck,
-                "CREATE TABLE Orders (OrderId INT NOT NULL PRIMARY KEY, CustomerId INT NULL); " +
-                        "SELECT COALESCE(CustomerId, 0) FROM Orders;");
-        assertThat(issues).hasSize(1);
-        assertThat(issues.get(0)).contains("Use ISNULL");
     }
 
     // TRACEABILITY_MAPPING: REQ-009

@@ -77,7 +77,7 @@ The keys below are the actual rule keys registered by `TSqlRulesDefinition` and 
 The plugin builds a project-wide schema catalog from the T-SQL DDL it can parse in the analyzed codebase. This catalog is used by schema-aware checks such as:
 
 - `SR0004` (`InPredicateIndexedColumn`)
-- `SR0007` (`NullableColumnIsNull`)
+- `SR0007` (`NullableColumnIsNull`): detects ASCII literal replacements longer than a known bounded nullable character column in `ISNULL`. Nullability comes from parser constraints or explicit column declarations in analyzed source files; omitted/unknown nullability is skipped. Valid `COALESCE` expressions are compliant.
 - `SR0014` (`NarrowingCast`)
 
 `S1614` (`PrimaryKeyRequired`) inspects `CREATE TABLE` statements directly and does not depend on the cross-file project catalog.

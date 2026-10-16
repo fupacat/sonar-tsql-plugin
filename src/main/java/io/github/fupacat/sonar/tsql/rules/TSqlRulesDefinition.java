@@ -909,13 +909,13 @@ public class TSqlRulesDefinition implements RulesDefinition {
 
         // Rule 11: SR0007
         repository.createRule(NullableColumnIsNullCheck.RULE_KEY)
-                .setName("Use ISNULL on nullable columns in expressions")
+                .setName("ISNULL replacement values should fit the column length")
                 .setHtmlDescription(
-                        "<p>Using <code>COALESCE</code> on a nullable column is less clear than <code>ISNULL</code> and can hide nullable-column intent in expressions.</p>"
-                        + NONCOMPLIANT_HEADER
-                        + "<pre>SELECT COALESCE(LastLogin, '1970-01-01') FROM Users;</pre>"
-                        + COMPLIANT_HEADER
-                        + "<pre>SELECT ISNULL(LastLogin, '1970-01-01') FROM Users;</pre>")
+                        "<p>ISNULL returns the type and length of its first argument. A longer replacement literal can be truncated when a nullable character column is NULL. This check only reports known bounded character columns and ASCII string literals; unknown lengths and metadata are ignored. Valid COALESCE expressions are not violations.</p>"
+                                + NONCOMPLIANT_HEADER
+                                + "<pre>-- Code is VARCHAR(3) NULL\nSELECT ISNULL(Code, 'fallback') FROM dbo.Items;</pre>"
+                                + COMPLIANT_HEADER
+                                + "<pre>SELECT COALESCE(Code, 'fallback') FROM dbo.Items;</pre>")
                 .setSeverity(Severity.MAJOR)
                 .setType(RuleType.BUG)
                 .setStatus(RuleStatus.READY)

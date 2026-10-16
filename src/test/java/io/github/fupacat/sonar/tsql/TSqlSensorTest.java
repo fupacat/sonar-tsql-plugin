@@ -746,7 +746,7 @@ class TSqlSensorTest {
         TSqlScript root = new TSqlScript();
         TSqlCheck check = mock(TSqlCheck.class);
         ProjectSchemaCatalog projectSchema = mock(ProjectSchemaCatalog.class);
-        doThrow(new RuntimeException("index failure")).when(projectSchema).indexScript(root);
+        doThrow(new RuntimeException("index failure")).when(projectSchema).indexScript(eq(root), any());
 
         invokePrivate("executeChecks",
                 new Class<?>[] {InputFile.class, SensorContext.class, io.github.fupacat.ast.TSqlFragment.class,
@@ -770,7 +770,7 @@ class TSqlSensorTest {
                         String.class, List.class, ProjectSchemaCatalog.class, boolean.class},
                 inputFile, context, root, "SELECT 1;", List.of(check), projectSchema, false);
 
-        verify(projectSchema, never()).indexScript(any());
+        verify(projectSchema, never()).indexScript(any(), any());
         verify(check, times(1)).scan(eq(root), any(TSqlCheckContext.class));
     }
 
