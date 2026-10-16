@@ -176,6 +176,71 @@ class ProjectSchemaCatalogTest {
     // TRACEABILITY_MAPPING: REQ-016
     @Test
     void testFileOrderDoesNotChangeQualifiedResolution() {
+        assertMultiFileScopes(false);
+        assertMultiFileScopes(true);
+    }
+
+    private void assertMultiFileScopes(boolean reverse) {
+        var ddl = TSqlParser.parse("CREATE TABLE dbo.A (Code BIGINT); CREATE TABLE dbo.B (Code SMALLINT);");
+        var a = TSqlParser.parse("SELECT t.Code, Code FROM dbo.A AS t;");
+        var b = TSqlParser.parse("SELECT t.Code, Code FROM dbo.B AS t;");
+        var catalog = ProjectSchemaCatalog.fromParsedResults(reverse ? List.of(b, a, ddl) : List.of(ddl, a, b));
+        assertThat(catalog.typeOf(columnReferenceFrom(a.fragment(), "Code", 0)).orElseThrow().typeName()).isEqualTo("bigint");
+        assertThat(catalog.typeOf(columnReferenceFrom(b.fragment(), "Code", 0)).orElseThrow().typeName()).isEqualTo("smallint");
+        assertThat(catalog.typeOf(columnReferenceFrom(a.fragment(), "Code", 1)).orElseThrow().typeName()).isEqualTo("bigint");
+        assertThat(catalog.typeOf(columnReferenceFrom(b.fragment(), "Code", 1)).orElseThrow().typeName()).isEqualTo("smallint");
+    }
+
+    // TRACEABILITY_MAPPING: REQ-016
+    @Test
+    void testUnknownSourcesDoNotBorrowKnownColumns() {
+        var ddl = TSqlParser.parse("CREATE TABLE dbo.Known (Code BIGINT);");
+        var query = TSqlParser.parse("SELECT Code FROM dbo.Unknown;");
+        var qualified = TSqlParser.parse("SELECT Known.Code FROM dbo.Unknown;");
+        var noFrom = TSqlParser.parse("SELECT Code;");
+        var catalog = ProjectSchemaCatalog.fromParsedResults(List.of(ddl, query, qualified, noFrom));
+        for (var parsed : List.of(query, qualified, noFrom)) {
+            var column = columnReferenceFrom(parsed.fragment(), "Code", 0);
+            assertThat(column).isNotNull();
+            assertThat(catalog.resolveColumn(column)).isEmpty();
+            assertThat(catalog.isIndexed(column)).isFalse();
+        }
+        assertThat(catalog.getTable("archive.Known")).isEmpty();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-016
+    @Test
+    void testJoinAmbiguityAndQualifiedAliases() {
+        var ddl = TSqlParser.parse("CREATE TABLE dbo.A (Code BIGINT); CREATE TABLE dbo.B (Code SMALLINT);");
+        var query = TSqlParser.parse("SELECT Code, a.Code, b.Code FROM dbo.A a JOIN dbo.B b ON a.Code = b.Code;");
+        // The pinned parser drops JOIN sources. Supply the complete AST to verify catalog semantics.
+        var other = TSqlParser.parse("SELECT b.Code FROM dbo.B b;");
+        final io.github.fupacat.ast.NamedTableReference[] second = new io.github.fupacat.ast.NamedTableReference[1];
+        other.fragment().accept(new TSqlConcreteFragmentVisitor() {
+            @Override
+            public void visit(io.github.fupacat.ast.NamedTableReference node) {
+                second[0] = node;
+            }
+        });
+        query.fragment().accept(new TSqlConcreteFragmentVisitor() {
+            @Override
+            public void visit(io.github.fupacat.ast.QuerySpecification node) {
+                var join = new io.github.fupacat.ast.QualifiedJoin();
+                join.FirstTableReference = node.FromClause.TableReferences.get(0);
+                join.SecondTableReference = second[0];
+                node.FromClause.TableReferences = List.of(join);
+                super.visit(node);
+            }
+        });
+        var catalog = ProjectSchemaCatalog.fromParsedResults(List.of(query, ddl));
+        assertThat(catalog.resolveColumn(columnReferenceFrom(query.fragment(), "Code", 0))).isEmpty();
+        assertThat(catalog.typeOf(columnReferenceFrom(query.fragment(), "Code", 1)).orElseThrow().typeName()).isEqualTo("bigint");
+        assertThat(catalog.typeOf(columnReferenceFrom(query.fragment(), "Code", 2)).orElseThrow().typeName()).isEqualTo("smallint");
+    }
+
+    // TRACEABILITY_MAPPING: REQ-016
+    @Test
+    void testUnboundExpressionsCannotBorrowAnotherFilesScope() {
         ProjectSchemaCatalog firstCatalog = catalogFromSql(
                 "CREATE TABLE dbo.A (Code BIGINT);"
                         + "CREATE TABLE dbo.B (Code SMALLINT);"
@@ -188,8 +253,8 @@ class ProjectSchemaCatalogTest {
         );
 
         ColumnReferenceExpression firstRef = columnReferenceFrom("SELECT CAST(Code AS INT) FROM dbo.B", "Code");
-        assertThat(firstCatalog.resolveColumn(firstRef).orElseThrow().getSqlType()).isEqualTo("smallint");
-        assertThat(secondCatalog.resolveColumn(firstRef).orElseThrow().getSqlType()).isEqualTo("smallint");
+        assertThat(firstCatalog.resolveColumn(firstRef)).isEmpty();
+        assertThat(secondCatalog.resolveColumn(firstRef)).isEmpty();
     }
 
     // TRACEABILITY_MAPPING: REQ-016

@@ -55,7 +55,6 @@ public final class ProjectSchemaCatalog {
     private final Map<String, Set<String>> indexedColumnsByTable = new HashMap<>();
     private final Map<ColumnReferenceExpression, QueryScope> expressionScopeByColumn = new IdentityHashMap<>();
     private final ArrayDeque<QueryScope> queryScopeStack = new ArrayDeque<>();
-    private final List<QueryScope> queryScopes = new ArrayList<>();
 
     public static ProjectSchemaCatalog empty() {
         return new ProjectSchemaCatalog();
@@ -105,8 +104,7 @@ public final class ProjectSchemaCatalog {
             return;
         }
         queryScopeStack.clear();
-        queryScopes.clear();
-        expressionScopeByColumn.clear();
+        // Scopes belong to cached AST nodes and must survive indexing subsequent files.
         root.accept(new CatalogIndexer());
     }
 
@@ -241,22 +239,7 @@ public final class ProjectSchemaCatalog {
         if (expression == null) {
             return null;
         }
-        QueryScope bound = expressionScopeByColumn.get(expression);
-        if (bound != null) {
-            return bound;
-        }
-        if (expression.firstTokenIndex < 0) {
-            return null;
-        }
-        QueryScope best = null;
-        for (QueryScope scope : queryScopes) {
-            if (scope.startTokenIndex <= expression.firstTokenIndex && expression.firstTokenIndex <= scope.endTokenIndex) {
-                if (best == null || (scope.startTokenIndex >= best.startTokenIndex && scope.endTokenIndex <= best.endTokenIndex)) {
-                    best = scope;
-                }
-            }
-        }
-        return best;
+        return expressionScopeByColumn.get(expression);
     }
 
     private TableSchema resolveTableReference(String qualifier, QueryScope scope) {
@@ -267,6 +250,10 @@ public final class ProjectSchemaCatalog {
         if (scope != null && scope.aliasLookup.containsKey(normalized)) {
             String aliasTarget = scope.aliasLookup.get(normalized);
             return aliasTarget == null ? null : getTable(aliasTarget).orElse(null);
+        }
+        if (scope != null && scope.tablesInScope.stream().noneMatch(name -> normalizeTableName(name).equals(normalized)
+                || shortTableName(normalizeTableName(name)).equals(normalized))) {
+            return null;
         }
         if (tables.containsKey(normalized)) {
             return tables.get(normalized);
@@ -309,7 +296,11 @@ public final class ProjectSchemaCatalog {
             return List.of();
         }
         List<TableSchema> matches = new ArrayList<>();
-        for (TableSchema table : scope.tablesInScope) {
+        for (String tableName : scope.tablesInScope) {
+            TableSchema table = getTable(tableName).orElse(null);
+            if (table == null) {
+                return List.of();
+            }
             if (table.getColumn(columnName).isPresent()) {
                 matches.add(table);
             }
@@ -411,25 +402,13 @@ public final class ProjectSchemaCatalog {
     }
 
     private QueryScope registerQueryScope(QuerySpecification specification) {
-        if (specification == null || specification.FromClause == null || specification.FromClause.TableReferences == null
-                || specification.FromClause.TableReferences.isEmpty()) {
-            return null;
-        }
-
         Map<String, String> aliasLookup = new HashMap<>();
-        List<TableSchema> tablesInScope = new ArrayList<>();
+        List<String> tablesInScope = new ArrayList<>();
         collectTableReferences(specification.FromClause, aliasLookup, tablesInScope);
-
-        if (tablesInScope.isEmpty()) {
-            return null;
-        }
-
-        QueryScope scope = new QueryScope(specification.firstTokenIndex, specification.lastTokenIndex, aliasLookup, tablesInScope);
-        queryScopes.add(scope);
-        return scope;
+        return new QueryScope(aliasLookup, tablesInScope);
     }
 
-    private void collectTableReferences(FromClause fromClause, Map<String, String> aliasLookup, List<TableSchema> tablesInScope) {
+    private void collectTableReferences(FromClause fromClause, Map<String, String> aliasLookup, List<String> tablesInScope) {
         if (fromClause == null || fromClause.TableReferences == null) {
             return;
         }
@@ -438,19 +417,15 @@ public final class ProjectSchemaCatalog {
         }
     }
 
-    private void collectTableReference(TableReference tableReference, Map<String, String> aliasLookup, List<TableSchema> tablesInScope) {
+    private void collectTableReference(TableReference tableReference, Map<String, String> aliasLookup, List<String> tablesInScope) {
         if (tableReference == null) {
             return;
         }
         if (tableReference instanceof NamedTableReference namedTableReference) {
             String tableName = schemaName(namedTableReference.SchemaObject);
-            TableSchema table = getTable(tableName).orElse(null);
-            if (table == null) {
-                return;
-            }
-            tablesInScope.add(table);
+            tablesInScope.add(tableName);
             if (namedTableReference.Alias != null && namedTableReference.Alias.Value != null && !namedTableReference.Alias.Value.isBlank()) {
-                aliasLookup.put(normalizeTableName(namedTableReference.Alias.Value), table.getTableName());
+                aliasLookup.put(normalizeTableName(namedTableReference.Alias.Value), tableName);
             }
             return;
         }
@@ -651,7 +626,7 @@ public final class ProjectSchemaCatalog {
         }
     }
 
-    private record QueryScope(int startTokenIndex, int endTokenIndex, Map<String, String> aliasLookup, List<TableSchema> tablesInScope) {
+    private record QueryScope(Map<String, String> aliasLookup, List<String> tablesInScope) {
     }
 
     public static final class TableSchema {
