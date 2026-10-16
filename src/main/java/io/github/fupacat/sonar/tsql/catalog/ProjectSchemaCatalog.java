@@ -42,6 +42,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class ProjectSchemaCatalog {
 
@@ -49,6 +51,12 @@ public final class ProjectSchemaCatalog {
     private static final String UNKNOWN_TYPE = "unknown";
     private static final char OPEN_BRACKET = '[';
     private static final char CLOSE_BRACKET = ']';
+    private static final Pattern FROM_WITH_ALIAS = Pattern.compile(
+            "(?is)\\bfrom\\s+([\\[\\]\"\\w\\.]+)\\s+(?:as\\s+)?([\\[\\]\"\\w]+)(.*?)(?:\\bwhere\\b|\\bgroup\\b|\\border\\b|\\bhaving\\b|;|$)"
+    );
+    private static final Pattern JOIN_WITH_ALIAS = Pattern.compile(
+            "(?is)\\bjoin\\s+([\\[\\]\"\\w\\.]+)\\s+(?:as\\s+)?([\\[\\]\"\\w]+)\\s+on\\b"
+    );
 
     private final Map<String, TableSchema> tables = new LinkedHashMap<>();
     private final Map<String, List<String>> shortTableNames = new HashMap<>();
@@ -117,7 +125,7 @@ public final class ProjectSchemaCatalog {
         }
         queryScopeStack.clear();
         // Scopes belong to cached AST nodes and must survive indexing subsequent files.
-        root.accept(new CatalogIndexer(new SourceNullability(sourceText)));
+        root.accept(new CatalogIndexer(new SourceNullability(sourceText), sourceText));
     }
 
     public boolean hasTable(String tableName) {
@@ -407,11 +415,43 @@ public final class ProjectSchemaCatalog {
         return identifier != null ? identifier.Value : "";
     }
 
-    private QueryScope registerQueryScope(QuerySpecification specification) {
+    private QueryScope registerQueryScope(QuerySpecification specification, String sourceText) {
         Map<String, String> aliasLookup = new HashMap<>();
         List<String> tablesInScope = new ArrayList<>();
         collectTableReferences(specification.FromClause, aliasLookup, tablesInScope);
+        augmentScopeFromJoinText(sourceText, aliasLookup, tablesInScope);
         return new QueryScope(aliasLookup, tablesInScope);
+    }
+
+    private void augmentScopeFromJoinText(String sourceText, Map<String, String> aliasLookup, List<String> tablesInScope) {
+        if (sourceText == null || sourceText.isBlank() || tablesInScope.isEmpty()) {
+            return;
+        }
+        String anchorTable = normalizeTableName(tablesInScope.get(0));
+        Set<String> normalizedTables = new HashSet<>();
+        for (String table : tablesInScope) {
+            normalizedTables.add(normalizeTableName(table));
+        }
+        Matcher fromMatcher = FROM_WITH_ALIAS.matcher(sourceText);
+        while (fromMatcher.find()) {
+            String fromTable = normalizeTableName(fromMatcher.group(1));
+            if (!fromTable.equals(anchorTable)) {
+                continue;
+            }
+            Matcher joinMatcher = JOIN_WITH_ALIAS.matcher(fromMatcher.group(3));
+            while (joinMatcher.find()) {
+                String tableName = stripDelimiters(joinMatcher.group(1)).trim();
+                String alias = stripDelimiters(joinMatcher.group(2)).trim();
+                String normalizedTable = normalizeTableName(tableName);
+                if (!normalizedTable.isBlank() && normalizedTables.add(normalizedTable)) {
+                    tablesInScope.add(tableName);
+                }
+                if (!alias.isBlank() && !normalizedTable.isBlank()) {
+                    aliasLookup.put(normalizeTableName(alias), tableName);
+                }
+            }
+            return;
+        }
     }
 
     private void collectTableReferences(FromClause fromClause, Map<String, String> aliasLookup, List<String> tablesInScope) {
@@ -443,9 +483,11 @@ public final class ProjectSchemaCatalog {
 
     private final class CatalogIndexer extends TSqlConcreteFragmentVisitor {
         private final SourceNullability sourceNullability;
+        private final String sourceText;
 
-        private CatalogIndexer(SourceNullability sourceNullability) {
+        private CatalogIndexer(SourceNullability sourceNullability, String sourceText) {
             this.sourceNullability = sourceNullability;
+            this.sourceText = sourceText;
         }
         @Override
         public void visit(CreateTableStatement node) {
@@ -462,7 +504,7 @@ public final class ProjectSchemaCatalog {
 
         @Override
         public void visit(QuerySpecification node) {
-            QueryScope scope = registerQueryScope(node);
+            QueryScope scope = registerQueryScope(node, sourceText);
             queryScopeStack.push(scope);
             super.visit(node);
             queryScopeStack.pop();

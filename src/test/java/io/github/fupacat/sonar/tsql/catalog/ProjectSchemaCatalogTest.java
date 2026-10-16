@@ -211,28 +211,14 @@ class ProjectSchemaCatalogTest {
     // TRACEABILITY_MAPPING: REQ-016
     @Test
     void testJoinAmbiguityAndQualifiedAliases() {
-        var ddl = TSqlParser.parse("CREATE TABLE dbo.A (Code BIGINT); CREATE TABLE dbo.B (Code SMALLINT);");
-        var query = TSqlParser.parse("SELECT Code, a.Code, b.Code FROM dbo.A a JOIN dbo.B b ON a.Code = b.Code;");
-        // The pinned parser drops JOIN sources. Supply the complete AST to verify catalog semantics.
-        var other = TSqlParser.parse("SELECT b.Code FROM dbo.B b;");
-        final io.github.fupacat.ast.NamedTableReference[] second = new io.github.fupacat.ast.NamedTableReference[1];
-        other.fragment().accept(new TSqlConcreteFragmentVisitor() {
-            @Override
-            public void visit(io.github.fupacat.ast.NamedTableReference node) {
-                second[0] = node;
-            }
-        });
-        query.fragment().accept(new TSqlConcreteFragmentVisitor() {
-            @Override
-            public void visit(io.github.fupacat.ast.QuerySpecification node) {
-                var join = new io.github.fupacat.ast.QualifiedJoin();
-                join.FirstTableReference = node.FromClause.TableReferences.get(0);
-                join.SecondTableReference = second[0];
-                node.FromClause.TableReferences = List.of(join);
-                super.visit(node);
-            }
-        });
-        var catalog = ProjectSchemaCatalog.fromParsedResults(List.of(query, ddl));
+        String ddlSql = "CREATE TABLE dbo.A (Code BIGINT); CREATE TABLE dbo.B (Code SMALLINT);";
+        String querySql = "SELECT Code, a.Code, b.Code FROM dbo.A a JOIN dbo.B b ON a.Code = b.Code;";
+        var ddl = TSqlParser.parse(ddlSql);
+        var query = TSqlParser.parse(querySql);
+        var catalog = ProjectSchemaCatalog.fromParsedResults(
+                List.of(query, ddl),
+                java.util.Map.of(query.fragment(), querySql, ddl.fragment(), ddlSql)
+        );
         assertThat(catalog.resolveColumn(columnReferenceFrom(query.fragment(), "Code", 0))).isEmpty();
         assertThat(catalog.typeOf(columnReferenceFrom(query.fragment(), "Code", 1)).orElseThrow().typeName()).isEqualTo("bigint");
         assertThat(catalog.typeOf(columnReferenceFrom(query.fragment(), "Code", 2)).orElseThrow().typeName()).isEqualTo("smallint");
@@ -242,30 +228,30 @@ class ProjectSchemaCatalogTest {
     @Test
     void testNestedAliasShadowingRestoresOuterScope() {
         var ddl = TSqlParser.parse("CREATE TABLE dbo.A (Code BIGINT); CREATE TABLE dbo.B (Code SMALLINT); CREATE INDEX IX_A ON dbo.A(Code);");
-        var outer = TSqlParser.parse("SELECT t.Code FROM dbo.A t;");
-        var inner = TSqlParser.parse("SELECT t.Code FROM dbo.B t;");
-        var outerRef = columnReferenceFrom(outer.fragment(), "Code", 0);
-        var innerRef = columnReferenceFrom(inner.fragment(), "Code", 0);
-        final io.github.fupacat.ast.QuerySpecification[] queries = new io.github.fupacat.ast.QuerySpecification[2];
-        for (int i = 0; i < 2; i++) {
-            final int index = i;
-            (i == 0 ? outer : inner).fragment().accept(new TSqlConcreteFragmentVisitor() {
-                @Override
-                public void visit(io.github.fupacat.ast.QuerySpecification node) {
-                    queries[index] = node;
-                }
-            });
-        }
-        var subquery = new io.github.fupacat.ast.ScalarSubquery();
-        subquery.QueryExpression = queries[1];
-        var element = new io.github.fupacat.ast.SelectScalarExpression();
-        element.Expression = subquery;
-        var elements = new java.util.ArrayList<>(queries[0].SelectElements);
-        elements.add(0, element);
-        queries[0].SelectElements = elements;
-        var catalog = ProjectSchemaCatalog.fromParsedResults(List.of(outer, ddl));
-        assertThat(catalog.typeOf(innerRef).orElseThrow().typeName()).isEqualTo("smallint");
+        var query = TSqlParser.parse(
+                "SELECT a.Code FROM dbo.A a WHERE EXISTS (SELECT 1 FROM dbo.B b WHERE b.Code = a.Code);"
+        );
+        final int[] querySpecs = {0};
+        query.fragment().accept(new TSqlConcreteFragmentVisitor() {
+            @Override
+            public void visit(io.github.fupacat.ast.QuerySpecification node) {
+                querySpecs[0]++;
+                super.visit(node);
+            }
+        });
+        assertThat(querySpecs[0]).isEqualTo(2);
+
+        var outerRef = columnReferenceFrom(query.fragment(), "Code", 0);
+        var innerRef = columnReferenceFrom(query.fragment(), "Code", 1);
+        var correlatedOuterRef = columnReferenceFrom(query.fragment(), "Code", 2);
+
+        var catalog = ProjectSchemaCatalog.fromParsedResults(List.of(query, ddl));
         assertThat(catalog.typeOf(outerRef).orElseThrow().typeName()).isEqualTo("bigint");
+        assertThat(catalog.typeOf(innerRef).orElseThrow().typeName()).isEqualTo("smallint");
+        assertThat(correlatedOuterRef).isNotNull();
+        assertThat(correlatedOuterRef.MultiPartIdentifier.Identifiers).hasSize(2);
+        assertThat(correlatedOuterRef.MultiPartIdentifier.Identifiers.get(0).Value).isEqualToIgnoringCase("a");
+        assertThat(correlatedOuterRef.MultiPartIdentifier.Identifiers.get(1).Value).isEqualToIgnoringCase("Code");
         assertThat(catalog.isIndexed(outerRef)).isTrue();
         assertThat(catalog.isIndexed(innerRef)).isFalse();
     }
