@@ -96,7 +96,7 @@ The plugin builds a project-wide schema catalog from the T-SQL DDL it can parse 
 - Full dependency analysis across external libraries, generated scripts, or stored procedures not included in the project scan
 - Full SQL Server semantic coverage such as alias resolution beyond the simplest same-name lookups, advanced partitioning, constraint semantics, or runtime object metadata
 
-This catalog is intentionally best-effort: it is designed to support project-aware checks without requiring a remote database connection or a full SQL Server engine. Current limitations include dropping schema/database qualifiers when indexing tables, treating aliases as table names, and falling back to a matching column elsewhere in the project. These can produce incorrect findings when names collide or metadata is missing; scoped resolution is tracked in issue #37.
+This catalog is intentionally best-effort: it is designed to support project-aware checks without requiring a remote database connection or a full SQL Server engine. Table identity preserves database/schema qualifiers, and query scopes resolve FROM aliases against the cached AST for each file. Unqualified columns with multiple known sources remain unresolved. Scope bindings survive catalog construction across files and do not use file-local token offsets to infer another file's scope. The pinned parser can omit JOIN operands, so complete JOIN analysis is not yet reliable; see [issue #61](https://github.com/fupacat/sonar-tsql-plugin/issues/61).
 
 ---
 

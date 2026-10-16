@@ -136,14 +136,174 @@ class ProjectSchemaCatalogTest {
     // TRACEABILITY_MAPPING: REQ-016
     @Test
     void testUnqualifiedColumnLookupFallsBackAcrossTables() {
-        ProjectSchemaCatalog catalog = catalogFromSql(
-                "CREATE TABLE SalesOrders (OrderId INT NOT NULL, CustomerId INT NOT NULL);"
-                        + "CREATE INDEX IX_SalesOrders_CustomerId ON SalesOrders(CustomerId);"
-        );
-        ColumnReferenceExpression customerIdRef = columnReferenceFrom("SELECT CustomerId FROM SalesOrders", "CustomerId");
+        String sql = "CREATE TABLE SalesOrders (OrderId INT NOT NULL, CustomerId INT NOT NULL);"
+                + "CREATE INDEX IX_SalesOrders_CustomerId ON SalesOrders(CustomerId);"
+                + "SELECT CustomerId FROM SalesOrders;";
+        ProjectSchemaCatalog catalog = catalogFromSql(sql);
+        ColumnReferenceExpression customerIdRef = columnReferenceFrom(sql, "CustomerId");
 
         assertThat(catalog.resolveColumn(customerIdRef)).isPresent();
         assertThat(catalog.isIndexed(customerIdRef)).isTrue();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-016
+    @Test
+    void testQualifiedNamesRemainDistinctAcrossSchemasAndDuplicateTableNames() {
+        String sql = "CREATE TABLE dbo.A (Code BIGINT);"
+                + "CREATE TABLE dbo.B (Code SMALLINT);"
+                + "CREATE TABLE sales.Items (Code BIGINT);"
+                + "CREATE TABLE archive.Items (Code SMALLINT);"
+                + "CREATE TABLE dbo.Orders (Id INT, CONSTRAINT PK_Orders PRIMARY KEY (Id));"
+                + "SELECT CAST(Code AS INT) FROM dbo.B;"
+                + "SELECT CAST(Code AS INT) FROM archive.Items;"
+                + "SELECT o.Id FROM dbo.Orders AS o WHERE o.Id IN (1, 2);";
+        ParseResult<TSqlScript> result = new TSqlParser().parse(sql);
+        ProjectSchemaCatalog catalog = new ProjectSchemaCatalog();
+        catalog.indexScript(result.fragment());
+
+        ColumnReferenceExpression firstRef = columnReferenceFrom(result.fragment(), "Code", 0);
+        ColumnReferenceExpression sameNameRef = columnReferenceFrom(result.fragment(), "Code", 1);
+        ColumnReferenceExpression aliasRef = columnReferenceFrom(result.fragment(), "Id", 0);
+
+        assertThat(catalog.resolveColumn(firstRef)).isPresent();
+        assertThat(catalog.resolveColumn(firstRef).orElseThrow().getSqlType()).isEqualToIgnoringCase("smallint");
+        assertThat(catalog.resolveColumn(sameNameRef).orElseThrow().getSqlType()).isEqualToIgnoringCase("smallint");
+        assertThat(catalog.resolveColumn(aliasRef)).isPresent();
+        assertThat(catalog.resolveColumn(aliasRef).orElseThrow().getSqlType()).isEqualToIgnoringCase("int");
+        assertThat(catalog.isIndexed(aliasRef)).isTrue();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-016
+    @Test
+    void testFileOrderDoesNotChangeQualifiedResolution() {
+        assertMultiFileScopes(false);
+        assertMultiFileScopes(true);
+    }
+
+    private void assertMultiFileScopes(boolean reverse) {
+        var ddl = TSqlParser.parse("CREATE TABLE dbo.A (Code BIGINT); CREATE TABLE dbo.B (Code SMALLINT);");
+        var a = TSqlParser.parse("SELECT t.Code, Code FROM dbo.A AS t;");
+        var b = TSqlParser.parse("SELECT t.Code, Code FROM dbo.B AS t;");
+        var catalog = ProjectSchemaCatalog.fromParsedResults(reverse ? List.of(b, a, ddl) : List.of(ddl, a, b));
+        assertThat(catalog.typeOf(columnReferenceFrom(a.fragment(), "Code", 0)).orElseThrow().typeName()).isEqualTo("bigint");
+        assertThat(catalog.typeOf(columnReferenceFrom(b.fragment(), "Code", 0)).orElseThrow().typeName()).isEqualTo("smallint");
+        assertThat(catalog.typeOf(columnReferenceFrom(a.fragment(), "Code", 1)).orElseThrow().typeName()).isEqualTo("bigint");
+        assertThat(catalog.typeOf(columnReferenceFrom(b.fragment(), "Code", 1)).orElseThrow().typeName()).isEqualTo("smallint");
+    }
+
+    // TRACEABILITY_MAPPING: REQ-016
+    @Test
+    void testUnknownSourcesDoNotBorrowKnownColumns() {
+        var ddl = TSqlParser.parse("CREATE TABLE dbo.Known (Code BIGINT);");
+        var query = TSqlParser.parse("SELECT Code FROM dbo.Unknown;");
+        var qualified = TSqlParser.parse("SELECT Known.Code FROM dbo.Unknown;");
+        var noFrom = TSqlParser.parse("SELECT Code;");
+        var catalog = ProjectSchemaCatalog.fromParsedResults(List.of(ddl, query, qualified, noFrom));
+        for (var parsed : List.of(query, qualified, noFrom)) {
+            var column = columnReferenceFrom(parsed.fragment(), "Code", 0);
+            assertThat(column).isNotNull();
+            assertThat(catalog.resolveColumn(column)).isEmpty();
+            assertThat(catalog.isIndexed(column)).isFalse();
+        }
+        assertThat(catalog.getTable("archive.Known")).isEmpty();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-016
+    @Test
+    void testJoinAmbiguityAndQualifiedAliases() {
+        var ddl = TSqlParser.parse("CREATE TABLE dbo.A (Code BIGINT); CREATE TABLE dbo.B (Code SMALLINT);");
+        var query = TSqlParser.parse("SELECT Code, a.Code, b.Code FROM dbo.A a JOIN dbo.B b ON a.Code = b.Code;");
+        // The pinned parser drops JOIN sources. Supply the complete AST to verify catalog semantics.
+        var other = TSqlParser.parse("SELECT b.Code FROM dbo.B b;");
+        final io.github.fupacat.ast.NamedTableReference[] second = new io.github.fupacat.ast.NamedTableReference[1];
+        other.fragment().accept(new TSqlConcreteFragmentVisitor() {
+            @Override
+            public void visit(io.github.fupacat.ast.NamedTableReference node) {
+                second[0] = node;
+            }
+        });
+        query.fragment().accept(new TSqlConcreteFragmentVisitor() {
+            @Override
+            public void visit(io.github.fupacat.ast.QuerySpecification node) {
+                var join = new io.github.fupacat.ast.QualifiedJoin();
+                join.FirstTableReference = node.FromClause.TableReferences.get(0);
+                join.SecondTableReference = second[0];
+                node.FromClause.TableReferences = List.of(join);
+                super.visit(node);
+            }
+        });
+        var catalog = ProjectSchemaCatalog.fromParsedResults(List.of(query, ddl));
+        assertThat(catalog.resolveColumn(columnReferenceFrom(query.fragment(), "Code", 0))).isEmpty();
+        assertThat(catalog.typeOf(columnReferenceFrom(query.fragment(), "Code", 1)).orElseThrow().typeName()).isEqualTo("bigint");
+        assertThat(catalog.typeOf(columnReferenceFrom(query.fragment(), "Code", 2)).orElseThrow().typeName()).isEqualTo("smallint");
+    }
+
+    // TRACEABILITY_MAPPING: REQ-016
+    @Test
+    void testNestedAliasShadowingRestoresOuterScope() {
+        var ddl = TSqlParser.parse("CREATE TABLE dbo.A (Code BIGINT); CREATE TABLE dbo.B (Code SMALLINT); CREATE INDEX IX_A ON dbo.A(Code);");
+        var outer = TSqlParser.parse("SELECT t.Code FROM dbo.A t;");
+        var inner = TSqlParser.parse("SELECT t.Code FROM dbo.B t;");
+        var outerRef = columnReferenceFrom(outer.fragment(), "Code", 0);
+        var innerRef = columnReferenceFrom(inner.fragment(), "Code", 0);
+        final io.github.fupacat.ast.QuerySpecification[] queries = new io.github.fupacat.ast.QuerySpecification[2];
+        for (int i = 0; i < 2; i++) {
+            final int index = i;
+            (i == 0 ? outer : inner).fragment().accept(new TSqlConcreteFragmentVisitor() {
+                @Override
+                public void visit(io.github.fupacat.ast.QuerySpecification node) {
+                    queries[index] = node;
+                }
+            });
+        }
+        var subquery = new io.github.fupacat.ast.ScalarSubquery();
+        subquery.QueryExpression = queries[1];
+        var element = new io.github.fupacat.ast.SelectScalarExpression();
+        element.Expression = subquery;
+        var elements = new java.util.ArrayList<>(queries[0].SelectElements);
+        elements.add(0, element);
+        queries[0].SelectElements = elements;
+        var catalog = ProjectSchemaCatalog.fromParsedResults(List.of(outer, ddl));
+        assertThat(catalog.typeOf(innerRef).orElseThrow().typeName()).isEqualTo("smallint");
+        assertThat(catalog.typeOf(outerRef).orElseThrow().typeName()).isEqualTo("bigint");
+        assertThat(catalog.isIndexed(outerRef)).isTrue();
+        assertThat(catalog.isIndexed(innerRef)).isFalse();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-016
+    @Test
+    void testOmittedSchemaIsAmbiguousWhenBaseNamesCollide() {
+        var ddl = TSqlParser.parse("CREATE TABLE sales.Items (Code BIGINT); CREATE TABLE archive.Items (Code SMALLINT);");
+        var query = TSqlParser.parse("SELECT i.Code FROM Items i;");
+        var qualified = TSqlParser.parse("SELECT archive.Items.Code FROM archive.Items;");
+        var catalog = ProjectSchemaCatalog.fromParsedResults(List.of(query, qualified, ddl));
+        assertThat(catalog.getTable("Items")).isEmpty();
+        assertThat(catalog.getTable("missing.Items")).isEmpty();
+        assertThat(catalog.getTable("Missing")).isEmpty();
+        var unknown = columnReferenceFrom(query.fragment(), "Code", 0);
+        assertThat(catalog.resolveColumn(unknown)).isEmpty();
+        assertThat(catalog.isIndexed(unknown)).isFalse();
+        assertThat(catalog.typeOf(columnReferenceFrom(qualified.fragment(), "Code", 0))
+                .orElseThrow().typeName()).isEqualTo("smallint");
+    }
+
+    // TRACEABILITY_MAPPING: REQ-016
+    @Test
+    void testUnboundExpressionsCannotBorrowAnotherFilesScope() {
+        ProjectSchemaCatalog firstCatalog = catalogFromSql(
+                "CREATE TABLE dbo.A (Code BIGINT);"
+                        + "CREATE TABLE dbo.B (Code SMALLINT);"
+                        + "SELECT CAST(Code AS INT) FROM dbo.B;"
+        );
+        ProjectSchemaCatalog secondCatalog = catalogFromSql(
+                "CREATE TABLE dbo.B (Code SMALLINT);"
+                        + "CREATE TABLE dbo.A (Code BIGINT);"
+                        + "SELECT CAST(Code AS INT) FROM dbo.B;"
+        );
+
+        ColumnReferenceExpression firstRef = columnReferenceFrom("SELECT CAST(Code AS INT) FROM dbo.B", "Code");
+        assertThat(firstCatalog.resolveColumn(firstRef)).isEmpty();
+        assertThat(secondCatalog.resolveColumn(firstRef)).isEmpty();
     }
 
     // TRACEABILITY_MAPPING: REQ-016
@@ -304,19 +464,34 @@ class ProjectSchemaCatalogTest {
     }
 
     private static ColumnReferenceExpression columnReferenceFrom(String sql, String targetColumnName) {
+        return columnReferenceFrom(sql, targetColumnName, 0);
+    }
+
+    private static ColumnReferenceExpression columnReferenceFrom(String sql, String targetColumnName, int occurrence) {
         ParseResult<TSqlScript> result = new TSqlParser().parse(sql);
+        return columnReferenceFrom(result.fragment(), targetColumnName, occurrence);
+    }
+
+    private static ColumnReferenceExpression columnReferenceFrom(TSqlScript script, String targetColumnName, int occurrence) {
         final ColumnReferenceExpression[] found = new ColumnReferenceExpression[1];
-        if (result == null || result.fragment() == null) {
+        if (script == null) {
             return null;
         }
-        result.fragment().accept(new TSqlConcreteFragmentVisitor() {
+        final int[] index = {0};
+        script.accept(new TSqlConcreteFragmentVisitor() {
             @Override
             public void visit(ColumnReferenceExpression node) {
+                if (found[0] != null) {
+                    return;
+                }
                 if (node != null && node.MultiPartIdentifier != null && node.MultiPartIdentifier.Identifiers != null) {
                     for (var identifier : node.MultiPartIdentifier.Identifiers) {
                         if (identifier != null && targetColumnName.equalsIgnoreCase(identifier.Value)) {
-                            found[0] = node;
-                            break;
+                            if (index[0] == occurrence) {
+                                found[0] = node;
+                                return;
+                            }
+                            index[0]++;
                         }
                     }
                 }

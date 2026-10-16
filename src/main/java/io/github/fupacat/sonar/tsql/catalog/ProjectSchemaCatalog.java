@@ -8,14 +8,19 @@ import io.github.fupacat.ast.ConstraintDefinition;
 import io.github.fupacat.ast.CreateIndexStatement;
 import io.github.fupacat.ast.CreateTableStatement;
 import io.github.fupacat.ast.DataTypeReference;
+import io.github.fupacat.ast.FromClause;
 import io.github.fupacat.ast.Identifier;
 import io.github.fupacat.ast.IndexDefinition;
+import io.github.fupacat.ast.JoinTableReference;
 import io.github.fupacat.ast.Literal;
 import io.github.fupacat.ast.MultiPartIdentifier;
+import io.github.fupacat.ast.NamedTableReference;
 import io.github.fupacat.ast.NullableConstraintDefinition;
 import io.github.fupacat.ast.ParameterizedDataTypeReference;
+import io.github.fupacat.ast.QuerySpecification;
 import io.github.fupacat.ast.SchemaObjectName;
 import io.github.fupacat.ast.SqlDataTypeReference;
+import io.github.fupacat.ast.TableReference;
 import io.github.fupacat.ast.TSqlConcreteFragmentVisitor;
 import io.github.fupacat.ast.TSqlFragment;
 import io.github.fupacat.ast.TSqlScript;
@@ -25,10 +30,12 @@ import org.slf4j.LoggerFactory;
 import org.sonar.api.batch.fs.InputFile;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -40,12 +47,14 @@ public final class ProjectSchemaCatalog {
 
     private static final Logger LOG = LoggerFactory.getLogger(ProjectSchemaCatalog.class);
     private static final String UNKNOWN_TYPE = "unknown";
-    private static final char DOT = '.';
     private static final char OPEN_BRACKET = '[';
     private static final char CLOSE_BRACKET = ']';
 
     private final Map<String, TableSchema> tables = new LinkedHashMap<>();
+    private final Map<String, List<String>> shortTableNames = new HashMap<>();
     private final Map<String, Set<String>> indexedColumnsByTable = new HashMap<>();
+    private final Map<ColumnReferenceExpression, QueryScope> expressionScopeByColumn = new IdentityHashMap<>();
+    private final ArrayDeque<QueryScope> queryScopeStack = new ArrayDeque<>();
 
     public static ProjectSchemaCatalog empty() {
         return new ProjectSchemaCatalog();
@@ -94,6 +103,8 @@ public final class ProjectSchemaCatalog {
         if (root == null) {
             return;
         }
+        queryScopeStack.clear();
+        // Scopes belong to cached AST nodes and must survive indexing subsequent files.
         root.accept(new CatalogIndexer());
     }
 
@@ -106,47 +117,50 @@ public final class ProjectSchemaCatalog {
             return Optional.empty();
         }
         String normalized = normalizeTableName(tableName);
-        return Optional.ofNullable(tables.get(normalized));
+        TableSchema exact = tables.get(normalized);
+        if (exact != null) {
+            return Optional.of(exact);
+        }
+        if (normalized.contains(".")) {
+            return Optional.empty();
+        }
+        String shortName = shortTableName(normalized);
+        List<String> matches = shortTableNames.get(shortName);
+        if (matches == null || matches.isEmpty()) {
+            return Optional.empty();
+        }
+        if (matches.size() == 1) {
+            return Optional.ofNullable(tables.get(matches.get(0)));
+        }
+        return Optional.empty();
     }
 
     public Optional<ColumnInfo> resolveColumn(ColumnReferenceExpression expression) {
         if (expression == null || expression.MultiPartIdentifier == null) {
             return Optional.empty();
         }
+
         List<String> identifiers = extractIdentifiers(expression.MultiPartIdentifier);
         if (identifiers.isEmpty()) {
             return Optional.empty();
         }
+
         String columnName = identifiers.get(identifiers.size() - 1);
-        String tableName = identifiers.size() > 1 ? identifiers.get(identifiers.size() - 2) : null;
-
-        if (tableName != null) {
-            Optional<TableSchema> table = getTable(tableName);
-            if (table.isPresent()) {
-                return table.get().getColumn(columnName);
+        QueryScope scope = findEnclosingScope(expression);
+        if (identifiers.size() > 1) {
+            String qualifier = qualifierFor(identifiers);
+            TableSchema resolved = resolveTableReference(qualifier, scope);
+            if (resolved != null) {
+                return resolved.getColumn(columnName);
             }
+            return Optional.empty();
         }
 
-        for (TableSchema table : tables.values()) {
-            Optional<ColumnInfo> column = table.getColumn(columnName);
-            if (column.isPresent()) {
-                return column;
-            }
+        List<TableSchema> matches = (scope == null) ? findUnqualifiedColumnMatches(columnName) : findColumnMatchesInScope(scope, columnName);
+        if (matches.size() == 1) {
+            return matches.get(0).getColumn(columnName);
         }
-
         return Optional.empty();
-    }
-
-    private List<String> extractIdentifiers(MultiPartIdentifier multi) {
-        List<String> identifiers = new ArrayList<>();
-        if (multi != null && multi.Identifiers != null) {
-            for (Identifier identifier : multi.Identifiers) {
-                if (identifier != null && identifier.Value != null && !identifier.Value.isBlank()) {
-                    identifiers.add(identifier.Value);
-                }
-            }
-        }
-        return identifiers;
     }
 
     public boolean isNullable(ColumnReferenceExpression expression) {
@@ -157,16 +171,26 @@ public final class ProjectSchemaCatalog {
         if (expression == null || expression.MultiPartIdentifier == null) {
             return false;
         }
-        String columnName = lastIdentifier(expression.MultiPartIdentifier);
-        String tableName = tableNameFrom(expression.MultiPartIdentifier);
-        if (tableName != null) {
-            Set<String> columns = indexedColumnsByTable.get(normalizeTableName(tableName));
-            return columns != null && columns.contains(normalizeColumnName(columnName));
+
+        List<String> identifiers = extractIdentifiers(expression.MultiPartIdentifier);
+        if (identifiers.isEmpty()) {
+            return false;
         }
-        for (Map.Entry<String, Set<String>> entry : indexedColumnsByTable.entrySet()) {
-            if (entry.getValue().contains(normalizeColumnName(columnName))) {
-                return true;
+
+        String columnName = identifiers.get(identifiers.size() - 1);
+        QueryScope scope = findEnclosingScope(expression);
+        if (identifiers.size() > 1) {
+            String qualifier = qualifierFor(identifiers);
+            TableSchema table = resolveTableReference(qualifier, scope);
+            if (table == null) {
+                return false;
             }
+            return hasIndexedColumn(table.getTableName(), columnName);
+        }
+
+        List<TableSchema> matches = (scope == null) ? findUnqualifiedColumnMatches(columnName) : findColumnMatchesInScope(scope, columnName);
+        if (matches.size() == 1) {
+            return hasIndexedColumn(matches.get(0).getTableName(), columnName);
         }
         return false;
     }
@@ -179,12 +203,7 @@ public final class ProjectSchemaCatalog {
         if (tableName == null || tableName.isBlank()) {
             return "";
         }
-        String normalized = tableName.trim();
-        int lastDot = normalized.lastIndexOf(DOT);
-        if (lastDot >= 0 && lastDot < normalized.length() - 1) {
-            normalized = normalized.substring(lastDot + 1);
-        }
-        return normalized.toLowerCase(Locale.ROOT);
+        return stripDelimiters(tableName.trim()).toLowerCase(Locale.ROOT);
     }
 
     private static String normalizeColumnName(String columnName) {
@@ -208,22 +227,391 @@ public final class ProjectSchemaCatalog {
         return builder.toString();
     }
 
-    private static String tableNameFrom(MultiPartIdentifier multiPartIdentifier) {
-        if (multiPartIdentifier == null || multiPartIdentifier.Identifiers == null || multiPartIdentifier.Identifiers.isEmpty()) {
-            return null;
+    private static String shortTableName(String fullName) {
+        if (fullName == null || fullName.isBlank()) {
+            return "";
         }
-        if (multiPartIdentifier.Identifiers.size() > 1) {
-            return multiPartIdentifier.Identifiers.get(multiPartIdentifier.Identifiers.size() - 2).Value;
-        }
-        return null;
+        int lastDot = fullName.lastIndexOf('.');
+        return lastDot >= 0 ? fullName.substring(lastDot + 1) : fullName;
     }
 
-    private static String lastIdentifier(MultiPartIdentifier multiPartIdentifier) {
+    private QueryScope findEnclosingScope(ColumnReferenceExpression expression) {
+        return expressionScopeByColumn.get(expression);
+    }
+
+    private TableSchema resolveTableReference(String qualifier, QueryScope scope) {
+        if (qualifier == null || qualifier.isBlank()) {
+            return null;
+        }
+        String normalized = normalizeTableName(qualifier);
+        if (scope != null && scope.aliasLookup.containsKey(normalized)) {
+            String aliasTarget = scope.aliasLookup.get(normalized);
+            return getTable(aliasTarget).orElse(null);
+        }
+        if (scope != null && scope.tablesInScope.stream().noneMatch(name -> normalizeTableName(name).equals(normalized)
+                || shortTableName(normalizeTableName(name)).equals(normalized))) {
+            return null;
+        }
+        if (tables.containsKey(normalized)) {
+            return tables.get(normalized);
+        }
+        if (normalized.contains(".")) {
+            return null;
+        }
+        return getTable(qualifier).orElse(null);
+    }
+
+    private static String qualifierFor(List<String> identifiers) {
+        StringBuilder qualifier = new StringBuilder();
+        for (int i = 0; i < identifiers.size() - 1; i++) {
+            if (i > 0) {
+                qualifier.append('.');
+            }
+            qualifier.append(identifiers.get(i));
+        }
+        return qualifier.toString();
+    }
+
+    private List<TableSchema> findUnqualifiedColumnMatches(String columnName) {
+        List<TableSchema> matches = new ArrayList<>();
+        for (TableSchema table : tables.values()) {
+            if (table.getColumn(columnName).isPresent()) {
+                matches.add(table);
+            }
+        }
+        return matches;
+    }
+
+    private List<TableSchema> findColumnMatchesInScope(QueryScope scope, String columnName) {
+        if (scope == null || columnName == null || columnName.isBlank()) {
+            return List.of();
+        }
+        List<TableSchema> matches = new ArrayList<>();
+        for (String tableName : scope.tablesInScope) {
+            TableSchema table = getTable(tableName).orElse(null);
+            if (table == null) {
+                return List.of();
+            }
+            if (table.getColumn(columnName).isPresent()) {
+                matches.add(table);
+            }
+        }
+        return matches;
+    }
+
+    private boolean hasIndexedColumn(String tableName, String columnName) {
+        if (tableName == null || tableName.isBlank() || columnName == null || columnName.isBlank()) {
+            return false;
+        }
+        Set<String> columns = indexedColumnsByTable.get(normalizeTableName(tableName));
+        return columns != null && columns.contains(normalizeColumnName(columnName));
+    }
+
+    private List<String> extractIdentifiers(MultiPartIdentifier multi) {
+        List<String> identifiers = new ArrayList<>();
+        if (multi != null && multi.Identifiers != null) {
+            for (Identifier identifier : multi.Identifiers) {
+                if (identifier != null && identifier.Value != null && !identifier.Value.isBlank()) {
+                    identifiers.add(identifier.Value);
+                }
+            }
+        }
+        return identifiers;
+    }
+
+    private static String schemaName(SchemaObjectName name) {
+        if (name == null) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder();
+        if (name.DatabaseIdentifier != null && name.DatabaseIdentifier.Value != null) {
+            builder.append(name.DatabaseIdentifier.Value).append('.');
+        }
+        if (name.SchemaIdentifier != null && name.SchemaIdentifier.Value != null) {
+            builder.append(name.SchemaIdentifier.Value).append('.');
+        }
+        if (name.BaseIdentifier != null && name.BaseIdentifier.Value != null) {
+            builder.append(name.BaseIdentifier.Value);
+        }
+        return builder.toString();
+    }
+
+    private void registerTable(String tableName, TableSchema table) {
+        if (tableName == null || tableName.isBlank()) {
+            return;
+        }
+        String normalized = normalizeTableName(tableName);
+        if (normalized.isBlank()) {
+            return;
+        }
+        TableSchema existing = tables.get(normalized);
+        if (existing == null) {
+            tables.put(normalized, table);
+        } else {
+            for (Map.Entry<String, ColumnInfo> entry : table.columns.entrySet()) {
+                existing.columns.putIfAbsent(entry.getKey(), entry.getValue());
+            }
+            return;
+        }
+        shortTableNames.computeIfAbsent(shortTableName(normalized), key -> new ArrayList<>()).add(normalized);
+    }
+
+    private void registerIndex(String tableName, List<String> columns) {
+        if (tableName == null || tableName.isBlank() || columns == null || columns.isEmpty()) {
+            return;
+        }
+        String normalized = normalizeTableName(tableName);
+        indexedColumnsByTable.computeIfAbsent(normalized, key -> new HashSet<>())
+                .addAll(columns.stream().map(ProjectSchemaCatalog::normalizeColumnName).toList());
+    }
+
+    private void registerStandaloneIndex(CreateIndexStatement node) {
+        if (node == null || node.OnName == null || node.Columns == null) {
+            return;
+        }
+        registerIndex(schemaName(node.OnName), extractIndexColumns(node.Columns));
+    }
+
+    private List<String> extractIndexColumns(List<?> indexedColumns) {
+        if (indexedColumns == null || indexedColumns.isEmpty()) {
+            return List.of();
+        }
+        return indexedColumns.stream()
+                .filter(entry -> entry instanceof io.github.fupacat.ast.ColumnWithSortOrder columnWithSortOrder
+                        && columnWithSortOrder.Column != null
+                        && columnWithSortOrder.Column.MultiPartIdentifier != null)
+                .map(entry -> lastIdentifier(((io.github.fupacat.ast.ColumnWithSortOrder) entry).Column.MultiPartIdentifier))
+                .toList();
+    }
+
+    private String lastIdentifier(MultiPartIdentifier multiPartIdentifier) {
         if (multiPartIdentifier == null || multiPartIdentifier.Identifiers == null || multiPartIdentifier.Identifiers.isEmpty()) {
             return "";
         }
         Identifier identifier = multiPartIdentifier.Identifiers.get(multiPartIdentifier.Identifiers.size() - 1);
         return identifier != null ? identifier.Value : "";
+    }
+
+    private QueryScope registerQueryScope(QuerySpecification specification) {
+        Map<String, String> aliasLookup = new HashMap<>();
+        List<String> tablesInScope = new ArrayList<>();
+        collectTableReferences(specification.FromClause, aliasLookup, tablesInScope);
+        return new QueryScope(aliasLookup, tablesInScope);
+    }
+
+    private void collectTableReferences(FromClause fromClause, Map<String, String> aliasLookup, List<String> tablesInScope) {
+        if (fromClause == null || fromClause.TableReferences == null) {
+            return;
+        }
+        for (TableReference tableReference : fromClause.TableReferences) {
+            collectTableReference(tableReference, aliasLookup, tablesInScope);
+        }
+    }
+
+    private void collectTableReference(TableReference tableReference, Map<String, String> aliasLookup, List<String> tablesInScope) {
+        if (tableReference == null) {
+            return;
+        }
+        if (tableReference instanceof NamedTableReference namedTableReference) {
+            String tableName = schemaName(namedTableReference.SchemaObject);
+            tablesInScope.add(tableName);
+            if (namedTableReference.Alias != null && namedTableReference.Alias.Value != null && !namedTableReference.Alias.Value.isBlank()) {
+                aliasLookup.put(normalizeTableName(namedTableReference.Alias.Value), tableName);
+            }
+            return;
+        }
+        if (tableReference instanceof JoinTableReference joinTableReference) {
+            collectTableReference(joinTableReference.FirstTableReference, aliasLookup, tablesInScope);
+            collectTableReference(joinTableReference.SecondTableReference, aliasLookup, tablesInScope);
+        }
+    }
+
+    private final class CatalogIndexer extends TSqlConcreteFragmentVisitor {
+        @Override
+        public void visit(CreateTableStatement node) {
+            if (node == null || node.SchemaObjectName == null) {
+                super.visit(node);
+                return;
+            }
+            String tableName = schemaName(node.SchemaObjectName);
+            TableSchema table = new TableSchema(tableName);
+            indexTableDefinition(table, node);
+            registerTable(tableName, table);
+            super.visit(node);
+        }
+
+        @Override
+        public void visit(QuerySpecification node) {
+            QueryScope scope = registerQueryScope(node);
+            queryScopeStack.push(scope);
+            super.visit(node);
+            queryScopeStack.pop();
+        }
+
+        @Override
+        public void visit(ColumnReferenceExpression node) {
+            QueryScope active = queryScopeStack.peekFirst();
+            if (active != null) {
+                expressionScopeByColumn.put(node, active);
+            }
+            super.visit(node);
+        }
+
+        @Override
+        public void visit(CreateIndexStatement node) {
+            registerStandaloneIndex(node);
+            super.visit(node);
+        }
+
+        private void indexTableDefinition(TableSchema table, CreateTableStatement node) {
+            if (table == null || node == null || node.Definition == null) {
+                return;
+            }
+            indexColumns(table, node.Definition.ColumnDefinitions);
+            registerConstraintIndexes(table.tableName, node.Definition.TableConstraints);
+            registerPrimaryKeyNullability(table, node.Definition.TableConstraints);
+            registerInlineColumnIndexes(table.tableName, node.Definition.ColumnDefinitions);
+            if (node.Definition.Indexes != null) {
+                for (IndexDefinition indexDefinition : node.Definition.Indexes) {
+                    registerIndex(table.tableName, extractIndexColumns(indexDefinition == null ? null : indexDefinition.Columns));
+                }
+            }
+        }
+
+        private void indexColumns(TableSchema table, List<ColumnDefinition> columnDefinitions) {
+            if (table == null || columnDefinitions == null) {
+                return;
+            }
+            for (ColumnDefinition columnDefinition : columnDefinitions) {
+                if (columnDefinition == null) {
+                    continue;
+                }
+                String columnName = columnDefinition.ColumnIdentifier != null && columnDefinition.ColumnIdentifier.Value != null
+                        ? columnDefinition.ColumnIdentifier.Value
+                        : "";
+                boolean nullable = isNullable(columnDefinition.Constraints);
+                String sqlType = extractSqlType(columnDefinition.DataType);
+                Integer length = extractLength(columnDefinition.DataType);
+                table.addColumn(new ColumnInfo(columnName, nullable, sqlType, length));
+                if (columnDefinition.Index != null) {
+                    registerIndex(table.tableName, extractIndexColumns(columnDefinition.Index.Columns));
+                }
+            }
+        }
+
+        private void registerConstraintIndexes(String tableName, List<ConstraintDefinition> constraints) {
+            if (tableName == null || tableName.isBlank() || constraints == null) {
+                return;
+            }
+            for (ConstraintDefinition constraint : constraints) {
+                if (constraint instanceof UniqueConstraintDefinition uniqueConstraint) {
+                    registerIndex(tableName, extractIndexColumns(uniqueConstraint.Columns));
+                }
+            }
+        }
+
+        private void registerPrimaryKeyNullability(TableSchema table, List<ConstraintDefinition> constraints) {
+            if (table == null || constraints == null) {
+                return;
+            }
+            for (ConstraintDefinition constraint : constraints) {
+                if (!(constraint instanceof UniqueConstraintDefinition uniqueConstraint) || !uniqueConstraint.IsPrimaryKey || uniqueConstraint.Columns == null) {
+                    continue;
+                }
+                for (String columnName : extractIndexColumns(uniqueConstraint.Columns)) {
+                    table.getColumn(columnName).ifPresent(column -> table.addColumn(new ColumnInfo(column.name(), false, column.sqlType(), column.length())));
+                }
+            }
+        }
+
+        private void registerInlineColumnIndexes(String tableName, List<ColumnDefinition> columnDefinitions) {
+            if (tableName == null || tableName.isBlank() || columnDefinitions == null) {
+                return;
+            }
+            for (ColumnDefinition columnDefinition : columnDefinitions) {
+                if (columnDefinition != null && columnDefinition.Constraints != null) {
+                    registerColumnConstraintIndexes(tableName, columnDefinition);
+                }
+            }
+        }
+
+        private void registerColumnConstraintIndexes(String tableName, ColumnDefinition columnDefinition) {
+            for (ConstraintDefinition constraint : columnDefinition.Constraints) {
+                if (constraint instanceof UniqueConstraintDefinition uniqueConstraint) {
+                    List<String> columnNames = extractConstraintColumnNames(columnDefinition, uniqueConstraint);
+                    if (!columnNames.isEmpty()) {
+                        registerIndex(tableName, columnNames);
+                    }
+                }
+            }
+        }
+
+        private List<String> extractConstraintColumnNames(ColumnDefinition columnDefinition, UniqueConstraintDefinition uniqueConstraint) {
+            if (uniqueConstraint.Columns != null && !uniqueConstraint.Columns.isEmpty()) {
+                return extractIndexColumns(uniqueConstraint.Columns);
+            }
+            String columnName = columnDefinition.ColumnIdentifier != null ? columnDefinition.ColumnIdentifier.Value : null;
+            return (columnName != null && !columnName.isBlank()) ? List.of(columnName) : List.of();
+        }
+
+        private boolean isNullable(List<ConstraintDefinition> constraints) {
+            if (constraints == null) {
+                return true;
+            }
+            for (ConstraintDefinition constraint : constraints) {
+                if (constraint instanceof NullableConstraintDefinition nullableConstraint) {
+                    return nullableConstraint.Nullable;
+                }
+                if (constraint instanceof UniqueConstraintDefinition uniqueConstraint && uniqueConstraint.IsPrimaryKey) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private String extractSqlType(DataTypeReference dataType) {
+            if (dataType == null) {
+                return UNKNOWN_TYPE;
+            }
+            if (dataType instanceof SqlDataTypeReference sqlDataTypeReference) {
+                return sqlDataTypeReference.SqlDataTypeOption != null
+                        ? sqlDataTypeReference.SqlDataTypeOption.name().toLowerCase(Locale.ROOT)
+                        : UNKNOWN_TYPE;
+            }
+            if (dataType instanceof ParameterizedDataTypeReference parameterizedDataTypeReference
+                    && parameterizedDataTypeReference.Name != null
+                    && parameterizedDataTypeReference.Name.BaseIdentifier != null) {
+                return parameterizedDataTypeReference.Name.BaseIdentifier.Value;
+            }
+            return dataType.getClass().getSimpleName();
+        }
+
+        private Integer extractLength(DataTypeReference dataType) {
+            if (!(dataType instanceof ParameterizedDataTypeReference parameterizedDataTypeReference) || parameterizedDataTypeReference.Parameters == null) {
+                return null;
+            }
+            for (Literal literal : parameterizedDataTypeReference.Parameters) {
+                Integer parsed = parseLengthLiteral(literal);
+                if (parsed != null) {
+                    return parsed;
+                }
+            }
+            return null;
+        }
+
+        private Integer parseLengthLiteral(Literal literal) {
+            if (literal == null || literal.Value == null || literal.Value.isBlank()) {
+                return null;
+            }
+            try {
+                return Integer.parseInt(literal.Value.trim());
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+    }
+
+    private record QueryScope(Map<String, String> aliasLookup, List<String> tablesInScope) {
     }
 
     public static final class TableSchema {
@@ -318,9 +706,8 @@ public final class ProjectSchemaCatalog {
             String normalized = typeName == null ? "" : typeName.toLowerCase(Locale.ROOT);
             return switch (normalized) {
                 case "tinyint", "smallint", "int", "integer", "bigint", "bit",
-                     "smallmoney", "money", "real", "float", "decimal", "numeric" -> TypeFamily.NUMERIC;
-                case "char", "nchar", "varchar", "nvarchar", "text", "ntext", "nvarcharmax", "varcharmax" ->
-                        TypeFamily.CHARACTER;
+                        "smallmoney", "money", "real", "float", "decimal", "numeric" -> TypeFamily.NUMERIC;
+                case "char", "nchar", "varchar", "nvarchar", "text", "ntext", "nvarcharmax", "varcharmax" -> TypeFamily.CHARACTER;
                 case "date", "time", "datetime", "smalldatetime", "datetime2", "datetimeoffset" -> TypeFamily.TEMPORAL;
                 case "binary", "varbinary", "image" -> TypeFamily.BINARY;
                 default -> TypeFamily.OTHER;
@@ -350,232 +737,6 @@ public final class ProjectSchemaCatalog {
                 case "binary", "nvarcharmax", "varcharmax", "ntext", "text" -> 8000;
                 default -> length != null ? length : 0;
             };
-        }
-    }
-
-    private final class CatalogIndexer extends TSqlConcreteFragmentVisitor {
-        @Override
-        public void visit(CreateTableStatement node) {
-            if (node == null || node.SchemaObjectName == null) {
-                super.visit(node);
-                return;
-            }
-            String tableName = normalizeTableName(schemaName(node.SchemaObjectName));
-            TableSchema table = new TableSchema(tableName);
-            indexTableDefinition(table, node);
-            registerTable(table.tableName, table);
-            super.visit(node);
-        }
-
-        @Override
-        public void visit(CreateIndexStatement node) {
-            registerStandaloneIndex(node);
-            super.visit(node);
-        }
-
-        private String schemaName(SchemaObjectName name) {
-            if (name == null) {
-                return "";
-            }
-            StringBuilder builder = new StringBuilder();
-            if (name.DatabaseIdentifier != null && name.DatabaseIdentifier.Value != null) {
-                builder.append(name.DatabaseIdentifier.Value).append('.');
-            }
-            if (name.SchemaIdentifier != null && name.SchemaIdentifier.Value != null) {
-                builder.append(name.SchemaIdentifier.Value).append('.');
-            }
-            if (name.BaseIdentifier != null && name.BaseIdentifier.Value != null) {
-                builder.append(name.BaseIdentifier.Value);
-            }
-            return builder.toString();
-        }
-
-        private void indexTableDefinition(TableSchema table, CreateTableStatement node) {
-            if (table == null || node == null || node.Definition == null) {
-                return;
-            }
-            indexColumns(table, node.Definition.ColumnDefinitions);
-            registerConstraintIndexes(table.tableName, node.Definition.TableConstraints);
-            registerPrimaryKeyNullability(table, node.Definition.TableConstraints);
-            registerInlineColumnIndexes(table.tableName, node.Definition.ColumnDefinitions);
-            if (node.Definition.Indexes != null) {
-                for (IndexDefinition indexDefinition : node.Definition.Indexes) {
-                    registerIndex(table.tableName, extractIndexColumns(indexDefinition == null ? null : indexDefinition.Columns));
-                }
-            }
-        }
-
-        private void indexColumns(TableSchema table, List<ColumnDefinition> columnDefinitions) {
-            if (table == null || columnDefinitions == null) {
-                return;
-            }
-            for (ColumnDefinition columnDefinition : columnDefinitions) {
-                if (columnDefinition == null) {
-                    continue;
-                }
-                String columnName = columnDefinition.ColumnIdentifier != null && columnDefinition.ColumnIdentifier.Value != null
-                        ? columnDefinition.ColumnIdentifier.Value
-                        : "";
-                boolean nullable = isNullable(columnDefinition.Constraints);
-                String sqlType = extractSqlType(columnDefinition.DataType);
-                Integer length = extractLength(columnDefinition.DataType);
-                table.addColumn(new ColumnInfo(columnName, nullable, sqlType, length));
-                if (columnDefinition.Index != null) {
-                    registerIndex(table.tableName, extractIndexColumns(columnDefinition.Index.Columns));
-                }
-            }
-        }
-
-        private void registerConstraintIndexes(String tableName, List<ConstraintDefinition> constraints) {
-            if (tableName == null || tableName.isBlank() || constraints == null) {
-                return;
-            }
-            for (ConstraintDefinition constraint : constraints) {
-                if (constraint instanceof UniqueConstraintDefinition uniqueConstraint) {
-                    registerIndex(tableName, extractIndexColumns(uniqueConstraint.Columns));
-                }
-            }
-        }
-
-        private void registerPrimaryKeyNullability(TableSchema table, List<ConstraintDefinition> constraints) {
-            if (table == null || constraints == null) {
-                return;
-            }
-            for (ConstraintDefinition constraint : constraints) {
-                if (!(constraint instanceof UniqueConstraintDefinition uniqueConstraint) || !uniqueConstraint.IsPrimaryKey || uniqueConstraint.Columns == null) {
-                    continue;
-                }
-                for (String columnName : extractIndexColumns(uniqueConstraint.Columns)) {
-                    table.getColumn(columnName).ifPresent(column -> table.addColumn(new ColumnInfo(column.name(), false, column.sqlType(), column.length())));
-                }
-            }
-        }
-
-        private void registerTable(String tableName, TableSchema table) {
-            if (tableName == null || tableName.isBlank()) {
-                return;
-            }
-            String normalized = normalizeTableName(tableName);
-            TableSchema target = tables.computeIfAbsent(normalized, key -> new TableSchema(normalized));
-            for (Map.Entry<String, ColumnInfo> entry : table.columns.entrySet()) {
-                target.columns.putIfAbsent(entry.getKey(), entry.getValue());
-            }
-        }
-
-        private void registerIndex(String tableName, List<String> columns) {
-            if (tableName == null || tableName.isBlank() || columns == null || columns.isEmpty()) {
-                return;
-            }
-            String normalized = normalizeTableName(tableName);
-            indexedColumnsByTable.computeIfAbsent(normalized, key -> new HashSet<>())
-                    .addAll(columns.stream().map(ProjectSchemaCatalog::normalizeColumnName).toList());
-        }
-
-        private void registerInlineColumnIndexes(String tableName, List<ColumnDefinition> columnDefinitions) {
-            if (tableName == null || tableName.isBlank() || columnDefinitions == null) {
-                return;
-            }
-            for (ColumnDefinition columnDefinition : columnDefinitions) {
-                if (columnDefinition != null && columnDefinition.Constraints != null) {
-                    registerColumnConstraintIndexes(tableName, columnDefinition);
-                }
-            }
-        }
-
-        private void registerColumnConstraintIndexes(String tableName, ColumnDefinition columnDefinition) {
-            for (ConstraintDefinition constraint : columnDefinition.Constraints) {
-                if (constraint instanceof UniqueConstraintDefinition uniqueConstraint) {
-                    List<String> columnNames = extractConstraintColumnNames(columnDefinition, uniqueConstraint);
-                    if (!columnNames.isEmpty()) {
-                        registerIndex(tableName, columnNames);
-                    }
-                }
-            }
-        }
-
-        private List<String> extractConstraintColumnNames(ColumnDefinition columnDefinition, UniqueConstraintDefinition uniqueConstraint) {
-            if (uniqueConstraint.Columns != null && !uniqueConstraint.Columns.isEmpty()) {
-                return extractIndexColumns(uniqueConstraint.Columns);
-            }
-            String columnName = columnDefinition.ColumnIdentifier != null ? columnDefinition.ColumnIdentifier.Value : null;
-            return (columnName != null && !columnName.isBlank()) ? List.of(columnName) : List.of();
-        }
-
-        private boolean isNullable(List<ConstraintDefinition> constraints) {
-            if (constraints == null) {
-                return true;
-            }
-            for (ConstraintDefinition constraint : constraints) {
-                if (constraint instanceof NullableConstraintDefinition nullableConstraint) {
-                    return nullableConstraint.Nullable;
-                }
-                if (constraint instanceof UniqueConstraintDefinition uniqueConstraint && uniqueConstraint.IsPrimaryKey) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private void registerStandaloneIndex(CreateIndexStatement node) {
-            if (node == null || node.OnName == null || node.Columns == null) {
-                return;
-            }
-            String tableName = schemaName(node.OnName);
-            registerIndex(tableName, extractIndexColumns(node.Columns));
-        }
-
-        private List<String> extractIndexColumns(List<?> indexedColumns) {
-            if (indexedColumns == null || indexedColumns.isEmpty()) {
-                return List.of();
-            }
-            return indexedColumns.stream()
-                    .filter(entry -> entry instanceof io.github.fupacat.ast.ColumnWithSortOrder c
-                            && c.Column != null
-                            && c.Column.MultiPartIdentifier != null)
-                    .map(entry -> lastIdentifier(((io.github.fupacat.ast.ColumnWithSortOrder) entry).Column.MultiPartIdentifier))
-                    .toList();
-        }
-
-        private String extractSqlType(DataTypeReference dataType) {
-            if (dataType == null) {
-                return UNKNOWN_TYPE;
-            }
-            if (dataType instanceof SqlDataTypeReference sqlDataTypeReference) {
-                return sqlDataTypeReference.SqlDataTypeOption != null
-                        ? sqlDataTypeReference.SqlDataTypeOption.name()
-                        : UNKNOWN_TYPE;
-            }
-            if (dataType instanceof ParameterizedDataTypeReference parameterizedDataTypeReference
-                    && parameterizedDataTypeReference.Name != null
-                    && parameterizedDataTypeReference.Name.BaseIdentifier != null) {
-                return parameterizedDataTypeReference.Name.BaseIdentifier.Value;
-            }
-            return dataType.getClass().getSimpleName();
-        }
-
-        private Integer extractLength(DataTypeReference dataType) {
-            if (!(dataType instanceof ParameterizedDataTypeReference parameterizedDataTypeReference) || parameterizedDataTypeReference.Parameters == null) {
-                return null;
-            }
-            for (Literal literal : parameterizedDataTypeReference.Parameters) {
-                Integer parsed = parseLengthLiteral(literal);
-                if (parsed != null) {
-                    return parsed;
-                }
-            }
-            return null;
-        }
-
-        private Integer parseLengthLiteral(Literal literal) {
-            if (literal == null || literal.Value == null || literal.Value.isBlank()) {
-                return null;
-            }
-            try {
-                return Integer.parseInt(literal.Value.trim());
-            } catch (NumberFormatException ignored) {
-                // ignore non-numeric parameters such as precision/scale pairs
-                return null;
-            }
         }
     }
 }
