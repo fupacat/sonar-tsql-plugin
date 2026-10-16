@@ -272,6 +272,23 @@ class ProjectSchemaCatalogTest {
 
     // TRACEABILITY_MAPPING: REQ-016
     @Test
+    void testOmittedSchemaIsAmbiguousWhenBaseNamesCollide() {
+        var ddl = TSqlParser.parse("CREATE TABLE sales.Items (Code BIGINT); CREATE TABLE archive.Items (Code SMALLINT);");
+        var query = TSqlParser.parse("SELECT i.Code FROM Items i;");
+        var qualified = TSqlParser.parse("SELECT archive.Items.Code FROM archive.Items;");
+        var catalog = ProjectSchemaCatalog.fromParsedResults(List.of(query, qualified, ddl));
+        assertThat(catalog.getTable("Items")).isEmpty();
+        assertThat(catalog.getTable("missing.Items")).isEmpty();
+        assertThat(catalog.getTable("Missing")).isEmpty();
+        var unknown = columnReferenceFrom(query.fragment(), "Code", 0);
+        assertThat(catalog.resolveColumn(unknown)).isEmpty();
+        assertThat(catalog.isIndexed(unknown)).isFalse();
+        assertThat(catalog.typeOf(columnReferenceFrom(qualified.fragment(), "Code", 0))
+                .orElseThrow().typeName()).isEqualTo("smallint");
+    }
+
+    // TRACEABILITY_MAPPING: REQ-016
+    @Test
     void testUnboundExpressionsCannotBorrowAnotherFilesScope() {
         ProjectSchemaCatalog firstCatalog = catalogFromSql(
                 "CREATE TABLE dbo.A (Code BIGINT);"
