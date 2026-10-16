@@ -61,25 +61,7 @@ class SchemaAwareChecksTest {
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.MethodSource("isNullLengthCases")
     void testIsNullReplacementLength(String sql, int expectedIssues) {
-        var parsed = TSqlParser.parse(sql).fragment();
-        var details = new StringBuilder(sql);
-        details.append(" rootTokens=").append(parsed.ScriptTokenStream);
-        parsed.accept(new TSqlConcreteFragmentVisitor() {
-            @Override
-            public void visit(io.github.fupacat.ast.ColumnDefinition column) {
-                details.append(" columnBounds=").append(column.firstTokenIndex).append(':')
-                        .append(column.lastTokenIndex).append(" constraints=").append(column.Constraints);
-                if (column.Constraints != null) {
-                    for (var constraint : column.Constraints) {
-                        if (constraint instanceof io.github.fupacat.ast.NullableConstraintDefinition nullable) {
-                            details.append(" nullable=").append(nullable.Nullable);
-                        }
-                    }
-                }
-                super.visit(column);
-            }
-        });
-        assertThat(CheckTestUtils.scan(nullableColumnCheck, sql)).as(details.toString()).hasSize(expectedIssues);
+        assertThat(CheckTestUtils.scan(nullableColumnCheck, sql)).as(sql).hasSize(expectedIssues);
     }
 
     private static java.util.stream.Stream<org.junit.jupiter.params.provider.Arguments> isNullLengthCases() {
@@ -91,11 +73,27 @@ class SchemaAwareChecksTest {
                 org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code VARCHAR(3) NOT NULL); SELECT ISNULL(Code, 'fallback') FROM Items;", 0),
                 org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code VARCHAR(3) NULL, Id INT NOT NULL); SELECT ISNULL(Code, 'fallback') FROM Items;", 1),
                 org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code VARCHAR(3) NOT    NULL); SELECT ISNULL(Code, 'fallback') FROM Items;", 0),
+                org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code VARCHAR(3)); SELECT ISNULL(Code, 'fallback') FROM Items;", 0),
+                org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code VARCHAR(3) NOT /* gap */ NULL); SELECT ISNULL(Code, 'fallback') FROM Items;", 0),
                 org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code VARCHAR(3) NULL /* NOT NULL is only a comment */); SELECT ISNULL(Code, 'fallback') FROM Items;", 1),
                 org.junit.jupiter.params.provider.Arguments.of("SELECT ISNULL(Code, 'fallback') FROM UnknownTable;", 0),
                 org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code VARCHAR(MAX) NULL); SELECT ISNULL(Code, 'fallback') FROM Items;", 0),
                 org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code INT NULL); SELECT ISNULL(Code, 0) FROM Items;", 0),
                 org.junit.jupiter.params.provider.Arguments.of("CREATE TABLE Items(Code VARCHAR(3) NULL); SELECT ISNULL(Code, @fallback) FROM Items;", 0));
+    }
+
+    // TRACEABILITY_MAPPING: REQ-017
+    @Test
+    void testIsNullWithSeparateDdlAndQueryFiles() throws java.io.IOException {
+        var ddl = org.mockito.Mockito.mock(org.sonar.api.batch.fs.InputFile.class);
+        org.mockito.Mockito.when(ddl.contents()).thenReturn("CREATE TABLE dbo.Items(Code VARCHAR(3) NULL);");
+        var catalog = ProjectSchemaCatalog.fromInputFiles(List.of(ddl));
+        var parsed = TSqlParser.parse("SELECT ISNULL(i.Code, 'fallback') FROM dbo.Items i;");
+        catalog.indexScript(parsed.fragment());
+        var context = new CheckTestUtils.CollectingContext("SELECT ISNULL(i.Code, 'fallback') FROM dbo.Items i;");
+        context.setProjectSchema(catalog);
+        nullableColumnCheck.scan(parsed.fragment(), context);
+        assertThat(context.issues).hasSize(1);
     }
 
     // TRACEABILITY_MAPPING: REQ-017

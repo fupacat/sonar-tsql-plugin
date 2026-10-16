@@ -14,6 +14,8 @@ import io.github.fupacat.sonar.tsql.catalog.ProjectSchemaCatalog;
 import io.github.fupacat.sonar.tsql.checks.AvoidSelectAllCheck;
 import io.github.fupacat.sonar.tsql.checks.CheckList;
 import io.github.fupacat.sonar.tsql.checks.InPredicateIndexedColumnCheck;
+import io.github.fupacat.sonar.tsql.checks.TSqlCheck;
+import io.github.fupacat.sonar.tsql.checks.TSqlCheckContext;
 import io.github.fupacat.sonar.tsql.rules.TSqlRulesDefinition;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -733,6 +735,43 @@ class TSqlSensorTest {
         // highlightRange invalid guard path.
         invokePrivate("highlightRange", new Class<?>[] {InputFile.class, NewHighlighting.class, String.class, int.class, int.class, TypeOfText.class, int[].class},
                 inputFile, highlighting, "abc", 3, 1, TypeOfText.KEYWORD, new int[] {0});
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void testExecuteChecksContinuesWhenPerFileSchemaIndexingFails() throws Exception {
+        InputFile inputFile = mock(InputFile.class);
+        when(inputFile.uri()).thenReturn(URI.create("file:///query.sql"));
+        SensorContext context = mock(SensorContext.class);
+        TSqlScript root = new TSqlScript();
+        TSqlCheck check = mock(TSqlCheck.class);
+        ProjectSchemaCatalog projectSchema = mock(ProjectSchemaCatalog.class);
+        doThrow(new RuntimeException("index failure")).when(projectSchema).indexScript(root);
+
+        invokePrivate("executeChecks",
+                new Class<?>[] {InputFile.class, SensorContext.class, io.github.fupacat.ast.TSqlFragment.class,
+                        String.class, List.class, ProjectSchemaCatalog.class, boolean.class},
+                inputFile, context, root, "SELECT 1;", List.of(check), projectSchema, true);
+
+        verify(check, times(1)).scan(eq(root), any(TSqlCheckContext.class));
+    }
+
+    // TRACEABILITY_MAPPING: REQ-005
+    @Test
+    void testExecuteChecksSkipsPerFileSchemaIndexingWhenSchemaRulesInactive() throws Exception {
+        InputFile inputFile = mock(InputFile.class);
+        SensorContext context = mock(SensorContext.class);
+        TSqlScript root = new TSqlScript();
+        TSqlCheck check = mock(TSqlCheck.class);
+        ProjectSchemaCatalog projectSchema = mock(ProjectSchemaCatalog.class);
+
+        invokePrivate("executeChecks",
+                new Class<?>[] {InputFile.class, SensorContext.class, io.github.fupacat.ast.TSqlFragment.class,
+                        String.class, List.class, ProjectSchemaCatalog.class, boolean.class},
+                inputFile, context, root, "SELECT 1;", List.of(check), projectSchema, false);
+
+        verify(projectSchema, never()).indexScript(any());
+        verify(check, times(1)).scan(eq(root), any(TSqlCheckContext.class));
     }
 
     // TRACEABILITY_MAPPING: REQ-005

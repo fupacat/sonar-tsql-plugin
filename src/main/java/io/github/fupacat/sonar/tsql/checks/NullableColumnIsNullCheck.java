@@ -30,7 +30,7 @@ public class NullableColumnIsNullCheck extends TSqlCheck {
             return;
         }
         ProjectSchemaCatalog.ColumnInfo metadata = getProjectSchema().resolveColumn(column).orElse(null);
-        if (metadata == null || !metadata.nullable() || metadata.length() == null || metadata.length() <= 0
+        if (metadata == null || !metadata.nullabilityKnown() || !metadata.nullable() || metadata.length() == null || metadata.length() <= 0
                 || !CHARACTER_TYPES.contains(metadata.sqlType().toLowerCase(Locale.ROOT))) {
             return;
         }
