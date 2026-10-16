@@ -236,9 +236,6 @@ public final class ProjectSchemaCatalog {
     }
 
     private QueryScope findEnclosingScope(ColumnReferenceExpression expression) {
-        if (expression == null) {
-            return null;
-        }
         return expressionScopeByColumn.get(expression);
     }
 
@@ -249,7 +246,7 @@ public final class ProjectSchemaCatalog {
         String normalized = normalizeTableName(qualifier);
         if (scope != null && scope.aliasLookup.containsKey(normalized)) {
             String aliasTarget = scope.aliasLookup.get(normalized);
-            return aliasTarget == null ? null : getTable(aliasTarget).orElse(null);
+            return getTable(aliasTarget).orElse(null);
         }
         if (scope != null && scope.tablesInScope.stream().noneMatch(name -> normalizeTableName(name).equals(normalized)
                 || shortTableName(normalizeTableName(name)).equals(normalized))) {
@@ -265,12 +262,6 @@ public final class ProjectSchemaCatalog {
     }
 
     private static String qualifierFor(List<String> identifiers) {
-        if (identifiers == null || identifiers.isEmpty()) {
-            return "";
-        }
-        if (identifiers.size() == 1) {
-            return identifiers.get(0);
-        }
         StringBuilder qualifier = new StringBuilder();
         for (int i = 0; i < identifiers.size() - 1; i++) {
             if (i > 0) {
@@ -452,22 +443,16 @@ public final class ProjectSchemaCatalog {
         @Override
         public void visit(QuerySpecification node) {
             QueryScope scope = registerQueryScope(node);
-            if (scope != null) {
-                queryScopeStack.push(scope);
-            }
+            queryScopeStack.push(scope);
             super.visit(node);
-            if (scope != null) {
-                queryScopeStack.pop();
-            }
+            queryScopeStack.pop();
         }
 
         @Override
         public void visit(ColumnReferenceExpression node) {
-            if (node != null && node.MultiPartIdentifier != null && node.MultiPartIdentifier.Identifiers != null && !node.MultiPartIdentifier.Identifiers.isEmpty()) {
-                QueryScope active = queryScopeStack.peekFirst();
-                if (active != null) {
-                    expressionScopeByColumn.put(node, active);
-                }
+            QueryScope active = queryScopeStack.peekFirst();
+            if (active != null) {
+                expressionScopeByColumn.put(node, active);
             }
             super.visit(node);
         }

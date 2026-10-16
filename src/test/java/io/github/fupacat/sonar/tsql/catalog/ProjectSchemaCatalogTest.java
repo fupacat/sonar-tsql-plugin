@@ -240,6 +240,38 @@ class ProjectSchemaCatalogTest {
 
     // TRACEABILITY_MAPPING: REQ-016
     @Test
+    void testNestedAliasShadowingRestoresOuterScope() {
+        var ddl = TSqlParser.parse("CREATE TABLE dbo.A (Code BIGINT); CREATE TABLE dbo.B (Code SMALLINT); CREATE INDEX IX_A ON dbo.A(Code);");
+        var outer = TSqlParser.parse("SELECT t.Code FROM dbo.A t;");
+        var inner = TSqlParser.parse("SELECT t.Code FROM dbo.B t;");
+        var outerRef = columnReferenceFrom(outer.fragment(), "Code", 0);
+        var innerRef = columnReferenceFrom(inner.fragment(), "Code", 0);
+        final io.github.fupacat.ast.QuerySpecification[] queries = new io.github.fupacat.ast.QuerySpecification[2];
+        for (int i = 0; i < 2; i++) {
+            final int index = i;
+            (i == 0 ? outer : inner).fragment().accept(new TSqlConcreteFragmentVisitor() {
+                @Override
+                public void visit(io.github.fupacat.ast.QuerySpecification node) {
+                    queries[index] = node;
+                }
+            });
+        }
+        var subquery = new io.github.fupacat.ast.ScalarSubquery();
+        subquery.QueryExpression = queries[1];
+        var element = new io.github.fupacat.ast.SelectScalarExpression();
+        element.Expression = subquery;
+        var elements = new java.util.ArrayList<>(queries[0].SelectElements);
+        elements.add(0, element);
+        queries[0].SelectElements = elements;
+        var catalog = ProjectSchemaCatalog.fromParsedResults(List.of(outer, ddl));
+        assertThat(catalog.typeOf(innerRef).orElseThrow().typeName()).isEqualTo("smallint");
+        assertThat(catalog.typeOf(outerRef).orElseThrow().typeName()).isEqualTo("bigint");
+        assertThat(catalog.isIndexed(outerRef)).isTrue();
+        assertThat(catalog.isIndexed(innerRef)).isFalse();
+    }
+
+    // TRACEABILITY_MAPPING: REQ-016
+    @Test
     void testUnboundExpressionsCannotBorrowAnotherFilesScope() {
         ProjectSchemaCatalog firstCatalog = catalogFromSql(
                 "CREATE TABLE dbo.A (Code BIGINT);"
