@@ -65,6 +65,7 @@ public final class ProjectSchemaCatalog {
             return empty();
         }
         List<ParseResult<TSqlScript>> parsedResults = new ArrayList<>();
+        Map<TSqlFragment, String> sources = new IdentityHashMap<>();
         for (InputFile inputFile : inputFiles) {
             if (inputFile == null) {
                 continue;
@@ -72,7 +73,7 @@ public final class ProjectSchemaCatalog {
             try {
                 String content = inputFile.contents();
                 var parsed = TSqlParser.parse(content);
-                if (parsed.fragment() != null) { parsed.fragment().Value = content; }
+                if (parsed.fragment() != null) { sources.put(parsed.fragment(), content); }
                 parsedResults.add(parsed);
             } catch (IOException ignored) {
                 // ignore unreadable file
@@ -80,10 +81,15 @@ public final class ProjectSchemaCatalog {
                 LOG.warn("Failed to parse schema catalog input: {}", inputFile.uri(), e);
             }
         }
-        return fromParsedResults(parsedResults);
+        return fromParsedResults(parsedResults, sources);
     }
 
     public static ProjectSchemaCatalog fromParsedResults(Iterable<ParseResult<TSqlScript>> parsedResults) {
+        return fromParsedResults(parsedResults, Map.of());
+    }
+
+    public static ProjectSchemaCatalog fromParsedResults(Iterable<ParseResult<TSqlScript>> parsedResults,
+            Map<? extends TSqlFragment, String> sources) {
         ProjectSchemaCatalog catalog = new ProjectSchemaCatalog();
         if (parsedResults == null) {
             return catalog;
@@ -93,7 +99,7 @@ public final class ProjectSchemaCatalog {
                 continue;
             }
             try {
-                catalog.indexScript(result.fragment());
+                catalog.indexScript(result.fragment(), sources.getOrDefault(result.fragment(), result.fragment().Value));
             } catch (Exception e) {
                 LOG.warn("Failed to index script while building project schema catalog", e);
             }
@@ -102,12 +108,16 @@ public final class ProjectSchemaCatalog {
     }
 
     public void indexScript(TSqlFragment root) {
+        indexScript(root, root == null ? null : root.Value);
+    }
+
+    public void indexScript(TSqlFragment root, String sourceText) {
         if (root == null) {
             return;
         }
         queryScopeStack.clear();
         // Scopes belong to cached AST nodes and must survive indexing subsequent files.
-        root.accept(new CatalogIndexer(new SourceNullability(root.Value)));
+        root.accept(new CatalogIndexer(new SourceNullability(sourceText)));
     }
 
     public boolean hasTable(String tableName) {

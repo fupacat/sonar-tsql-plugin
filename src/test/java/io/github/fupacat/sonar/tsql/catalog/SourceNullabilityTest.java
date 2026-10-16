@@ -63,4 +63,16 @@ class SourceNullabilityTest {
             assertThat(catalog.getTable("Items").orElseThrow().getColumn("Code").orElseThrow().nullabilityKnown()).isFalse();
         }
     }
+
+    // TRACEABILITY_MAPPING: REQ-017
+    @Test
+    void explicitSourceDoesNotMutateTheSharedAst() {
+        String sql = "CREATE TABLE Items(Code VARCHAR(3) NULL);";
+        var parsed = io.github.fupacat.TSqlParser.parse(sql);
+        var original = parsed.fragment().Value;
+        var catalog = ProjectSchemaCatalog.fromParsedResults(java.util.List.of(parsed), java.util.Map.of(parsed.fragment(), sql));
+        catalog.indexScript(parsed.fragment(), sql);
+        assertThat(parsed.fragment().Value).isEqualTo(original);
+        assertThat(catalog.getTable("Items").orElseThrow().getColumn("Code").orElseThrow().nullabilityKnown()).isTrue();
+    }
 }

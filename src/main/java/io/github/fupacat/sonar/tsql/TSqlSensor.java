@@ -38,7 +38,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -78,8 +77,6 @@ public class TSqlSensor implements Sensor {
         if (needsSchema) {
             try {
                 projectSchema = buildProjectSchema(parsedFiles.values().stream()
-                        .map(ParsedFile::result)
-                        .filter(Objects::nonNull)
                         .toList());
             } catch (Exception e) {
                 LOG.warn("Failed to build project schema catalog; continuing analysis without schema metadata", e);
@@ -109,8 +106,18 @@ public class TSqlSensor implements Sensor {
     }
 
     // TRACEABILITY_MAPPING: REQ-005
-    ProjectSchemaCatalog buildProjectSchema(Iterable<ParseResult<TSqlScript>> parsedResults) {
-        return ProjectSchemaCatalog.fromParsedResults(parsedResults);
+    ProjectSchemaCatalog buildProjectSchema(Iterable<ParsedFile> parsedFiles) {
+        Map<TSqlFragment, String> sources = new java.util.IdentityHashMap<>();
+        List<ParseResult<TSqlScript>> results = new ArrayList<>();
+        for (ParsedFile file : parsedFiles) {
+            if (file.result() != null) {
+                results.add(file.result());
+                if (file.result().fragment() != null) {
+                    sources.put(file.result().fragment(), file.content());
+                }
+            }
+        }
+        return ProjectSchemaCatalog.fromParsedResults(results, sources);
     }
 
     // TRACEABILITY_MAPPING: REQ-005
@@ -125,7 +132,6 @@ public class TSqlSensor implements Sensor {
                 ParseResult<TSqlScript> result;
                 try {
                     result = TSqlParser.parse(content);
-                    if (result.fragment() != null) { result.fragment().Value = content; }
                 } catch (Exception e) {
                     LOG.warn("Unexpected parser exception on file: " + inputFile.uri(), e);
                     parsedFiles.put(inputFile, new ParsedFile(content, null, null, e));
@@ -538,7 +544,7 @@ public class TSqlSensor implements Sensor {
         ProjectSchemaCatalog schemaForChecks = projectSchema;
         if (needsSchema) {
             try {
-                projectSchema.indexScript(rootFragment);
+                projectSchema.indexScript(rootFragment, sourceText);
             } catch (Exception e) {
                 LOG.warn("Failed to index per-file schema scope for {}; continuing without schema metadata for this file",
                         inputFile != null ? inputFile.uri() : "<unknown>", e);
