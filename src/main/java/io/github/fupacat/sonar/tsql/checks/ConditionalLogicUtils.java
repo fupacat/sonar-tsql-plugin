@@ -6,8 +6,18 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 final class ConditionalLogicUtils {
+    private static final Set<String> NON_SEMANTIC_FIELDS = Set.of(
+            "ScriptTokenStream",
+            "Value",
+            "firstTokenIndex",
+            "lastTokenIndex",
+            "offset",
+            "tokenType",
+            "convertStringToIdentifier");
+
     private ConditionalLogicUtils() {
     }
 
@@ -125,6 +135,9 @@ final class ConditionalLogicUtils {
     }
 
     private static void appendFieldSignature(StringBuilder builder, String fieldName, Object value) {
+        if (NON_SEMANTIC_FIELDS.contains(fieldName)) {
+            return;
+        }
         if (value instanceof Iterable<?> iterable) {
             List<String> items = new ArrayList<>();
             for (Object item : iterable) {

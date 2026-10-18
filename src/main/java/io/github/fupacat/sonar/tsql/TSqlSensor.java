@@ -4,6 +4,7 @@ import io.github.fupacat.ParseError;
 import io.github.fupacat.ParseResult;
 import io.github.fupacat.TSqlParser;
 import io.github.fupacat.TSqlParserToken;
+import io.github.fupacat.TSqlTokenType;
 import io.github.fupacat.ast.TSqlFragment;
 import io.github.fupacat.ast.TSqlScript;
 import io.github.fupacat.sonar.tsql.catalog.ProjectSchemaCatalog;
@@ -239,7 +240,24 @@ public class TSqlSensor implements Sensor {
 
         TSqlScript script = result != null ? result.fragment() : null;
         if (script != null && script.ScriptTokenStream != null && !script.ScriptTokenStream.isEmpty()) {
-            publishHighlightingFromTokens(inputFile, highlighting, script.ScriptTokenStream);
+            boolean hasStructuredTokenTypes = false;
+            for (Object tokenObject : script.ScriptTokenStream) {
+                if (tokenObject instanceof TSqlParserToken token) {
+                    TSqlTokenType tokenType = token.tokenType;
+                    if (tokenType == null) {
+                        tokenType = token._getTokenType();
+                    }
+                    if (tokenType != null && tokenType != TSqlTokenType.None) {
+                        hasStructuredTokenTypes = true;
+                        break;
+                    }
+                }
+            }
+            if (hasStructuredTokenTypes) {
+                publishHighlightingFromTokens(inputFile, highlighting, script.ScriptTokenStream);
+            } else {
+                publishHighlightingFromSourceText(inputFile, highlighting, content);
+            }
         } else {
             publishHighlightingFromSourceText(inputFile, highlighting, content);
         }
@@ -372,11 +390,18 @@ public class TSqlSensor implements Sensor {
 
     // TRACEABILITY_MAPPING: REQ-005
     private static TypeOfText mapTokenToType(TSqlParserToken token) {
-        if (token == null || token.tokenType == null) {
+        if (token == null) {
+            return null;
+        }
+        TSqlTokenType tokenType = token.tokenType;
+        if (tokenType == null) {
+            tokenType = token._getTokenType();
+        }
+        if (tokenType == null) {
             return null;
         }
         String tokenText = token.getText();
-        return switch (token.tokenType) {
+        return switch (tokenType) {
             case SingleLineComment, MultilineComment -> TypeOfText.COMMENT;
             case AsciiStringLiteral, UnicodeStringLiteral -> TypeOfText.STRING;
             case Identifier, QuotedIdentifier, Variable, AsciiStringOrQuotedIdentifier -> TypeOfText.KEYWORD_LIGHT;

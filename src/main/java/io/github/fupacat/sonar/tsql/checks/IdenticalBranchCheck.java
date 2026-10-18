@@ -27,14 +27,19 @@ public class IdenticalBranchCheck extends TSqlCheck {
     @Override
     public void visit(SimpleCaseExpression node) {
         if (node.WhenClauses != null) {
+            boolean duplicateFound = false;
             for (int i = 0; i < node.WhenClauses.size(); i++) {
                 for (int j = i + 1; j < node.WhenClauses.size(); j++) {
                     if (node.WhenClauses.get(i).ThenExpression != null && node.WhenClauses.get(j).ThenExpression != null
                             && ConditionalLogicUtils.structurallySame(node.WhenClauses.get(i).ThenExpression,
                                     node.WhenClauses.get(j).ThenExpression)) {
                         reportIssue(node, "CASE branches should not have identical results.");
-                        return;
+                        duplicateFound = true;
+                        break;
                     }
+                }
+                if (duplicateFound) {
+                    break;
                 }
             }
         }
@@ -44,14 +49,19 @@ public class IdenticalBranchCheck extends TSqlCheck {
     @Override
     public void visit(SearchedCaseExpression node) {
         if (node.WhenClauses != null) {
+            boolean duplicateFound = false;
             for (int i = 0; i < node.WhenClauses.size(); i++) {
                 for (int j = i + 1; j < node.WhenClauses.size(); j++) {
                     if (node.WhenClauses.get(i).ThenExpression != null && node.WhenClauses.get(j).ThenExpression != null
                             && ConditionalLogicUtils.structurallySame(node.WhenClauses.get(i).ThenExpression,
                                     node.WhenClauses.get(j).ThenExpression)) {
                         reportIssue(node, "CASE branches should not have identical results.");
-                        return;
+                        duplicateFound = true;
+                        break;
                     }
+                }
+                if (duplicateFound) {
+                    break;
                 }
             }
         }
