@@ -240,7 +240,24 @@ public class TSqlSensor implements Sensor {
 
         TSqlScript script = result != null ? result.fragment() : null;
         if (script != null && script.ScriptTokenStream != null && !script.ScriptTokenStream.isEmpty()) {
-            publishHighlightingFromTokens(inputFile, highlighting, script.ScriptTokenStream);
+            boolean hasStructuredTokenTypes = false;
+            for (Object tokenObject : script.ScriptTokenStream) {
+                if (tokenObject instanceof TSqlParserToken token) {
+                    TSqlTokenType tokenType = token.tokenType;
+                    if (tokenType == null) {
+                        tokenType = token._getTokenType();
+                    }
+                    if (tokenType != null && tokenType != TSqlTokenType.None) {
+                        hasStructuredTokenTypes = true;
+                        break;
+                    }
+                }
+            }
+            if (hasStructuredTokenTypes) {
+                publishHighlightingFromTokens(inputFile, highlighting, script.ScriptTokenStream);
+            } else {
+                publishHighlightingFromSourceText(inputFile, highlighting, content);
+            }
         } else {
             publishHighlightingFromSourceText(inputFile, highlighting, content);
         }
