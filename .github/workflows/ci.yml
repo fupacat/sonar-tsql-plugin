@@ -65,7 +65,7 @@ jobs:
           cache: 'maven'
 
       - name: Download verified plugin for smoke test
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: sonar-tsql-plugin
           path: target/
