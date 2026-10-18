@@ -48,7 +48,7 @@
         <maven.compiler.release>17</maven.compiler.release>
         <java.version>17</java.version>
         
-        <sonar.apiVersion>10.11.0.2468</sonar.apiVersion>
+        <sonar.apiVersion>14.2.0.5584</sonar.apiVersion>
         <sonar.pluginMinVersion>9.9</sonar.pluginMinVersion>
         <scriptdom.version>0.1.0</scriptdom.version>
         
