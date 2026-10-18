@@ -1,4 +1,6 @@
 name: SonarQube
+permissions:
+  contents: read
 on:
   push:
     branches:
@@ -7,6 +9,7 @@ on:
     types: [opened, synchronize, reopened]
 jobs:
   build:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     name: Build and analyze
     runs-on: ubuntu-latest
     steps:
